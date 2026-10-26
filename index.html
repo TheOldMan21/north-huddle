@@ -3023,7 +3023,8 @@ setPmode=function(m){ _setPmodeP(m); syncDepthVis(); };
 const _renderPlayersP=renderPlayers;
 renderPlayers=function(){ _renderPlayersP(); const L=$("pLeaders"); if(L){ const c=S.players.length?leaderCards():""; L.innerHTML=c?`<h2>Season leaders</h2><div class="leaders">${c}</div>`:""; } };
 const _renderDepthP=renderDepth;
-renderDepth=function(){ _renderDepthP(); const b=$("depthBody"); if(b&&S.injuries.length&&S.dunit!=="special") b.insertAdjacentHTML("afterbegin",`<h2>Injury report</h2><div class="list">${S.injuries.map(i=>`<div class="row"><div class="grow"><div class="t1">${esc(i.player)} <span class="chip pos">${esc(i.pos)}</span></div><div class="t2">${esc(i.injury)}${i.note?" · "+esc(i.note):""}</div></div><div class="inj-status ${/out|ir|reserve/i.test(i.status)?"out":""}">${esc(i.status)}</div></div>`).join("")}</div>`); };
+renderDepth=function(){ _renderDepthP(); const b=$("depthBody"); if(b&&S.injuries.length&&S.dunit!=="special"){ const dh=[...b.querySelectorAll("h2")].find(h=>/Depth chart/.test(h.textContent)); const all=S.injuries.slice().sort((x,y)=>(/reserve/i.test(x.status)?1:0)-(/reserve/i.test(y.status)?1:0)); const show=window.__injAll?all:all.slice(0,5); (dh||b.firstChild)?.insertAdjacentHTML("beforebegin",`<h2>Injury report</h2><div class="list">${show.map(i=>`<div class="row"><div class="grow"><div class="t1">${esc(i.player)} <span class="chip pos">${esc(i.pos)}</span></div><div class="t2">${esc(i.injury)}${i.note?" · "+esc(i.note):""}</div></div><div class="inj-status ${/out|ir|reserve/i.test(i.status)?"out":""}">${esc(i.status)}</div></div>`).join("")}</div>${all.length>5?`<button class="tbtn inj-more" data-injall="1">${window.__injAll?"Show fewer":"Show all "+all.length}</button>`:""}`); } };
+document.addEventListener("click",e=>{ if(e.target.closest("[data-injall]")){ window.__injAll=!window.__injAll; renderDepth(); } });
 if(store.get("vh_pmode")==="depth") setPmode("depth");
 if(location.hash==="#depth") setTab("depth");
 document.addEventListener("click",async e=>{ if(!e.target.closest("[data-copyurl]")) return;
@@ -3160,6 +3161,7 @@ body.adm-open{overflow:hidden}
 .pred-sub{margin-top:2px}
 .wp-pick .tb{transform:scale(.8);margin:-4px;flex:none}
 .wp-pick .wpk-name{font-size:14px}
+.inj-more{align-self:center;margin:8px auto 0;display:block}
 
 </style>
 <script>
