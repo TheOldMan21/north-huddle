@@ -67,7 +67,8 @@ function boxOf(s) {
 export async function onRequest(ctx) {
   const url = new URL(ctx.request.url);
   const team = (url.searchParams.get("team") || "MIN").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4);
-  const key = new Request(url.origin + "/api/scores?team=" + team);
+  const event = (url.searchParams.get("event") || "").replace(/\D/g, "").slice(0, 14);
+  const key = new Request(url.origin + "/api/scores?team=" + team + (event ? "&event=" + event : ""));
   const cache = caches.default;
   const hit = await cache.match(key);
   if (hit) return hit;
@@ -92,7 +93,7 @@ export async function onRequest(ctx) {
         redZone: !!sit.isRedZone, tv: (c.broadcasts || []).flatMap((b) => b.names || []).join(", ")
       };
     });
-    const g = out.games.find((x) => x.home === team || x.away === team);
+    const g = event ? out.games.find((x) => String(x.id) === event) : out.games.find((x) => x.home === team || x.away === team);
     if (g && g.state !== "pre") {
       try {
         const s = await (await fetch(SUM + g.id, { headers: { "user-agent": "NorthHuddle/1.0" } })).json();

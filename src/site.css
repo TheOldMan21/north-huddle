@@ -126,3 +126,69 @@ body.adm-open{overflow:hidden}
 .wp-pick .tb{transform:scale(.8);margin:-4px;flex:none}
 .wp-pick .wpk-name{font-size:14px}
 .inj-more{align-self:center;margin:8px auto 0;display:block}
+/* schedule modes */
+.gm-seg{margin-bottom:4px}
+.sb-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sb-head h2{margin:0}
+.sb-grid{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:640px){.sb-grid{grid-template-columns:1fr 1fr}}
+.sb-game{display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;border:1px solid var(--line);font:inherit;color:inherit;width:100%}
+.sb-game.live{border-color:var(--loss)}
+.sb-game.mine{box-shadow:inset 3px 0 0 var(--gold)}
+.sb-teams{display:flex;flex-direction:column;gap:4px}
+.sb-team{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--muted)}
+.sb-team .tb{transform:scale(.8);margin:-3px}
+.sb-team b{margin-left:auto;font:800 20px var(--display);color:var(--fg)}
+.sb-team.win{color:var(--fg)}
+.sb-abbr{min-width:36px}
+.sb-poss{color:#B07F00;font-size:12px}
+.sb-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.gs-score{display:flex;align-items:center;gap:10px;margin-top:4px}
+.gs-score b{font:800 30px var(--display)}
+.gs-at{color:var(--muted);font-weight:700}
+.gs-sit{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px;margin:6px 0}
+.gs-sit .tb{transform:scale(.75);margin:-4px}
+.gs-last{margin-bottom:8px}
+.gs-sec{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.gs-wp{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.gs-wph{display:block;height:100%;background:var(--purple)}
+/* standings */
+.st-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:640px){.st-grid{grid-template-columns:1fr 1fr}}
+.st-card.mine{border:2px solid var(--gold)}
+.st-h{font:800 15px var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.st-t{width:100%;border-collapse:collapse;font-size:14px}
+.st-t th{font:700 11px var(--body);color:var(--muted);text-align:right;padding:4px}
+.st-t td{text-align:right;padding:6px 4px;border-top:1px solid var(--line)}
+.st-t td:first-child,.st-t th:first-child{text-align:left}
+.st-t tr.me td{background:var(--surface-2);font-weight:700}
+.st-team{display:inline-flex;align-items:center;gap:6px}
+.st-team .tb{transform:scale(.75);margin:-4px}
+.st-seed{font:800 10px var(--display);background:var(--gold);color:var(--on-gold);border-radius:99px;padding:1px 5px}
+.pp-card{display:flex;flex-direction:column;gap:6px}
+.pp-row{display:flex;align-items:center;gap:8px;font-size:14px;padding:4px 0;border-top:1px solid var(--line)}
+.pp-row.me{font-weight:700}
+.pp-row .tb{transform:scale(.75);margin:-4px}
+.pp-seed{width:18px;text-align:center;color:var(--muted)}
+/* league-wide players */
+.lp-line{color:var(--purple-ink)}
+.lp-tap{cursor:pointer}
+/* sleeper */
+.sl-intro{display:flex;gap:12px;align-items:center}
+.sl-logo{width:40px;height:40px;border-radius:10px;background:#1B2236;color:#7CF5D9;font:800 22px var(--display);display:grid;place-items:center;flex:none}
+.sl-form{display:flex;flex-direction:column;gap:6px}
+.sl-row{display:flex;gap:8px}
+.sl-row input{flex:1;min-width:0;font:16px var(--body);padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+.sl-head{display:flex;align-items:center;gap:10px}
+.sl-head .av,.sl-team .av{width:36px;height:36px}
+.sl-select{width:100%;font:15px var(--body);padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+.sl-mu{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:640px){.sl-mu{grid-template-columns:1fr 1fr}}
+.sl-side{display:flex;flex-direction:column;gap:4px}
+.sl-team{display:flex;align-items:center;gap:8px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+.sl-pts{font:800 26px var(--display);color:var(--purple-ink)}
+.sl-pl{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);font-size:14px}
+.sl-me{background:var(--surface-2)}
+.sl-pf{min-width:70px;text-align:right}
+.gs-sec .wp-lab{display:flex;justify-content:space-between;font-size:13px}
+.sl-pl .grow,.sl-team .grow,.sl-head .grow{flex:1;min-width:0}

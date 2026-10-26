@@ -3162,6 +3162,72 @@ body.adm-open{overflow:hidden}
 .wp-pick .tb{transform:scale(.8);margin:-4px;flex:none}
 .wp-pick .wpk-name{font-size:14px}
 .inj-more{align-self:center;margin:8px auto 0;display:block}
+/* schedule modes */
+.gm-seg{margin-bottom:4px}
+.sb-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sb-head h2{margin:0}
+.sb-grid{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:640px){.sb-grid{grid-template-columns:1fr 1fr}}
+.sb-game{display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;border:1px solid var(--line);font:inherit;color:inherit;width:100%}
+.sb-game.live{border-color:var(--loss)}
+.sb-game.mine{box-shadow:inset 3px 0 0 var(--gold)}
+.sb-teams{display:flex;flex-direction:column;gap:4px}
+.sb-team{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--muted)}
+.sb-team .tb{transform:scale(.8);margin:-3px}
+.sb-team b{margin-left:auto;font:800 20px var(--display);color:var(--fg)}
+.sb-team.win{color:var(--fg)}
+.sb-abbr{min-width:36px}
+.sb-poss{color:#B07F00;font-size:12px}
+.sb-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.gs-score{display:flex;align-items:center;gap:10px;margin-top:4px}
+.gs-score b{font:800 30px var(--display)}
+.gs-at{color:var(--muted);font-weight:700}
+.gs-sit{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px;margin:6px 0}
+.gs-sit .tb{transform:scale(.75);margin:-4px}
+.gs-last{margin-bottom:8px}
+.gs-sec{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.gs-wp{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.gs-wph{display:block;height:100%;background:var(--purple)}
+/* standings */
+.st-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:640px){.st-grid{grid-template-columns:1fr 1fr}}
+.st-card.mine{border:2px solid var(--gold)}
+.st-h{font:800 15px var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.st-t{width:100%;border-collapse:collapse;font-size:14px}
+.st-t th{font:700 11px var(--body);color:var(--muted);text-align:right;padding:4px}
+.st-t td{text-align:right;padding:6px 4px;border-top:1px solid var(--line)}
+.st-t td:first-child,.st-t th:first-child{text-align:left}
+.st-t tr.me td{background:var(--surface-2);font-weight:700}
+.st-team{display:inline-flex;align-items:center;gap:6px}
+.st-team .tb{transform:scale(.75);margin:-4px}
+.st-seed{font:800 10px var(--display);background:var(--gold);color:var(--on-gold);border-radius:99px;padding:1px 5px}
+.pp-card{display:flex;flex-direction:column;gap:6px}
+.pp-row{display:flex;align-items:center;gap:8px;font-size:14px;padding:4px 0;border-top:1px solid var(--line)}
+.pp-row.me{font-weight:700}
+.pp-row .tb{transform:scale(.75);margin:-4px}
+.pp-seed{width:18px;text-align:center;color:var(--muted)}
+/* league-wide players */
+.lp-line{color:var(--purple-ink)}
+.lp-tap{cursor:pointer}
+/* sleeper */
+.sl-intro{display:flex;gap:12px;align-items:center}
+.sl-logo{width:40px;height:40px;border-radius:10px;background:#1B2236;color:#7CF5D9;font:800 22px var(--display);display:grid;place-items:center;flex:none}
+.sl-form{display:flex;flex-direction:column;gap:6px}
+.sl-row{display:flex;gap:8px}
+.sl-row input{flex:1;min-width:0;font:16px var(--body);padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+.sl-head{display:flex;align-items:center;gap:10px}
+.sl-head .av,.sl-team .av{width:36px;height:36px}
+.sl-select{width:100%;font:15px var(--body);padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+.sl-mu{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:640px){.sl-mu{grid-template-columns:1fr 1fr}}
+.sl-side{display:flex;flex-direction:column;gap:4px}
+.sl-team{display:flex;align-items:center;gap:8px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+.sl-pts{font:800 26px var(--display);color:var(--purple-ink)}
+.sl-pl{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);font-size:14px}
+.sl-me{background:var(--surface-2)}
+.sl-pf{min-width:70px;text-align:right}
+.gs-sec .wp-lab{display:flex;justify-content:space-between;font-size:13px}
+.sl-pl .grow,.sl-team .grow,.sl-head .grow{flex:1;min-width:0}
 
 </style>
 <script>
@@ -3625,6 +3691,194 @@ renderHome=function(){
   if(ACC.db) PRED.unsub=ACC.db.collection("predictions").orderBy("t","desc").limit(1000).onSnapshot(s=>{ PRED.all=s.docs.map(d=>({id:d.id,...d.data()})); if(S.tab==="home") renderHome(); },e=>console.warn("predictions",e));
   renderHome();
 })();
+
+/* ===================== North Huddle: all-games scoreboard, standings, league-wide players, Sleeper ===================== */
+
+/* ---------- Schedule tab: Team | Scores | Standings ---------- */
+const GM={mode:store.get("vh_gmode")||"team", stand:null, standAt:0, sheet:null, sheetT:0};
+function gmSeg(){ return `<div class="seg gm-seg" role="group" aria-label="Schedule view">${[["team",NICK()],["scores","All scores"],["standings","Standings"]].map(([k,l])=>`<button data-gmode="${k}" aria-pressed="${GM.mode===k}">${esc(l)}</button>`).join("")}</div>`; }
+const _renderGamesL=renderGames;
+renderGames=function(){
+  const el=$("v-games"); if(!el) return;
+  if(GM.mode==="team"){ _renderGamesL(); el.insertAdjacentHTML("afterbegin",gmSeg()); return; }
+  el.innerHTML=gmSeg()+`<div id="gmBody" class="stack"></div>`;
+  if(GM.mode==="scores") renderScoreboard(); else renderStandings();
+};
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-gmode]"); if(b){ GM.mode=b.dataset.gmode; store.set("vh_gmode",GM.mode); renderGames(); if(GM.mode==="standings") loadStandings(); if(GM.mode==="scores") pollLive(); return; }
+  const g=e.target.closest("[data-sbgame]"); if(g){ openGameSheet(g.dataset.sbgame); return; }
+});
+
+/* ---------- scoreboard ---------- */
+function stateRank(x){ return x.state==="in"?0:x.state==="pre"?1:2; }
+function gameRow(x){
+  const live=x.state==="in", fin=x.state==="post", pre=x.state==="pre";
+  const sc=(a,s,win)=>`<div class="sb-team${win?" win":""}">${badge(a)}<span class="sb-abbr">${esc(a)}</span>${pre?"":`<b class="num">${esc(s)}</b>`}${x.possession===a&&live?'<span class="sb-poss" title="Has the ball">●</span>':""}</div>`;
+  const when=pre?fmtDate(x.kickoff,{weekday:"short",hour:"numeric",minute:"2-digit"})+" CT":x.detail;
+  return `<button class="card sb-game${live?" live":""}${(x.home===CUR||x.away===CUR)?" mine":""}" data-sbgame="${esc(x.id)}">
+    <div class="sb-teams">${sc(x.away,x.as,fin&&x.as>x.hs)}${sc(x.home,x.hs,fin&&x.hs>x.as)}</div>
+    <div class="sb-meta">${live?'<span class="chip live">LIVE</span>':""}<span>${esc(when)}</span>${x.tv&&pre?`<span class="t2">${esc(x.tv)}</span>`:""}${live&&x.shortDD?`<span class="t2">${esc(x.shortDD)}${x.posText?` · ${esc(x.posText)}`:""}</span>`:""}${live&&x.redZone?'<span class="chip live">RED ZONE</span>':""}</div></button>`;
+}
+function renderScoreboard(){
+  const b=$("gmBody"); if(!b) return;
+  const gs=(LIVE.data?.games||[]).slice().sort((a,c)=>stateRank(a)-stateRank(c)||String(a.kickoff).localeCompare(String(c.kickoff)));
+  if(!gs.length){ b.innerHTML=skelRows(4); return; }
+  const live=gs.filter(x=>x.state==="in").length;
+  b.innerHTML=`<div class="sb-head"><h2>Week ${esc(LIVE.data.week||"")} scoreboard</h2><span class="t2">${live?`${live} live · updates every minute`:"Tap a game for details"}</span></div><div class="sb-grid">${gs.map(gameRow).join("")}</div>`;
+}
+// keep the scoreboard fresh: the shared live poll already fetches every minute during games
+const _pollLiveL=pollLive;
+pollLive=async function(){ await _pollLiveL(); if(S.tab==="games"&&GM.mode==="scores") renderScoreboard(); if(GM.sheet) refreshGameSheet(); };
+
+/* ---------- game sheet (any game) ---------- */
+async function openGameSheet(id){ GM.sheet={id, data:null}; renderGameSheet(); $("sheetBg").hidden=false; refreshGameSheet(); clearInterval(GM.sheetT); GM.sheetT=setInterval(()=>{ if($("sheetBg").hidden){ clearInterval(GM.sheetT); GM.sheet=null; return; } refreshGameSheet(); },60000); }
+async function refreshGameSheet(){
+  const s=GM.sheet; if(!s) return;
+  try{ const r=await fetch(`/api/scores?event=${encodeURIComponent(s.id)}&team=${CUR}`,{cache:"no-store"}); if(r.ok){ s.data=await r.json(); if(GM.sheet===s&&!$("sheetBg").hidden) renderGameSheet(); } }catch(e){}
+}
+function renderGameSheet(){
+  const s=GM.sheet, d=s.data, x=(d?.games||LIVE.data?.games||[]).find(g=>String(g.id)===String(s.id));
+  if(!x){ $("sheet").innerHTML=`<div class="sheet-head"><div class="nm">Game</div><button class="x" id="closeSheet" aria-label="Close">×</button></div>${skelRows(3)}`; return; }
+  const f=d?.focus, pre=x.state==="pre";
+  const wp=f?.wp?.pts?.length?(()=>{ const p=Math.round(f.wp.now*100); return `<div class="gs-sec"><div class="label">Win probability</div><div class="gs-wp"><span class="gs-wph" style="width:${p}%"></span></div><div class="wp-lab"><span>${esc(x.home)} ${p}%</span><span>${esc(x.away)} ${100-p}%</span></div></div>`; })():"";
+  const sit=x.state==="in"&&x.possession?`<div class="gs-sit">${badge(x.possession)} <b>${esc(x.possession)} ball</b> · ${esc(x.shortDD||"")}${x.posText?` at ${esc(x.posText)}`:""}${x.redZone?' <span class="chip live">RED ZONE</span>':""}</div>${x.lastPlay?`<div class="t2 gs-last">Last play: ${esc(x.lastPlay)}</div>`:""}`:"";
+  const plays=(f?.plays||[]).slice(0,12).map(p=>`<div class="gx-play${p.scoring?" gx-score":""}"><div class="gx-pm">Q${esc(p.q)} ${esc(p.clock)}${p.team?` · ${esc(p.team)}`:""}${p.dd?` · ${esc(p.dd)}`:""}</div><div class="gx-pt">${esc(p.text)}</div></div>`).join("");
+  const box=(f?.box||[]).map(t=>{ const tabs=Object.entries({passing:"Passing",rushing:"Rushing",receiving:"Receiving"}).map(([k,l])=>{ const c=t.cats?.[k]; if(!c?.rows?.length) return ""; return `<table class="gx-box"><thead><tr><th>${esc(t.team)} ${l}</th>${c.labels.map(z=>`<th>${esc(z)}</th>`).join("")}</tr></thead><tbody>${c.rows.map(r=>`<tr><td>${esc(r.name)}</td>${r.stats.map(v=>`<td class="num">${esc(v)}</td>`).join("")}</tr>`).join("")}</tbody></table>`; }).join(""); return tabs; }).join("");
+  $("sheet").innerHTML=`<div class="sheet-head"><div><div class="label">${x.state==="in"?'<span class="chip live">LIVE</span> ':""}${esc(pre?fmtDate(x.kickoff,{weekday:"long",hour:"numeric",minute:"2-digit"})+" CT":x.detail)}${x.tv?` · ${esc(x.tv)}`:""}</div>
+      <div class="gs-score">${badge(x.away,true)}<b class="num">${pre?"":esc(x.as)}</b><span class="gs-at">@</span><b class="num">${pre?"":esc(x.hs)}</b>${badge(x.home,true)}</div></div><button class="x" id="closeSheet" aria-label="Close">×</button></div>
+    ${sit}${wp}
+    ${plays?`<div class="gs-sec"><div class="label">Latest plays</div>${plays}</div>`:""}
+    ${box?`<div class="gs-sec"><div class="label">Box score</div>${box}</div>`:""}
+    ${pre&&!plays?`<div class="card empty">Live plays, box score and win probability appear here at kickoff.</div>`:""}
+    <div class="foot">Updates every minute while open.</div>`;
+}
+
+/* ---------- standings (always current from ESPN) ---------- */
+async function loadStandings(force){
+  if(!force && GM.stand && Date.now()-GM.standAt<10*60e3) return;
+  try{ const r=await fetch("/api/standings"); if(r.ok){ const d=await r.json(); if(d?.divisions){ GM.stand=d; GM.standAt=Date.now(); LEAGUE.standings=d.divisions; syncView(); if(S.tab==="games"&&GM.mode==="standings") renderStandings(); else renderAll(); } } }catch(e){}
+}
+function renderStandings(){
+  const b=$("gmBody"); if(!b) return;
+  const D=GM.stand?.divisions; if(!D){ b.innerHTML=skelRows(6); loadStandings(); return; }
+  const myDiv=TEAMS[CUR]?.[2];
+  const table=(name,rows)=>`<div class="card st-card${name===myDiv?" mine":""}"><div class="st-h">${esc(name)}</div><table class="st-t"><thead><tr><th></th><th>W-L${rows.some(r=>r.t)?"-T":""}</th><th>PF</th><th>PA</th><th>Strk</th></tr></thead><tbody>${rows.map(r=>`<tr class="${r.abbr===CUR?"me":""}"><td><span class="st-team">${badge(r.abbr)}<span>${esc(r.abbr)}</span>${r.seed&&r.seed<=7?`<span class="st-seed" title="Playoff seed">${r.seed}</span>`:""}</span></td><td class="num">${r.w}-${r.l}${rows.some(z=>z.t)?"-"+r.t:""}</td><td class="num">${r.pf}</td><td class="num">${r.pa}</td><td>${esc(r.streak)}</td></tr>`).join("")}</tbody></table></div>`;
+  const conf=c=>{ const all=Object.entries(D).filter(([n])=>n.startsWith(c)).flatMap(([n,rs])=>rs.map(r=>({...r,divn:n}))); const seeded=all.filter(r=>r.seed&&r.seed<=7).sort((a,z)=>a.seed-z.seed);
+    return `<div class="card pp-card"><div class="st-h">${c} playoff picture</div>${seeded.map(r=>`<div class="pp-row${r.abbr===CUR?" me":""}"><b class="num pp-seed">${r.seed}</b>${badge(r.abbr)}<span class="grow">${esc(r.team)}</span><span class="num">${r.w}-${r.l}${r.t?"-"+r.t:""}</span><span class="t2">${r.seed<=4?"Div. leader":"Wild card"}</span></div>`).join("")||'<div class="t2">Seeds appear once games are played.</div>'}</div>`; };
+  b.innerHTML=`<div class="sb-head"><h2>Standings</h2><span class="t2">Live from ESPN</span></div>${conf("NFC")}${conf("AFC")}<div class="st-grid">${Object.entries(D).sort(([a],[z])=>(a===myDiv?-1:z===myDiv?1:a.localeCompare(z))).map(([n,r])=>table(n,r)).join("")}</div>`;
+}
+loadStandings();
+
+/* ---------- any NFL player: stats in search results ---------- */
+const LP={data:null, idx:null};
+async function loadLeaguePlayers(){
+  if(LP.data) return LP.data;
+  try{ const r=await fetch("/api/data?f=players"); if(r.ok){ LP.data=await r.json(); LP.idx={}; Object.entries(LP.data.teams||{}).forEach(([a,ps])=>ps.forEach(p=>{ LP.idx[nmz(p.name)+"|"+a]=p; LP.idx[nmz(p.name)]=LP.idx[nmz(p.name)]||{...p,abbr:a}; })); } }catch(e){}
+  return LP.data;
+}
+function lpFind(name,abbr){ if(!LP.idx) return null; return abbr?(LP.idx[nmz(name)+"|"+abbr]||null):(LP.idx[nmz(name)]||null); }
+function lpLine(p){ const s=p?.stats||{}, o=[];
+  if(s.pass?.yds) o.push(`${s.pass.yds} pass yds, ${s.pass.td} TD`); if(s.rush?.yds) o.push(`${s.rush.yds} rush yds${s.rush.td?`, ${s.rush.td} TD`:""}`);
+  if(s.rec?.yds) o.push(`${s.rec.rec} rec, ${s.rec.yds} yds${s.rec.td?`, ${s.rec.td} TD`:""}`); if(s.def?.tkl||s.def?.sacks) o.push(`${s.def.tkl} tkl${s.def.sacks?`, ${s.def.sacks} sk`:""}${s.def.int?`, ${s.def.int} INT`:""}`);
+  return o.join(" · "); }
+function lpDecorate(){
+  const box=$("tresults"); if(!box||box.hidden) return;
+  if(!LP.data){ loadLeaguePlayers().then(()=>{ if(LP.data) lpDecorate(); }); return; }
+  const q=$("tsearch").value, r=searchPlayers(q);
+  box.querySelectorAll(".row").forEach((row,i)=>{ const p=r[i]; if(!p) return; const lp=lpFind(p.name,p.abbr); const line=lpLine(lp);
+    if(line&&!row.querySelector(".lp-line")) row.querySelector(".grow")?.insertAdjacentHTML("beforeend",`<div class="t2 lp-line">2026: ${esc(line)}</div>`);
+    if(lp){ row.classList.add("lp-tap"); row.dataset.lp=p.abbr+"|"+p.name; } });
+}
+$("tsearch")?.addEventListener("input",()=>setTimeout(lpDecorate,0));
+const _renderTrackResultsL=renderTrackResults;
+renderTrackResults=function(){ _renderTrackResultsL(); lpDecorate(); };
+document.addEventListener("click",e=>{
+  const row=e.target.closest("[data-lp]"); if(!row||e.target.closest("button")) return;
+  const [abbr,name]=row.dataset.lp.split(/\|(.+)/); const p=lpFind(name,abbr); if(!p) return;
+  const s=p.stats||{}, grid=(t,items)=>`<h2>${t}</h2><div class="statgrid">${items.filter(i=>i[1]!=null&&i[1]!=="").map(([l,v])=>`<div class="sg"><b class="num">${esc(v)}</b><span>${l}</span></div>`).join("")}</div>`;
+  const blocks=[];
+  if(s.pass) blocks.push(grid("Passing",[["Cmp/Att",s.pass.att?`${s.pass.cmp}/${s.pass.att}`:null],["Yards",s.pass.yds],["TD",s.pass.td],["INT",s.pass.att?s.pass.int:null],["Rating",s.pass.rate?Number(s.pass.rate).toFixed(1):null]]));
+  if(s.rush) blocks.push(grid("Rushing",[["Carries",s.rush.att],["Yards",s.rush.yds],["TD",s.rush.td]]));
+  if(s.rec) blocks.push(grid("Receiving",[["Rec",s.rec.rec],["Yards",s.rec.yds],["TD",s.rec.td]]));
+  if(s.def) blocks.push(grid("Defense",[["Tackles",s.def.tkl],["Sacks",s.def.sacks],["INT",s.def.int]]));
+  $("sheet").innerHTML=`<div class="sheet-head"><div><div class="label">${badge(abbr)} ${esc(p.pos||"")}${p.number?` · #${esc(p.number)}`:""}</div><div class="nm">${esc(p.name)}</div></div><button class="x" id="closeSheet" aria-label="Close">×</button></div>
+    ${p.status?`<div class="alert"><div>${esc(p.status)}</div></div>`:""}${blocks.join("")||'<div class="empty">No season stats yet.</div>'}<div class="foot">2026 season totals from ESPN, refreshed every few hours.</div>`;
+  $("sheetBg").hidden=false;
+});
+
+/* ===================== North Huddle: Sleeper league import ===================== */
+// Read-only view of a real Sleeper fantasy league (public API, no login). Username is remembered on this device.
+const SL={user:null, leagues:[], league:null, state:null, rosters:[], users:{}, matchups:[], players:null, loading:false, err:"", week:null, t:0};
+const SLAPI="https://api.sleeper.app/v1";
+async function slGet(p){ const r=await fetch(SLAPI+p); if(!r.ok) throw new Error(r.status); return r.json(); }
+function slSaved(){ try{ return JSON.parse(localStorage.getItem("nh_sleeper")||"null"); }catch(e){ return null; } }
+function slSave(v){ try{ v?localStorage.setItem("nh_sleeper",JSON.stringify(v)):localStorage.removeItem("nh_sleeper"); }catch(e){} }
+async function slPlayers(){ if(SL.players) return SL.players; try{ const r=await fetch("/api/data?f=sleeper"); if(r.ok) SL.players=await r.json(); }catch(e){} return SL.players||{}; }
+function slName(pid){ const p=SL.players?.[pid]; if(!p) return isNaN(pid)?`${pid} D/ST`:"Player"; return p[0]; }
+function slMeta(pid){ const p=SL.players?.[pid]; if(!p) return isNaN(pid)?"DEF":""; return `${p[1]}${p[2]?" · "+p[2]:""}${p[3]?` · <span class="st-note">${esc(p[3])}</span>`:""}`; }
+const slAv=a=>a?`https://sleepercdn.com/avatars/thumbs/${encodeURIComponent(a)}`:BLANK_AV;
+
+async function slLoadUser(username){
+  SL.loading=true; SL.err=""; renderFantasy();
+  try{
+    const u=await slGet("/user/"+encodeURIComponent(username.trim())); if(!u||!u.user_id) throw new Error("nouser");
+    SL.state=SL.state||await slGet("/state/nfl");
+    const season=SL.state.league_season||SL.state.season;
+    SL.user=u; SL.leagues=await slGet(`/user/${u.user_id}/leagues/nfl/${season}`)||[];
+    const saved=slSaved()||{}; slSave({username:u.username||username, league:saved.league&&SL.leagues.some(l=>l.league_id===saved.league)?saved.league:(SL.leagues[0]?.league_id||null)});
+    if(slSaved().league) await slLoadLeague(slSaved().league);
+  }catch(e){ SL.err=String(e.message)==="nouser"||String(e.message)==="404"?"No Sleeper user with that name. Check the spelling (it's your Sleeper username, not your email).":"Couldn't reach Sleeper. Try again in a minute."; }
+  SL.loading=false; renderFantasy();
+}
+async function slLoadLeague(id){
+  SL.loading=true; renderFantasy();
+  try{
+    SL.state=SL.state||await slGet("/state/nfl");
+    const wk=SL.state.display_week||SL.state.week||1; SL.week=SL.week||wk;
+    const [lg,ros,us,mu]=await Promise.all([slGet("/league/"+id),slGet(`/league/${id}/rosters`),slGet(`/league/${id}/users`),slGet(`/league/${id}/matchups/${SL.week}`),slPlayers()]);
+    SL.league=lg; SL.rosters=ros||[]; SL.users=Object.fromEntries((us||[]).map(u=>[u.user_id,u])); SL.matchups=mu||[];
+    const s=slSaved()||{}; slSave({...s, league:id});
+  }catch(e){ SL.err="Couldn't load that league from Sleeper."; }
+  SL.loading=false; renderFantasy();
+  clearInterval(SL.t); SL.t=setInterval(()=>{ if(FX.sec==="sleeper"&&S.tab==="fantasy"&&!document.hidden&&SL.league) slRefreshPoints(); },60000);
+}
+async function slRefreshPoints(){ try{ SL.matchups=await slGet(`/league/${SL.league.league_id}/matchups/${SL.week}`)||[]; if(FX.sec==="sleeper"&&!document.activeElement?.closest?.("#slForm")) renderFantasy(); }catch(e){} }
+function slTeamName(r){ const u=SL.users[r?.owner_id]; return u?.metadata?.team_name||u?.display_name||"Team "+(r?.roster_id||""); }
+function slOwner(r){ return SL.users[r?.owner_id]; }
+
+function renderSleeper(){
+  const saved=slSaved();
+  const intro=`<div class="card sl-intro"><div class="sl-logo">S</div><div><div class="t1">Your Sleeper league</div><div class="t2">See your real Sleeper league here: matchup, live points and standings. Just your Sleeper username, no password.</div></div></div>`;
+  if(!saved?.username) return intro+`<form class="card sl-form" id="slForm"><label class="t2" for="slUser">Sleeper username</label><div class="sl-row"><input id="slUser" name="u" autocomplete="off" autocapitalize="off" placeholder="e.g. skolfan21" required><button class="btn-gold" type="submit">Connect</button></div>${SL.err?`<div class="auth-err">${esc(SL.err)}</div>`:""}</form>`;
+  if(SL.loading&&!SL.league) return skelRows(4);
+  if(!SL.user){ slLoadUser(saved.username); return skelRows(4); }
+  if(SL.err&&!SL.league) return `<div class="card"><div class="auth-err">${esc(SL.err)}</div><button class="tbtn" data-slreset="1">Use a different username</button></div>`;
+  if(!SL.leagues.length) return `<div class="card empty">No ${esc(SL.state?.league_season||"")} Sleeper leagues for <b>${esc(saved.username)}</b>.<br><button class="tbtn" data-slreset="1">Use a different username</button></div>`;
+  const pick=SL.leagues.length>1?`<select id="slLeague" class="sl-select" aria-label="Choose league">${SL.leagues.map(l=>`<option value="${esc(l.league_id)}"${l.league_id===saved.league?" selected":""}>${esc(l.name)}</option>`).join("")}</select>`:"";
+  const head=`<div class="card sl-head"><img class="av" src="${esc(slAv(SL.user.avatar))}" alt=""><div class="grow"><div class="t1">${esc(SL.league?.name||"")}</div><div class="t2">${esc(SL.user.display_name||saved.username)} · Week ${esc(SL.week||"")} · ${SL.league?.total_rosters||""} teams</div></div><button class="tbtn" data-slreset="1">Switch</button></div>${pick}`;
+  if(!SL.league) return head+skelRows(3);
+  const mine=SL.rosters.find(r=>r.owner_id===SL.user.user_id||(r.co_owners||[]).includes(SL.user.user_id));
+  const mm=SL.matchups.find(m=>m.roster_id===mine?.roster_id), opp=mm&&SL.matchups.find(m=>m.matchup_id===mm.matchup_id&&m.roster_id!==mm.roster_id);
+  const side=(m,r)=>{ const st=m?.starters||[], pts=m?.starters_points||[];
+    return `<div class="sl-side"><div class="sl-team"><img class="av" src="${esc(slAv(slOwner(r)?.avatar))}" alt=""><div class="grow"><div class="t1">${esc(slTeamName(r))}</div><div class="t2">${r?.settings?`${r.settings.wins}-${r.settings.losses}${r.settings.ties?"-"+r.settings.ties:""}`:""}</div></div><b class="num sl-pts">${(m?.points??0).toFixed(1)}</b></div>
+      ${st.map((pid,i)=>`<div class="sl-pl"><div class="grow"><div class="t1">${esc(pid==="0"?"Empty":slName(pid))}</div><div class="t2">${pid==="0"?"":slMeta(pid)}</div></div><span class="num">${(pts[i]??0).toFixed(1)}</span></div>`).join("")}</div>`; };
+  const matchup=mm?`<h2>This week's matchup</h2><div class="card sl-mu">${side(mm,mine)}${opp?side(opp,SL.rosters.find(r=>r.roster_id===opp.roster_id)):'<div class="sl-side t2">No opponent this week.</div>'}</div>`:`<div class="card empty">No matchup found for week ${esc(SL.week)}.</div>`;
+  const stand=SL.rosters.slice().sort((a,b)=>(b.settings?.wins||0)-(a.settings?.wins||0)||((b.settings?.fpts||0)+(b.settings?.fpts_decimal||0)/100)-((a.settings?.fpts||0)+(a.settings?.fpts_decimal||0)/100));
+  const table=`<h2>Standings</h2><div class="list">${stand.map((r,i)=>`<div class="row${r===mine?" sl-me":""}"><b class="num pred-rank">${i+1}</b><img class="av" src="${esc(slAv(slOwner(r)?.avatar))}" alt=""><div class="grow"><div class="t1">${esc(slTeamName(r))}</div><div class="t2">${esc(slOwner(r)?.display_name||"")}</div></div><span class="num">${r.settings?.wins||0}-${r.settings?.losses||0}${r.settings?.ties?"-"+r.settings.ties:""}</span><span class="t2 num sl-pf">${((r.settings?.fpts||0)+(r.settings?.fpts_decimal||0)/100).toFixed(1)} PF</span></div>`).join("")}</div>`;
+  return head+matchup+table+`<div class="foot">From Sleeper · points refresh every minute while this page is open.</div>`;
+}
+document.addEventListener("submit",e=>{ if(e.target.id!=="slForm") return; e.preventDefault(); e.stopImmediatePropagation(); const u=e.target.u.value.trim(); if(!u) return; slSave({username:u}); SL.user=null; SL.league=null; slLoadUser(u); },true);
+document.addEventListener("change",e=>{ if(e.target.id==="slLeague"){ SL.league=null; SL.week=null; slLoadLeague(e.target.value); } });
+document.addEventListener("click",e=>{ if(e.target.closest("[data-slreset]")){ slSave(null); Object.assign(SL,{user:null,leagues:[],league:null,err:"",week:null}); renderFantasy(); } });
+(function(){ const seg=$("fSeg"); if(seg&&!seg.querySelector('[data-fsec="sleeper"]')) seg.querySelector('[data-fsec="league"]')?.insertAdjacentHTML("afterend",`<button data-fsec="sleeper" aria-pressed="false">Sleeper</button>`); })();
+const _renderFantasySL=renderFantasy;
+renderFantasy=function(){
+  if(FX.sec!=="sleeper") return _renderFantasySL();
+  $("fHead").hidden=true; $("fSetup").hidden=true;
+  document.querySelectorAll("#fSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.fsec==="sleeper")));
+  $("fantasyBody").innerHTML=renderSleeper();
+};
+if(FX.sec==="sleeper") renderFantasy();
 
 /* ===================== North Huddle: chat reactions + Google sign-in ===================== */
 
