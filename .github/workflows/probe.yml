@@ -12,7 +12,7 @@ jobs:
         run: |
           mkdir -p out && cd out
           S="https://north-huddle.pages.dev"
-          for t in GB DET CHI MIN; do curl -s -m 40 -D "team-$t.headers" "$S/api/team?abbr=$t" -o "team-$t.json"; done
+          sleep 100; curl -s -m 60 "$S/api/team?abbr=GB&debug=1" -o debug.json; curl -s -m 60 -o core-direct.json -w "%{http_code}" "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/9/depthcharts" > core-code.txt
           curl -s -m 40 -D scores.headers "$S/api/scores?team=MIN" -o scores.json
           curl -s -m 40 -D index.headers "$S/" -o index.html
           curl -s -m 30 -A "Mozilla/5.0" -o espn-direct.json -w "%{http_code}" "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/gb" > espn-code.txt
