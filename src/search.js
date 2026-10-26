@@ -2,7 +2,7 @@
 const SR={open:false, q:"", ai:{ready:null, msgs:[], busy:false}};
 const ICO_SEARCH=`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
 const ICO_SPARK=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.8 5.4L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.6zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9zM5 15l.7 1.8 1.8.7-1.8.7L5 20l-.7-1.8L2.5 17.5l1.8-.7z"/></svg>`;
-(function(){ const r=$("refreshBtn"); if(r&&!$("searchBtn")) r.insertAdjacentHTML("beforebegin",`<button class="refresh" id="searchBtn" aria-label="Search the site" title="Search">${ICO_SEARCH}</button>`); })();
+(function(){ const h=document.querySelector("header.top"); if(h&&!$("hSearch")) h.insertAdjacentHTML("beforeend",`<div class="hsearch" id="hSearch"><button class="hs-field" id="searchBtn" aria-label="Search the site">${ICO_SEARCH}<span>Search players, teams, news…</span></button><button class="hs-ai" data-hsai="1" aria-label="Ask Huddle AI" title="Ask Huddle AI">${ICO_SPARK}<span>Ask AI</span></button></div>`); })();
 
 /* ---------- what can be found ---------- */
 function sections(){
@@ -52,16 +52,18 @@ function searchAll(q){
 function openLeaguePlayer(abbr,name){ const el=document.createElement("div"); el.setAttribute("data-lp",abbr+"|"+name); document.body.appendChild(el); el.click(); el.remove(); }
 
 /* ---------- overlay ---------- */
-function openSearch(prefill){
+function openSearch(prefill,ai){
+  SR.aiMode=!!ai;
   let ov=$("searchView");
   if(!ov){
     ov=document.createElement("div"); ov.id="searchView"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Search");
     ov.innerHTML=`<div class="sv-top"><div class="sv-box">${ICO_SEARCH}<input id="svInput" type="search" autocomplete="off" placeholder="Search players, teams, news… or ask a question" aria-label="Search North Huddle"></div><button class="tbtn" data-svclose="1">Cancel</button></div><div class="sv-body" id="svBody"></div>`;
     document.body.appendChild(ov);
     $("svInput").addEventListener("input",e=>{ SR.q=e.target.value; renderSearch(); });
-    $("svInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const q=SR.q.trim(); if(!q) return; const r=searchAll(q); if(looksLikeQuestion(q)||!r.length) askAI(q); else r[0].act(); } });
+    $("svInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const q=SR.q.trim(); if(!q) return; const r=searchAll(q); if(SR.aiMode||looksLikeQuestion(q)||!r.length) askAI(q); else r[0].act(); } });
   }
   ov.hidden=false; document.body.classList.add("sv-open"); SR.open=true;
+  $("svInput").placeholder=SR.aiMode?"Ask Huddle AI anything about football…":"Search players, teams, news… or ask a question";
   $("svInput").value=prefill||SR.q||""; SR.q=$("svInput").value; renderSearch(); setTimeout(()=>$("svInput").focus(),30);
   loadLeaguePlayers().then(()=>{ if(SR.open) renderSearch(); });
   aiReady();
@@ -70,21 +72,23 @@ function closeSearch(){ const ov=$("searchView"); if(ov) ov.hidden=true; documen
 const looksLikeQuestion=q=>/\?$|^(who|what|when|where|why|how|is|are|can|should|will|do|does|did|which|tell|explain)\b/i.test(q.trim());
 function renderSearch(){
   const b=$("svBody"); if(!b) return;
-  const q=SR.q.trim(), res=searchAll(q);
+  const q=SR.q.trim(), res=SR.aiMode?[]:searchAll(q);
   const aiRow=q.length>=2&&SR.ai.ready!==false?`<button class="sv-row sv-ai" data-svask="1"><span class="sv-ico">${ICO_SPARK}</span><div class="grow"><div class="t1">Ask Huddle AI</div><div class="t2">“${esc(q)}”</div></div><span class="chev">›</span></button>`:"";
   const groups={}; res.forEach(r=>(groups[r.type]=groups[r.type]||[]).push(r));
   const order=["Section","Team","Player","Game","News"];
   const rows=order.filter(t=>groups[t]).map(t=>`<div class="sv-h">${t==="Section"?"On the site":t+"s"}</div>${groups[t].map(r=>`<button class="sv-row" data-svi="${res.indexOf(r)}">${r.badge?`<span class="sv-b">${badge(r.badge)}</span>`:`<span class="sv-ico">${ICO_SEARCH}</span>`}<div class="grow"><div class="t1">${esc(r.label)}</div>${r.sub?`<div class="t2">${esc(r.sub)}</div>`:""}</div></button>`).join("")}`).join("");
   const chat=SR.ai.msgs.length?`<div class="sv-h">${ICO_SPARK} Huddle AI</div><div class="ai-thread" id="aiThread">${SR.ai.msgs.map(m=>`<div class="ai-msg ${m.role}">${esc(m.content).replace(/\n/g,"<br>")}</div>`).join("")}${SR.ai.busy?'<div class="ai-msg assistant ai-typing"><span></span><span></span><span></span></div>':""}</div><div class="t2 ai-note">AI answers can be wrong. Check scores and stats on the site.</div><button class="tbtn" data-aiclear="1">Clear conversation</button>`:"";
-  const empty=!q&&!SR.ai.msgs.length?`<div class="sv-tips"><div class="sv-h">Try</div>${["Justin Jefferson","Standings","Packers","Sleeper","When is the next game?","What is a safety in football?"].map(s=>`<button class="chip sv-chip" data-svq="${esc(s)}">${esc(s)}</button>`).join("")}${SR.ai.ready===false?"":`<p class="t2">Type a question and press Enter to ask <b>Huddle AI</b>, the site's assistant.</p>`}</div>`:"";
-  b.innerHTML=chat+aiRow+(q&&!res.length?`<div class="t2 sv-none">No matches on the site for “${esc(q)}”.</div>`:"")+rows+empty;
+  const empty=!SR.aiMode&&!q&&!SR.ai.msgs.length?`<div class="sv-tips"><div class="sv-h">Try</div>${["Justin Jefferson","Standings","Packers","Sleeper","When is the next game?","What is a safety in football?"].map(s=>`<button class="chip sv-chip" data-svq="${esc(s)}">${esc(s)}</button>`).join("")}${SR.ai.ready===false?"":`<p class="t2">Type a question and press Enter to ask <b>Huddle AI</b>, the site's assistant.</p>`}</div>`:"";
+  const aiHello=SR.aiMode&&!SR.ai.msgs.length?`<div class="ai-hello"><div class="ai-badge">${ICO_SPARK}</div><div class="t1">Ask Huddle AI</div><p class="t2">Your football assistant. It knows the site's latest scores, schedule, stats, injuries and standings, and can explain rules and fantasy strategy.</p>${SR.ai.ready===false?'<p class="t2"><b>The assistant is being set up.</b> Check back soon!</p>':["When is the next Vikings game?","Who leads the team in receiving yards?","Who's injured right now?","Explain what a two-point conversion is","Who should I start in fantasy this week?"].map(x=>`<button class="sv-row sv-sugg" data-svq="${esc(x)}">${ICO_SPARK}<span>${esc(x)}</span></button>`).join("")}</div>`:"";
+  b.innerHTML=aiHello+chat+(SR.aiMode?"":aiRow)+(q&&!res.length?`<div class="t2 sv-none">No matches on the site for “${esc(q)}”.</div>`:"")+rows+empty;
   SR.last=res; const th=$("aiThread"); if(th) th.scrollTop=th.scrollHeight;
 }
 document.addEventListener("click",e=>{
   if(e.target.closest("#searchBtn")) return openSearch();
   if(e.target.closest("[data-svclose]")) return closeSearch();
   const r=e.target.closest("[data-svi]"); if(r){ SR.last?.[Number(r.dataset.svi)]?.act(); return; }
-  const c=e.target.closest("[data-svq]"); if(c){ $("svInput").value=c.dataset.svq; SR.q=c.dataset.svq; if(looksLikeQuestion(SR.q)) askAI(SR.q); else renderSearch(); return; }
+  const c=e.target.closest("[data-svq]"); if(c){ $("svInput").value=c.dataset.svq; SR.q=c.dataset.svq; if(SR.aiMode||looksLikeQuestion(SR.q)) askAI(SR.q); else renderSearch(); return; }
+  if(e.target.closest("[data-hsai]")) return openSearch("",true);
   if(e.target.closest("[data-svask]")) return askAI(SR.q.trim());
   if(e.target.closest("[data-aiclear]")){ SR.ai.msgs=[]; renderSearch(); }
 });
