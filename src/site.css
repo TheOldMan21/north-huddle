@@ -246,3 +246,4 @@ body.adm-open{overflow:hidden}
 .ico-bell{width:18px;height:18px;color:var(--purple-ink)}
 .pa-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;border-top:1px solid var(--line)}
 .pa-row input{width:20px;height:20px;accent-color:var(--purple)}
+.pa-btns{display:flex;gap:8px;flex-wrap:wrap}

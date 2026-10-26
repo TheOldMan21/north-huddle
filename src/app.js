@@ -70,7 +70,7 @@ function pushPanel(){
   const on=!!(APP.sub&&APP.prefs), p={...PUSH_DEF,...(APP.prefs||{})};
   const row=(k,l)=>`<label class="pa-row"><span>${l}</span><input type="checkbox" data-pushpref="${k}" ${p[k]?"checked":""}></label>`;
   return `<div class="card push-panel"><div class="t1">${ICO_BELL} Game alerts</div>
-    ${on?`<div class="t2">For the ${esc(TEAMS[p.team||CUR]?.[1]||"Vikings")}. Switch teams and alerts follow.</div>${row("scores","Scoring plays (touchdowns & field goals)")}${row("final","Final scores")}${row("kickoff","Kickoff reminders (1 hour before)")}<button class="tbtn" data-pushoff="1">Turn off alerts</button>`
+    ${on?`<div class="t2">For the ${esc(TEAMS[p.team||CUR]?.[1]||"Vikings")}. Switch teams and alerts follow.</div>${row("scores","Scoring plays (touchdowns & field goals)")}${row("final","Final scores")}${row("kickoff","Kickoff reminders (1 hour before)")}<div class="pa-btns"><button class="tbtn" data-pushtest="1">Send me a test alert</button><button class="tbtn" data-pushoff="1">Turn off alerts</button></div>`
       :`<div class="t2">Get a phone notification for touchdowns, final scores and kickoff.${isStandalone()?"":" Works best after you install the app."}</div><button class="btn-gold" data-pushon="1">Turn on game alerts</button>`}
     ${!isStandalone()&&APP.prompt?`<button class="tbtn" data-install="1">Install the app</button>`:""}</div>`;
 }
@@ -83,6 +83,7 @@ openAcct=function(){
   const ins=()=>{ sh.querySelector(".push-panel")?.remove(); (anchor?anchor:sh.lastElementChild).insertAdjacentHTML(anchor?"beforebegin":"afterend",pushPanel()); };
   ins(); if(APP.sub&&!APP.prefs) loadPushPrefs().then(()=>{ if(!$("sheetBg").hidden) ins(); });
 };
+document.addEventListener("click",async e=>{ if(e.target.closest("[data-pushtest]")){ try{ await ACC.db.doc("requests/pushtest-"+ACC.id).set({kind:"pushtest", by:ACC.id, status:"pending", at:nowIso()}); toast("Test alert is on its way. It should arrive within a minute.",6000); }catch(err){ toast("Couldn't request a test alert."); } return; } });
 document.addEventListener("click",e=>{ if(e.target.closest("[data-pushon]")) enablePush(); else if(e.target.closest("[data-pushoff]")) disablePush(); });
 document.addEventListener("change",e=>{ const c=e.target.closest("[data-pushpref]"); if(c) setPushPref(c.dataset.pushpref,c.checked); });
 const _setTeamP=setTeam;

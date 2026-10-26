@@ -128,8 +128,21 @@ async function run(env) {
       }
     }
   }
+  // test alerts requested from the site ("Send me a test alert")
+  let tests = 0;
+  const tr = await sb(tok, "/rest/v1/docs?select=path,data&col=eq.requests&data->>kind=eq.pushtest&data->>status=eq.pending");
+  const treq = tr.ok ? await tr.json() : [];
+  if (treq.length) {
+    const key = await vapidKey(env.VAPID_PRIVATE);
+    for (const t of treq) {
+      const sr = await sb(tok, "/rest/v1/push_subs?select=endpoint,sub&uid=eq." + encodeURIComponent(t.data.by));
+      const mine = sr.ok ? await sr.json() : [];
+      for (const s of mine) { try { const res = await sendPush(s.sub, { title: "North Huddle test alert ✅", body: "Game alerts are working on this device. Skol!", tag: "test", url: SITE + "/" }, key); if (res.ok) tests++; else if (res.status === 404 || res.status === 410) await sb(tok, "/rest/v1/push_subs?endpoint=eq." + encodeURIComponent(s.endpoint), { method: "DELETE" }); } catch (e) {} }
+      await sb(tok, "/rest/v1/rpc/doc_update", { method: "POST", body: JSON.stringify({ p_path: t.path, p_patch: { status: "done", sent: tests, handledAt: new Date().toISOString() } }) });
+    }
+  }
   await sb(tok, "/rest/v1/docs?on_conflict=path", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ path: "push/state", col: "push", id: "state", data: { ...state, at: new Date().toISOString() } }) });
-  return `events ${todo.length}, sent ${sent}, removed ${gone}${first ? " (first run: started watching)" : ""}`;
+  return `events ${todo.length}, sent ${sent}, removed ${gone}, test alerts ${tests}${first ? " (first run: started watching)" : ""}`;
 }
 export default {
   async scheduled(event, env, ctx) { ctx.waitUntil(run(env).then((m) => console.log(m)).catch((e) => console.log("error", e.message))); },
