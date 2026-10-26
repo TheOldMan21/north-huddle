@@ -12,15 +12,9 @@ jobs:
         run: |
           mkdir -p out && cd out
           S="https://north-huddle.pages.dev"
-          A="https://site.api.espn.com/apis/site/v2/sports/football/nfl"
-          get(){ curl -s -m 40 -A "Mozilla/5.0" "$2" -o "$1.json"; echo "$1 $(wc -c < $1.json)"; }
-          get depth2 "$A/teams/9/depthcharts"
-          get lead_a "$A/teams/9/leaders"
-          get lead_b "$A/teams/gb/leaders"
-          get stats_a "$A/teams/9/statistics"
-          get stats_b "$A/teams/gb/statistics"
-          get lead_c "https://site.api.espn.com/apis/site/v3/sports/football/nfl/teams/9/leaders"
-          get lead_d "$A/leaders?team=9"
+          sleep 90
+          S="https://north-huddle.pages.dev"
+          for t in GB DET KC; do curl -s -m 60 "$S/api/team?abbr=$t" -o "team-$t.json"; done
           ls -la
       - name: Commit
         run: |
