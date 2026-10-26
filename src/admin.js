@@ -82,3 +82,8 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!$("adminView")?.h
 const _openAcctAdm=openAcct;
 openAcct=function(){ _openAcctAdm(); if(ACC.id&&ACC.owner){ const out=$("sheet").querySelector("[data-signout]"); const b=`<button class="btn-gold adm-btn" data-adm-open="1">Open admin page</button>`; if(out) out.insertAdjacentHTML("beforebegin",b); else $("sheet").insertAdjacentHTML("beforeend",b); } };
 if(location.hash==="#admin") accReady.then(()=>{ if(ACC.owner) openAdmin(); });
+// Admin shortcut in the header, next to Update (owner only)
+accReady.then(()=>{
+  if(!ACC.owner || $("admHdrBtn")) return;
+  $("refreshBtn")?.insertAdjacentHTML("beforebegin",`<button class="refresh adm-hdr" id="admHdrBtn" data-adm-open="1" aria-label="Admin page" title="Admin"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></button>`);
+});

@@ -53,3 +53,4 @@ body.adm-open{overflow:hidden}
 .adm-lg-h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .adm-chips{display:flex;flex-wrap:wrap;gap:6px}
 .adm-btn{width:100%;margin-top:12px}
+.adm-hdr{border-color:var(--gold);color:var(--gold)}
