@@ -12,9 +12,13 @@ jobs:
         run: |
           mkdir -p out && cd out
           S="https://north-huddle.pages.dev"
-          sleep 90
-          S="https://north-huddle.pages.dev"
-          for t in GB DET KC; do curl -s -m 60 "$S/api/team?abbr=$t" -o "team-$t.json"; done
+          get(){ curl -s -m 40 -A "Mozilla/5.0" "$2" -o "$1.json"; echo "$1 $(wc -c < $1.json)"; }
+          get st3 "https://site.api.espn.com/apis/v2/sports/football/nfl/standings?level=3"
+          get st2 "https://site.api.espn.com/apis/v2/sports/football/nfl/standings?level=2"
+          get sl_state "https://api.sleeper.app/v1/state/nfl"
+          get sl_user "https://api.sleeper.app/v1/user/sleeperbot"
+          curl -s -m 40 -I "https://api.sleeper.app/v1/state/nfl" -H "Origin: https://north-huddle.pages.dev" > sl_cors.txt
+          get sl_players "https://api.sleeper.app/v1/players/nfl"
           ls -la
       - name: Commit
         run: |

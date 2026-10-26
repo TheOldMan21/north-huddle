@@ -24,7 +24,8 @@ function admMembers(){
   const chatDay=ADM.chat.filter(m=>now-Date.parse(m.t)<864e5).length;
   const stats=`<div class="adm-stats">${[["Members",real.length],["New this week",newWk],["Active this week",act],["Chats today",chatDay]].map(([l,v])=>`<div class="adm-stat"><b class="num">${v}</b><span>${l}</span></div>`).join("")}</div>`;
   const rows=real.map(u=>`<div class="row adm-user">${admAv(u)}<div class="grow"><div class="t1">${esc(u.name||"(no name)")}${u.is_admin?' <span class="chip pos">ADMIN</span>':""}${u.banned?' <span class="chip live">BANNED</span>':""}</div>
-      <div class="t2">${esc(u.email)}</div><div class="t2">Joined ${esc(admDate(u.created_at))} · Last visit ${esc(admAgo(u.last_sign_in_at))}</div></div>
+      <div class="t2">${esc(u.email)}</div><div class="t2">Joined ${esc(admDate(u.created_at))} · Last visit ${esc(admAgo(u.last_sign_in_at))}</div>
+      <div class="adm-badges"><span class="t2">Badges:</span>${[["vip","VIP"],["donor","Donor"]].map(([k,l])=>`<button class="adm-bt${(typeof BADGES!=="undefined"&&BADGES[u.id]?.[k])?" on":""}" data-admbadge="${k}" data-uid="${esc(u.id)}" aria-pressed="${!!(typeof BADGES!=="undefined"&&BADGES[u.id]?.[k])}">${k==="vip"?ICO_STAR:ICO_HEART}${l}</button>`).join("")}</div></div>
       ${u.is_admin?"":u.banned?`<button class="tbtn" data-adm-unban="${esc(u.id)}">Unban</button>`:admArm("ban:"+u.id,"Ban")}</div>`).join("");
   return stats+`<h2>Members</h2><div class="list">${rows||`<div class="card empty">No members yet. Share the site link with friends!</div>`}</div>
     <div class="foot">Banned members can still view the site but can't chat, post or play. To delete an account completely, use Supabase → Authentication → Users.</div>`;
@@ -68,6 +69,7 @@ document.addEventListener("click",async e=>{
   const tab=t.closest("[data-adm-tab]"); if(tab){ ADM.tab=tab.dataset.admTab; ADM.arm=null; renderAdmin(); return; }
   const arm=t.closest("[data-adm-arm]"); if(arm){ ADM.arm=arm.dataset.admArm; renderAdmin(); setTimeout(()=>{ if(ADM.arm===arm.dataset.admArm){ ADM.arm=null; renderAdmin(); } },4000); return; }
   const un=t.closest("[data-adm-unban]"); if(un){ const {error}=await NH.sb.from("banned").delete().eq("uid",un.dataset.admUnban); toast(error?"Couldn't unban.":"Member unbanned."); admLoad(); return; }
+  const bd=t.closest("[data-admbadge]"); if(bd){ const k=bd.dataset.admbadge, uid=bd.dataset.uid, on=!BADGES[uid]?.[k]; try{ await setBadge(uid,k,on); toast(`${k==="vip"?"VIP":"Donor"} badge ${on?"added":"removed"}.`); }catch(err){ toast("Couldn't change the badge."); } return; }
   const go=t.closest("[data-adm-go]"); if(!go) return;
   const [kind,id]=go.dataset.admGo.split(/:(.+)/); ADM.arm=null;
   try{
