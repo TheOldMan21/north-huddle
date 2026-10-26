@@ -39,7 +39,7 @@ rep('<script id="hub-snapshot"', '<script src="/js/supabase.js"></script>\n<scri
 
 # --- styles + site script at the end ---
 css = (R / "src/site.css").read_text()
-site = "\n".join((R / f).read_text() for f in ["src/site.js", "src/teams.js", "src/live.js", "src/league.js", "src/sleeper.js", "src/social.js", "src/community.js", "src/talk.js", "src/app.js", "src/search.js", "src/admin.js"])
+site = "\n".join((R / f).read_text() for f in ["src/site.js", "src/teams.js", "src/live.js", "src/league.js", "src/sleeper.js", "src/social.js", "src/community.js", "src/talk.js", "src/app.js", "src/search.js", "src/activity.js", "src/admin.js"])
 h = h + "\n<style>\n" + css + "\n</style>\n<script>\n" + site + "\n</script>\n"
 
 if not h.lstrip().lower().startswith("<!doctype"):

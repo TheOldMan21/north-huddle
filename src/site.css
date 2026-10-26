@@ -298,3 +298,23 @@ header.top{flex-wrap:wrap;row-gap:10px}
 .sv-sugg{gap:8px}.sv-sugg svg{width:16px;height:16px;fill:var(--gold);flex:none}
 .hsearch{max-width:640px;margin:0 auto;justify-content:center}
 .hs-field{justify-content:center}
+/* voice */
+.sv-mic,.sv-spk{flex:none;width:34px;height:34px;border-radius:50%;border:0;background:var(--surface-2);color:var(--purple-ink);display:grid;place-items:center;cursor:pointer}
+.sv-mic svg,.sv-spk svg{width:18px;height:18px}
+.sv-mic.listening{background:var(--loss);color:#fff;animation:pulse 1.2s infinite}
+.sv-spk.on{background:var(--purple);color:var(--gold)}
+.hs-mic{margin-left:auto;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--surface-2);color:var(--purple);flex:none}
+.hs-mic svg{width:16px;height:16px}
+.hs-field{justify-content:flex-start}
+/* admin activity */
+.adm-tabs{overflow-x:auto}
+.adm-tabs button{white-space:nowrap}
+.act-range{margin:0;padding:3px}
+.act-range button{padding:5px 10px;font-size:13px}
+.act-days{display:flex;flex-direction:column;gap:6px}
+.act-day{display:flex;align-items:center;gap:8px;font-size:13px}
+.act-d{width:76px;color:var(--muted)}
+.act-bar{flex:1;height:10px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.act-bar span{display:block;height:100%;background:var(--purple);border-radius:99px}
+.act-row .av{width:36px;height:36px}
+.act-when{text-align:right}

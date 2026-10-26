@@ -3344,6 +3344,26 @@ header.top{flex-wrap:wrap;row-gap:10px}
 .sv-sugg{gap:8px}.sv-sugg svg{width:16px;height:16px;fill:var(--gold);flex:none}
 .hsearch{max-width:640px;margin:0 auto;justify-content:center}
 .hs-field{justify-content:center}
+/* voice */
+.sv-mic,.sv-spk{flex:none;width:34px;height:34px;border-radius:50%;border:0;background:var(--surface-2);color:var(--purple-ink);display:grid;place-items:center;cursor:pointer}
+.sv-mic svg,.sv-spk svg{width:18px;height:18px}
+.sv-mic.listening{background:var(--loss);color:#fff;animation:pulse 1.2s infinite}
+.sv-spk.on{background:var(--purple);color:var(--gold)}
+.hs-mic{margin-left:auto;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--surface-2);color:var(--purple);flex:none}
+.hs-mic svg{width:16px;height:16px}
+.hs-field{justify-content:flex-start}
+/* admin activity */
+.adm-tabs{overflow-x:auto}
+.adm-tabs button{white-space:nowrap}
+.act-range{margin:0;padding:3px}
+.act-range button{padding:5px 10px;font-size:13px}
+.act-days{display:flex;flex-direction:column;gap:6px}
+.act-day{display:flex;align-items:center;gap:8px;font-size:13px}
+.act-d{width:76px;color:var(--muted)}
+.act-bar{flex:1;height:10px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.act-bar span{display:block;height:100%;background:var(--purple);border-radius:99px}
+.act-row .av{width:36px;height:36px}
+.act-when{text-align:right}
 
 </style>
 <script>
@@ -4431,6 +4451,93 @@ async function askAI(q){
   SR.ai.busy=false; if(SR.open) renderSearch();
 }
 
+/* ---------- voice: talk to Huddle AI ---------- */
+const SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
+const ICO_MIC=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+const ICO_SPEAK=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+const VOICE={rec:null, on:false, speak:store.get("nh_speak")==="1"};
+function micButtons(){
+  const box=document.querySelector("#searchView .sv-box"); if(!box||box.querySelector(".sv-mic")) return;
+  if(SpeechRec) box.insertAdjacentHTML("beforeend",`<button class="sv-mic" data-mic="1" aria-label="Ask by voice" title="Ask by voice">${ICO_MIC}</button>`);
+  if("speechSynthesis" in window) box.insertAdjacentHTML("beforeend",`<button class="sv-spk${VOICE.speak?" on":""}" data-speak="1" aria-label="Read answers out loud" aria-pressed="${VOICE.speak}" title="Read answers out loud">${ICO_SPEAK}</button>`);
+}
+function startVoice(){
+  if(!SpeechRec) return toast("Voice isn't supported in this browser. Try Chrome.");
+  if(VOICE.on){ VOICE.rec?.stop(); return; }
+  const r=new SpeechRec(); VOICE.rec=r; r.lang="en-US"; r.interimResults=true; r.maxAlternatives=1;
+  const inp=$("svInput"), mic=document.querySelector(".sv-mic"); let finalText="";
+  r.onstart=()=>{ VOICE.on=true; mic?.classList.add("listening"); inp.placeholder="Listening… ask your question"; };
+  r.onresult=e=>{ let t=""; for(let i=0;i<e.results.length;i++){ t+=e.results[i][0].transcript; if(e.results[i].isFinal) finalText=t; } inp.value=t; SR.q=t; if(!SR.aiMode) renderSearch(); };
+  r.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed") toast("Allow microphone access to ask by voice."); else if(e.error==="no-speech") toast("Didn't catch that. Tap the mic and try again."); };
+  r.onend=()=>{ VOICE.on=false; mic?.classList.remove("listening"); inp.placeholder=SR.aiMode?"Ask Huddle AI anything about football…":"Search players, teams, news… or ask a question"; const q=(finalText||inp.value).trim(); if(q){ SR.aiMode=true; askAI(q); } };
+  try{ r.start(); }catch(e){ toast("Couldn't start the microphone."); }
+}
+function speakAnswer(text){
+  if(!VOICE.speak||!("speechSynthesis" in window)||!text) return;
+  speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang="en-US"; u.rate=1.03; speechSynthesis.speak(u);
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-mic]")){ e.preventDefault(); startVoice(); return; }
+  const s=e.target.closest("[data-speak]"); if(s){ e.preventDefault(); VOICE.speak=!VOICE.speak; store.set("nh_speak",VOICE.speak?"1":"0"); s.classList.toggle("on",VOICE.speak); s.setAttribute("aria-pressed",String(VOICE.speak)); if(!VOICE.speak) speechSynthesis.cancel(); else toast("Huddle AI will read answers out loud."); }
+  if(e.target.closest("[data-svclose]")&&"speechSynthesis" in window) speechSynthesis.cancel();
+});
+const _openSearchV=openSearch;
+openSearch=function(prefill,ai){ _openSearchV(prefill,ai); micButtons(); };
+const _askAIV=askAI;
+askAI=async function(q){ const n=SR.ai.msgs.length; await _askAIV(q); const last=SR.ai.msgs[SR.ai.msgs.length-1]; if(SR.ai.msgs.length>n&&last?.role==="assistant") speakAnswer(last.content); };
+// mic shortcut right on the header bar
+(function(){ const f=$("searchBtn"); if(f&&SpeechRec&&!document.querySelector(".hs-mic")) f.insertAdjacentHTML("beforeend",`<span class="hs-mic" data-hsmic="1" role="button" aria-label="Ask by voice">${ICO_MIC}</span>`); })();
+document.addEventListener("click",e=>{ if(e.target.closest("[data-hsmic]")){ e.stopPropagation(); e.preventDefault(); openSearch("",true); setTimeout(startVoice,150); } },true);
+
+/* ===================== North Huddle: visit log (admin Activity tab) ===================== */
+// Records one row when someone opens the site (and again if they're still around 30 minutes later).
+const DEVICE=(()=>{ try{ let d=localStorage.getItem("nh_dev"); if(!d){ d=Math.random().toString(36).slice(2,10); localStorage.setItem("nh_dev",d); } return d; }catch(e){ return "x"+Math.random().toString(36).slice(2,8); } })();
+function deviceKind(){ const u=navigator.userAgent; return /iPhone/.test(u)?"iPhone":/iPad/.test(u)?"iPad":/Android/.test(u)?(/Mobile/.test(u)?"Android phone":"Android tablet"):/Mac/.test(u)?"Mac":/Windows/.test(u)?"Windows PC":/CrOS/.test(u)?"Chromebook":/Linux/.test(u)?"Computer":"Device"; }
+async function logVisit(){
+  try{
+    const last=Number(sessionStorage.getItem("nh_vlog")||0); if(Date.now()-last<30*60e3) return;
+    sessionStorage.setItem("nh_vlog",String(Date.now()));
+  }catch(e){}
+  await accReady;
+  try{ await NH.sb.from("visits").insert({uid:ACC.id||null, device:DEVICE, kind:deviceKind(), app:!!(matchMedia("(display-mode: standalone)").matches||navigator.standalone), team:CUR}); }catch(e){}
+}
+logVisit();
+setInterval(()=>{ if(!document.hidden) logVisit(); }, 5*60e3);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) logVisit(); });
+
+/* ---------- admin tab ---------- */
+const ACT={rows:[], err:"", loading:false, days:7};
+async function loadActivity(){
+  ACT.loading=true; ACT.err="";
+  const since=new Date(Date.now()-ACT.days*864e5).toISOString();
+  const {data,error}=await NH.sb.from("visits").select("at,uid,device,kind,app,team").gte("at",since).order("at",{ascending:false}).limit(1000);
+  if(error) ACT.err=/visits|relation|schema/i.test(error.message)?"setup":error.message; else ACT.rows=data||[];
+  ACT.loading=false; if(ADM.tab==="activity") renderAdmin();
+}
+function actName(r){ if(r.uid){ const u=ADM.users.find(x=>x.id===r.uid); return u?.name||(u?.email||"").split("@")[0]||"Member"; } return "Guest "+String(r.device||"").slice(0,4).toUpperCase(); }
+function admActivity(){
+  if(ACT.err==="setup") return `<div class="card"><b>One-time setup needed.</b><p class="acct-p">Copy github.com/TheOldMan21/north-huddle/blob/main/supabase/activity.sql and run it in Supabase → SQL Editor. Then tap Refresh.</p></div>`;
+  if(ACT.err) return `<div class="card empty">Couldn't load activity: ${esc(ACT.err)}</div>`;
+  if(ACT.loading&&!ACT.rows.length) return skelRows(5);
+  const rows=ACT.rows.filter(r=>!(r.uid&&ADM.users.find(u=>u.id===r.uid&&/huddlebot@/i.test(u.email))));
+  const dayKey=t=>new Date(t).toLocaleDateString("en-US",{timeZone:"America/Chicago"});
+  const today=dayKey(Date.now()), todays=rows.filter(r=>dayKey(r.at)===today);
+  const uniq=a=>new Set(a.map(r=>r.uid||("g"+r.device))).size;
+  const members=new Set(rows.filter(r=>r.uid).map(r=>r.uid)).size, guests=new Set(rows.filter(r=>!r.uid).map(r=>r.device)).size;
+  const stats=`<div class="adm-stats">${[["Visitors today",uniq(todays)],["Visits today",todays.length],[`Visitors (${ACT.days} days)`,uniq(rows)],["Members / guests",`${members} / ${guests}`]].map(([l,v])=>`<div class="adm-stat"><b class="num">${v}</b><span>${l}</span></div>`).join("")}</div>`;
+  // per-day bar list
+  const days=[]; for(let i=ACT.days-1;i>=0;i--){ const d=dayKey(Date.now()-i*864e5); days.push([d, uniq(rows.filter(r=>dayKey(r.at)===d))]); }
+  const max=Math.max(1,...days.map(d=>d[1]));
+  const chart=`<div class="card act-days">${days.map(([d,n])=>`<div class="act-day"><span class="act-d">${esc(new Date(d).toLocaleDateString("en-US",{weekday:"short",month:"numeric",day:"numeric"}))}</span><span class="act-bar"><span style="width:${n/max*100}%"></span></span><b class="num">${n}</b></div>`).join("")}</div>`;
+  // latest visits, newest first (collapse repeats from the same person within an hour)
+  const seen={}, list=[];
+  rows.forEach(r=>{ const k=r.uid||r.device; if(seen[k]&&Date.parse(seen[k])-Date.parse(r.at)<36e5) return; seen[k]=r.at; list.push(r); });
+  const avatar=r=>{ const u=r.uid&&ADM.users.find(x=>x.id===r.uid); return `<img class="av" src="${esc(u?.photo||BLANK_AV)}" alt="">`; };
+  const feed=list.slice(0,150).map(r=>`<div class="row act-row">${avatar(r)}<div class="grow"><div class="t1">${esc(actName(r))}${r.uid?"":' <span class="chip">guest</span>'}</div><div class="t2">${esc(r.kind||"Device")}${r.app?" · app":""}${r.team&&r.team!=="MIN"?" · viewing "+esc(r.team):""}</div></div><div class="act-when"><div class="t1 num">${esc(new Date(r.at).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}))}</div><div class="t2">${esc(dayKey(r.at)===today?"Today":new Date(r.at).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",timeZone:"America/Chicago"}))}</div></div></div>`).join("");
+  return stats+`<div class="sb-head"><h2>Visitors per day</h2><div class="auth-seg act-range">${[1,7,30].map(d=>`<button data-actdays="${d}" aria-pressed="${ACT.days===d}">${d===1?"Today":d+" days"}</button>`).join("")}</div></div>${chart}<h2>Who opened the site</h2><div class="list">${feed||'<div class="card empty">No visits yet in this period.</div>'}</div><div class="foot">Members show by name. Guests (not signed in) show as a random code per device, with no personal info. Times are Central.</div>`;
+}
+document.addEventListener("click",e=>{ const b=e.target.closest("[data-actdays]"); if(b){ ACT.days=Number(b.dataset.actdays); loadActivity(); } });
+
 /* ===================== North Huddle: admin page (site owner only) ===================== */
 const ADM={tab:"members", users:[], chat:[], leagues:[], loading:false, err:"", arm:null};
 function admDate(t){ return t?fmtDate(t,{month:"short",day:"numeric",year:"numeric"}):"—"; }
@@ -4499,14 +4606,14 @@ function renderAdmin(){
   if(ADM.loading&&!ADM.users.length){ body.innerHTML=skelRows(5); return; }
   if(ADM.err==="setup"){ body.innerHTML=`<div class="card"><b>One-time setup needed.</b><p class="acct-p">Open github.com/TheOldMan21/north-huddle/blob/main/supabase/admin.sql, copy it, and run it in Supabase → SQL Editor → New query. Then tap Refresh.</p></div>`; return; }
   if(ADM.err){ body.innerHTML=`<div class="card empty">Couldn't load: ${esc(ADM.err)}</div>`; return; }
-  body.innerHTML=ADM.tab==="members"?admMembers():ADM.tab==="chat"?admChat():ADM.tab==="polls"?admPolls():admLeagues();
+  body.innerHTML=ADM.tab==="members"?admMembers():ADM.tab==="chat"?admChat():ADM.tab==="polls"?admPolls():ADM.tab==="activity"?admActivity():admLeagues();
 }
 function openAdmin(){
   let ov=$("adminView");
   if(!ov){
     ov=document.createElement("div"); ov.id="adminView"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Admin");
     ov.innerHTML=`<div class="adm-top"><div class="adm-title">Admin</div><button class="tbtn" data-adm-refresh="1">Refresh</button><button class="x" data-adm-close="1" aria-label="Close">×</button></div>
-      <div class="auth-seg adm-tabs" role="group"><button data-adm-tab="members">Members</button><button data-adm-tab="chat">Chat</button><button data-adm-tab="leagues">Leagues</button><button data-adm-tab="polls">Polls</button></div>
+      <div class="auth-seg adm-tabs" role="group"><button data-adm-tab="members">Members</button><button data-adm-tab="activity">Activity</button><button data-adm-tab="chat">Chat</button><button data-adm-tab="leagues">Leagues</button><button data-adm-tab="polls">Polls</button></div>
       <div class="adm-body"></div>`;
     document.body.appendChild(ov);
   }
@@ -4517,8 +4624,8 @@ document.addEventListener("click",async e=>{
   const t=e.target;
   if(t.closest("[data-adm-open]")){ openAdmin(); return; }
   if(t.closest("[data-adm-close]")){ closeAdmin(); return; }
-  if(t.closest("[data-adm-refresh]")){ admLoad(); return; }
-  const tab=t.closest("[data-adm-tab]"); if(tab){ ADM.tab=tab.dataset.admTab; ADM.arm=null; renderAdmin(); return; }
+  if(t.closest("[data-adm-refresh]")){ admLoad(); if(ADM.tab==="activity") loadActivity(); return; }
+  const tab=t.closest("[data-adm-tab]"); if(tab){ ADM.tab=tab.dataset.admTab; ADM.arm=null; renderAdmin(); if(ADM.tab==="activity") loadActivity(); return; }
   const arm=t.closest("[data-adm-arm]"); if(arm){ ADM.arm=arm.dataset.admArm; renderAdmin(); setTimeout(()=>{ if(ADM.arm===arm.dataset.admArm){ ADM.arm=null; renderAdmin(); } },4000); return; }
   const un=t.closest("[data-adm-unban]"); if(un){ const {error}=await NH.sb.from("banned").delete().eq("uid",un.dataset.admUnban); toast(error?"Couldn't unban.":"Member unbanned."); admLoad(); return; }
   const bd=t.closest("[data-admbadge]"); if(bd){ const k=bd.dataset.admbadge, uid=bd.dataset.uid, on=!BADGES[uid]?.[k]; try{ await setBadge(uid,k,on); toast(`${k==="vip"?"VIP":"Donor"} badge ${on?"added":"removed"}.`); }catch(err){ toast("Couldn't change the badge."); } return; }

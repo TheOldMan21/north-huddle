@@ -121,3 +121,41 @@ async function askAI(q){
   }catch(e){ SR.ai.msgs.push({role:"assistant",content:"Sorry, I couldn't reach the assistant. Check your connection and try again."}); }
   SR.ai.busy=false; if(SR.open) renderSearch();
 }
+
+/* ---------- voice: talk to Huddle AI ---------- */
+const SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
+const ICO_MIC=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+const ICO_SPEAK=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+const VOICE={rec:null, on:false, speak:store.get("nh_speak")==="1"};
+function micButtons(){
+  const box=document.querySelector("#searchView .sv-box"); if(!box||box.querySelector(".sv-mic")) return;
+  if(SpeechRec) box.insertAdjacentHTML("beforeend",`<button class="sv-mic" data-mic="1" aria-label="Ask by voice" title="Ask by voice">${ICO_MIC}</button>`);
+  if("speechSynthesis" in window) box.insertAdjacentHTML("beforeend",`<button class="sv-spk${VOICE.speak?" on":""}" data-speak="1" aria-label="Read answers out loud" aria-pressed="${VOICE.speak}" title="Read answers out loud">${ICO_SPEAK}</button>`);
+}
+function startVoice(){
+  if(!SpeechRec) return toast("Voice isn't supported in this browser. Try Chrome.");
+  if(VOICE.on){ VOICE.rec?.stop(); return; }
+  const r=new SpeechRec(); VOICE.rec=r; r.lang="en-US"; r.interimResults=true; r.maxAlternatives=1;
+  const inp=$("svInput"), mic=document.querySelector(".sv-mic"); let finalText="";
+  r.onstart=()=>{ VOICE.on=true; mic?.classList.add("listening"); inp.placeholder="Listening… ask your question"; };
+  r.onresult=e=>{ let t=""; for(let i=0;i<e.results.length;i++){ t+=e.results[i][0].transcript; if(e.results[i].isFinal) finalText=t; } inp.value=t; SR.q=t; if(!SR.aiMode) renderSearch(); };
+  r.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed") toast("Allow microphone access to ask by voice."); else if(e.error==="no-speech") toast("Didn't catch that. Tap the mic and try again."); };
+  r.onend=()=>{ VOICE.on=false; mic?.classList.remove("listening"); inp.placeholder=SR.aiMode?"Ask Huddle AI anything about football…":"Search players, teams, news… or ask a question"; const q=(finalText||inp.value).trim(); if(q){ SR.aiMode=true; askAI(q); } };
+  try{ r.start(); }catch(e){ toast("Couldn't start the microphone."); }
+}
+function speakAnswer(text){
+  if(!VOICE.speak||!("speechSynthesis" in window)||!text) return;
+  speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang="en-US"; u.rate=1.03; speechSynthesis.speak(u);
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-mic]")){ e.preventDefault(); startVoice(); return; }
+  const s=e.target.closest("[data-speak]"); if(s){ e.preventDefault(); VOICE.speak=!VOICE.speak; store.set("nh_speak",VOICE.speak?"1":"0"); s.classList.toggle("on",VOICE.speak); s.setAttribute("aria-pressed",String(VOICE.speak)); if(!VOICE.speak) speechSynthesis.cancel(); else toast("Huddle AI will read answers out loud."); }
+  if(e.target.closest("[data-svclose]")&&"speechSynthesis" in window) speechSynthesis.cancel();
+});
+const _openSearchV=openSearch;
+openSearch=function(prefill,ai){ _openSearchV(prefill,ai); micButtons(); };
+const _askAIV=askAI;
+askAI=async function(q){ const n=SR.ai.msgs.length; await _askAIV(q); const last=SR.ai.msgs[SR.ai.msgs.length-1]; if(SR.ai.msgs.length>n&&last?.role==="assistant") speakAnswer(last.content); };
+// mic shortcut right on the header bar
+(function(){ const f=$("searchBtn"); if(f&&SpeechRec&&!document.querySelector(".hs-mic")) f.insertAdjacentHTML("beforeend",`<span class="hs-mic" data-hsmic="1" role="button" aria-label="Ask by voice">${ICO_MIC}</span>`); })();
+document.addEventListener("click",e=>{ if(e.target.closest("[data-hsmic]")){ e.stopPropagation(); e.preventDefault(); openSearch("",true); setTimeout(startVoice,150); } },true);

@@ -66,14 +66,14 @@ function renderAdmin(){
   if(ADM.loading&&!ADM.users.length){ body.innerHTML=skelRows(5); return; }
   if(ADM.err==="setup"){ body.innerHTML=`<div class="card"><b>One-time setup needed.</b><p class="acct-p">Open github.com/TheOldMan21/north-huddle/blob/main/supabase/admin.sql, copy it, and run it in Supabase → SQL Editor → New query. Then tap Refresh.</p></div>`; return; }
   if(ADM.err){ body.innerHTML=`<div class="card empty">Couldn't load: ${esc(ADM.err)}</div>`; return; }
-  body.innerHTML=ADM.tab==="members"?admMembers():ADM.tab==="chat"?admChat():ADM.tab==="polls"?admPolls():admLeagues();
+  body.innerHTML=ADM.tab==="members"?admMembers():ADM.tab==="chat"?admChat():ADM.tab==="polls"?admPolls():ADM.tab==="activity"?admActivity():admLeagues();
 }
 function openAdmin(){
   let ov=$("adminView");
   if(!ov){
     ov=document.createElement("div"); ov.id="adminView"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Admin");
     ov.innerHTML=`<div class="adm-top"><div class="adm-title">Admin</div><button class="tbtn" data-adm-refresh="1">Refresh</button><button class="x" data-adm-close="1" aria-label="Close">×</button></div>
-      <div class="auth-seg adm-tabs" role="group"><button data-adm-tab="members">Members</button><button data-adm-tab="chat">Chat</button><button data-adm-tab="leagues">Leagues</button><button data-adm-tab="polls">Polls</button></div>
+      <div class="auth-seg adm-tabs" role="group"><button data-adm-tab="members">Members</button><button data-adm-tab="activity">Activity</button><button data-adm-tab="chat">Chat</button><button data-adm-tab="leagues">Leagues</button><button data-adm-tab="polls">Polls</button></div>
       <div class="adm-body"></div>`;
     document.body.appendChild(ov);
   }
@@ -84,8 +84,8 @@ document.addEventListener("click",async e=>{
   const t=e.target;
   if(t.closest("[data-adm-open]")){ openAdmin(); return; }
   if(t.closest("[data-adm-close]")){ closeAdmin(); return; }
-  if(t.closest("[data-adm-refresh]")){ admLoad(); return; }
-  const tab=t.closest("[data-adm-tab]"); if(tab){ ADM.tab=tab.dataset.admTab; ADM.arm=null; renderAdmin(); return; }
+  if(t.closest("[data-adm-refresh]")){ admLoad(); if(ADM.tab==="activity") loadActivity(); return; }
+  const tab=t.closest("[data-adm-tab]"); if(tab){ ADM.tab=tab.dataset.admTab; ADM.arm=null; renderAdmin(); if(ADM.tab==="activity") loadActivity(); return; }
   const arm=t.closest("[data-adm-arm]"); if(arm){ ADM.arm=arm.dataset.admArm; renderAdmin(); setTimeout(()=>{ if(ADM.arm===arm.dataset.admArm){ ADM.arm=null; renderAdmin(); } },4000); return; }
   const un=t.closest("[data-adm-unban]"); if(un){ const {error}=await NH.sb.from("banned").delete().eq("uid",un.dataset.admUnban); toast(error?"Couldn't unban.":"Member unbanned."); admLoad(); return; }
   const bd=t.closest("[data-admbadge]"); if(bd){ const k=bd.dataset.admbadge, uid=bd.dataset.uid, on=!BADGES[uid]?.[k]; try{ await setBadge(uid,k,on); toast(`${k==="vip"?"VIP":"Donor"} badge ${on?"added":"removed"}.`); }catch(err){ toast("Couldn't change the badge."); } return; }
