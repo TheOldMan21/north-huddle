@@ -9,6 +9,8 @@ Unofficial Minnesota football fan hub (owner: TheOldMan21). Hosted on Cloudflare
 - `build.py` — assembles `index.html` from the above. **Always run `python3 build.py` after editing anything in `src/`, and commit `index.html`.**
 - `functions/api/scores.js` — Cloudflare Pages Function proxying ESPN's scoreboard + scoring plays (30 s edge cache).
 - `js/supabase.js` — vendored supabase-js 2.45.4 UMD.
+- `supabase/admin.sql` — admin page support (banned table, admin_users RPC, can_write with ban check). Run AFTER setup.sql whenever setup.sql is re-run.
+- `src/admin.js` — owner-only admin page (Members / Chat / Leagues), opened from the account sheet or /#admin.
 - `supabase/setup.sql` — database schema, access rules, RPCs (`doc_update` deep merge, `doc_acquire` lease). Re-runnable in the Supabase SQL Editor.
 - `scripts/nh.py` — CLI for scheduled updates to read/write docs as the bot (`NH_BOT_PW` env var).
 

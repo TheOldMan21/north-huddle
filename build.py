@@ -32,7 +32,7 @@ rep('<script id="hub-snapshot"', '<script src="/js/supabase.js"></script>\n<scri
 
 # --- styles + site script at the end ---
 css = (R / "src/site.css").read_text()
-site = (R / "src/site.js").read_text()
+site = (R / "src/site.js").read_text() + "\n" + (R / "src/admin.js").read_text()
 h = h + "\n<style>\n" + css + "\n</style>\n<script>\n" + site + "\n</script>\n"
 
 if not h.lstrip().lower().startswith("<!doctype"):
