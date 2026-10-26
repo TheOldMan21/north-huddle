@@ -12,12 +12,14 @@ function playsOf(s) {
     const d = s.drives || {};
     const drives = [...(d.previous || []), ...(d.current ? [d.current] : [])];
     const seen = new Set(), all = [];
+    const tm = {};
+    for (const c of s.header?.competitions?.[0]?.competitors || []) tm[String(c.team?.id || c.id)] = ab(c.team);
     for (const dr of drives) {
       const team = ab(dr.team);
       for (const p of dr.plays || []) {
         if (!p || seen.has(p.id)) continue; seen.add(p.id);
         all.push({
-          id: p.id, q: p.period?.number, clock: p.clock?.displayValue || "", team,
+          id: p.id, q: p.period?.number, clock: p.clock?.displayValue || "", team: tm[String(p.start?.team?.id)] || team,
           dd: p.start?.shortDownDistanceText || p.start?.downDistanceText || "",
           text: p.text || p.type?.text || "", type: p.type?.text || "",
           scoring: !!p.scoringPlay, yards: p.statYardage ?? null

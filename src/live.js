@@ -110,7 +110,7 @@ function predCardHtml(){
       :`<div class="t2">No predictions for this game.</div>`;
     if(mine) body=`<div class="t2">Your pick: <b>${esc(CUR)} ${esc(mine.us)}–${esc(mine.them)}</b></div>`+body;
   }
-  return `<section class="card pred-card" id="predCard"><div class="pred-head"><div><div class="label">Predict the score · Week ${esc(g.week)}</div><div class="t1">${esc(NICK())} ${vs}</div></div><button class="tbtn" data-predlb="1">Leaderboard</button></div>${body}</section>`;
+  return `<section class="card pred-card" id="predCard" style="order:${(()=>{ const r=$("v-home")?.querySelector(".sb-row"); return r&&r.style.order?r.style.order:7; })()}"><div class="pred-head"><div><div class="label">Predict the score · Week ${esc(g.week)}</div><div class="t1">${esc(NICK())} ${vs}</div></div><button class="tbtn" data-predlb="1">Leaderboard</button></div>${body}</section>`;
 }
 function openPredLeaderboard(){
   const games=Object.fromEntries(S.games.map(g=>[gameKey(g),g])), tot={};
