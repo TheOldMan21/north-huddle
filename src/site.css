@@ -71,7 +71,7 @@ body.adm-open{overflow:hidden}
 .gx-pane{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
 .gx-empty{color:var(--muted);font-size:14px;padding:6px 0}
 .gx-play{border-left:3px solid var(--line);padding:2px 0 2px 10px}
-.gx-play.score{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(255,198,47,.14),transparent)}
+.gx-play.gx-score{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(255,198,47,.14),transparent)}
 .gx-pm{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .gx-pt{font-size:14px;line-height:1.35}
 .gx-more{align-self:center}

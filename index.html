@@ -3106,7 +3106,7 @@ body.adm-open{overflow:hidden}
 .gx-pane{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
 .gx-empty{color:var(--muted);font-size:14px;padding:6px 0}
 .gx-play{border-left:3px solid var(--line);padding:2px 0 2px 10px}
-.gx-play.score{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(255,198,47,.14),transparent)}
+.gx-play.gx-score{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(255,198,47,.14),transparent)}
 .gx-pm{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .gx-pt{font-size:14px;line-height:1.35}
 .gx-more{align-self:center}
@@ -3388,7 +3388,7 @@ function gxSubscribe(key){
 function playsHtml(){
   const pl=LIVE.data?.focus?.plays||[];
   if(!pl.length) return `<div class="gx-empty">Plays show up here once the game starts.</div>`;
-  const list=(GX.allPlays?pl:pl.slice(0,8)).map(p=>`<div class="gx-play${p.scoring?" score":""}"><div class="gx-pm">Q${esc(p.q)} ${esc(p.clock)}${p.team?` · ${esc(p.team)}`:""}${p.dd?` · ${esc(p.dd)}`:""}${p.scoring?' · <b>SCORE</b>':""}</div><div class="gx-pt">${esc(p.text)}</div></div>`).join("");
+  const list=(GX.allPlays?pl:pl.slice(0,8)).map(p=>`<div class="gx-play${p.scoring?" gx-score":""}"><div class="gx-pm">Q${esc(p.q)} ${esc(p.clock)}${p.team?` · ${esc(p.team)}`:""}${p.dd?` · ${esc(p.dd)}`:""}${p.scoring?' · <b>SCORE</b>':""}</div><div class="gx-pt">${esc(p.text)}</div></div>`).join("");
   return list+(pl.length>8?`<button class="tbtn gx-more" data-gxall="1">${GX.allPlays?"Show fewer":"Show all "+pl.length+" plays"}</button>`:"");
 }
 function boxHtml(){

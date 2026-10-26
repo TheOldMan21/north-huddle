@@ -50,7 +50,7 @@ function gxSubscribe(key){
 function playsHtml(){
   const pl=LIVE.data?.focus?.plays||[];
   if(!pl.length) return `<div class="gx-empty">Plays show up here once the game starts.</div>`;
-  const list=(GX.allPlays?pl:pl.slice(0,8)).map(p=>`<div class="gx-play${p.scoring?" score":""}"><div class="gx-pm">Q${esc(p.q)} ${esc(p.clock)}${p.team?` · ${esc(p.team)}`:""}${p.dd?` · ${esc(p.dd)}`:""}${p.scoring?' · <b>SCORE</b>':""}</div><div class="gx-pt">${esc(p.text)}</div></div>`).join("");
+  const list=(GX.allPlays?pl:pl.slice(0,8)).map(p=>`<div class="gx-play${p.scoring?" gx-score":""}"><div class="gx-pm">Q${esc(p.q)} ${esc(p.clock)}${p.team?` · ${esc(p.team)}`:""}${p.dd?` · ${esc(p.dd)}`:""}${p.scoring?' · <b>SCORE</b>':""}</div><div class="gx-pt">${esc(p.text)}</div></div>`).join("");
   return list+(pl.length>8?`<button class="tbtn gx-more" data-gxall="1">${GX.allPlays?"Show fewer":"Show all "+pl.length+" plays"}</button>`:"");
 }
 function boxHtml(){
