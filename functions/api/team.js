@@ -9,7 +9,15 @@ const ab = (x) => { const a = String(x || "").toUpperCase(); return FIX[a] || a;
 const slug = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const idOf = (ref) => (String(ref || "").match(/athletes\/(\d+)/) || [])[1] || "";
 const H = { "user-agent": "Mozilla/5.0 (NorthHuddle)" };
-const j = async (u) => { try { const r = await fetch(u, { headers: H }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
+const DBG = [];
+const j = async (u) => {
+  try {
+    let r = await fetch(u, { headers: H, redirect: "follow" });
+    if (!r.ok && u.includes("sports.core.api")) { DBG.push([u, r.status]); r = await fetch(u.replace("https://sports.core.api.espn.com", "http://sports.core.api.espn.com"), { headers: H, redirect: "follow" }); }
+    DBG.push([u, r.status]);
+    return r.ok ? await r.json() : null;
+  } catch (e) { DBG.push([u, "err " + e.message]); return null; }
+};
 
 const OFF = new Set(["wr", "lt", "lg", "c", "rg", "rt", "qb", "te", "rb", "fb"]);
 const SPEC = new Set(["pk", "p", "h", "pr", "kr", "ls", "ko"]);
@@ -21,8 +29,10 @@ export async function onRequest(ctx) {
   if (!abbr) return new Response('{"error":"abbr"}', { status: 400, headers: { "content-type": "application/json" } });
   const key = new Request(url.origin + "/api/team?abbr=" + abbr);
   const cache = caches.default;
-  const hit = await cache.match(key);
+  const debug = url.searchParams.has("debug");
+  const hit = debug ? null : await cache.match(key);
   if (hit) return hit;
+  DBG.length = 0;
 
   const ea = (ESPN_ABBR[abbr] || abbr).toLowerCase();
   const teamJ = await j(`${A}/teams/${ea}`);
@@ -173,6 +183,7 @@ export async function onRequest(ctx) {
     },
     games, players, depth: depthOut, injuries, news: newsOut, videos: []
   };
+  if (debug) return new Response(JSON.stringify({ dbg: DBG, depth: depthOut.length, players: players.length }), { headers: { "content-type": "application/json" } });
   const resp = new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" } });
   ctx.waitUntil(cache.put(key, new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=600" } })));
   return resp;
