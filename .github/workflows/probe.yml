@@ -13,8 +13,10 @@ jobs:
           mkdir -p out && cd out
           S="https://north-huddle.pages.dev"
           S="https://north-huddle.pages.dev"
-          curl -s -m 30 "$S/api/ask" -o ask_get.json
-          curl -s -m 60 -X POST "$S/api/ask" -H "content-type: application/json" -d '{"q":"When is the next Vikings game and who leads them in receiving?","context":"Team: Minnesota Vikings. Record 6-0. Schedule: Wk8 at DET Sun Nov 1 12:00 PM CT FOX. Players: Justin Jefferson (WR): 40 rec 600 yds 5 TD; Jordan Addison (WR): 25 rec 300 yds 2 TD."}' -o ask_post.json
+          sleep 120
+          curl -s -m 90 "$S/api/recap?event=401873014" -o recap.json
+          curl -s -m 30 "$S/api/scores?week=6" -o week6.json
+          curl -s -m 30 "$S/" | grep -c "round 3" > build.txt || true
           ls -la
       - name: Commit
         run: |
