@@ -1,0 +1,26 @@
+name: probe-site
+on:
+  push:
+    branches: [probe]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch live site endpoints
+        run: |
+          mkdir -p out && cd out
+          S="https://north-huddle.pages.dev"
+          for t in GB DET CHI MIN; do curl -s -m 40 -D "team-$t.headers" "$S/api/team?abbr=$t" -o "team-$t.json"; done
+          curl -s -m 40 -D scores.headers "$S/api/scores?team=MIN" -o scores.json
+          curl -s -m 40 -D index.headers "$S/" -o index.html
+          curl -s -m 30 -A "Mozilla/5.0" -o espn-direct.json -w "%{http_code}" "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/gb" > espn-code.txt
+          ls -la
+      - name: Commit
+        run: |
+          cd out
+          git init -q && git checkout -q -b probe-out
+          git config user.name probe && git config user.email probe@example.com
+          git add -A && git commit -qm samples
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" probe-out
