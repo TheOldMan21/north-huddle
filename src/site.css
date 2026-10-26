@@ -318,3 +318,7 @@ header.top{flex-wrap:wrap;row-gap:10px}
 .act-bar span{display:block;height:100%;background:var(--purple);border-radius:99px}
 .act-row .av{width:36px;height:36px}
 .act-when{text-align:right}
+/* iPhone */
+.ios-share{width:15px;height:15px;vertical-align:-2px;color:#0A84FF}
+.ios-bar .grow span{line-height:1.4}
+.ios-steps{margin:2px 0 0 18px;padding:0;font-size:14px;display:flex;flex-direction:column;gap:4px}

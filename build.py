@@ -18,7 +18,7 @@ rep("<title>Vikings Gameday Hub</title>",
     '<meta property="og:type" content="website">\n<meta property="og:site_name" content="North Huddle">\n<meta property="og:title" content="North Huddle">\n'
     '<meta property="og:description" content="Live scores, fantasy leagues, game picks and fan chat. An unofficial Minnesota football fan hub.">\n'
     '<meta property="og:image" content="https://north-huddle.pages.dev/og.png">\n<meta property="og:url" content="https://north-huddle.pages.dev/">\n'
-    '<meta name="twitter:card" content="summary_large_image">\n<meta name="twitter:image" content="https://north-huddle.pages.dev/og.png">\n<meta name="mobile-web-app-capable" content="yes">')
+    '<meta name="twitter:card" content="summary_large_image">\n<meta name="twitter:image" content="https://north-huddle.pages.dev/og.png">\n<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-title" content="North Huddle">\n<meta name="apple-mobile-web-app-status-bar-style" content="default">')
 
 # --- Claude-specific wording ---
 rep("Live data can't load in this view. Open the hub from your Claude app while signed in.", "Live data couldn't load. Check your connection and refresh.")
@@ -39,7 +39,7 @@ rep('<script id="hub-snapshot"', '<script src="/js/supabase.js"></script>\n<scri
 
 # --- styles + site script at the end ---
 css = (R / "src/site.css").read_text()
-site = "\n".join((R / f).read_text() for f in ["src/site.js", "src/teams.js", "src/live.js", "src/league.js", "src/sleeper.js", "src/social.js", "src/community.js", "src/talk.js", "src/app.js", "src/search.js", "src/activity.js", "src/admin.js"])
+site = "\n".join((R / f).read_text() for f in ["src/site.js", "src/teams.js", "src/live.js", "src/league.js", "src/sleeper.js", "src/social.js", "src/community.js", "src/talk.js", "src/app.js", "src/search.js", "src/activity.js", "src/ios.js", "src/admin.js"])
 h = h + "\n<style>\n" + css + "\n</style>\n<script>\n" + site + "\n</script>\n"
 
 if not h.lstrip().lower().startswith("<!doctype"):
