@@ -93,10 +93,24 @@ function predScore(p,g){
   const sgn=x=>x>0?1:x<0?-1:0, winner=sgn(p.us-p.them)===sgn(g.us-g.them);
   return (winner?5:0)+Math.max(0,10-Math.round(err/2))+(err===0?5:0);
 }
-function predFor(g){ const k=gameKey(g); return PRED.all.filter(p=>p.game===k); }
+function predFor(g){ const k=gameKey(g); return PRED.all.filter(p=>p.game===k&&p.kind!=="pick"); }
+function picksFor(g){ const k=gameKey(g); return PRED.all.filter(p=>p.game===k&&p.kind==="pick"); }
+function winPickHtml(g,locked){
+  const k=gameKey(g), picks=picksFor(g), mine=picks.find(p=>p.uid===ACC.id)?.pick;
+  const sides=[CUR,g.oppAbbr], n={}; sides.forEach(a=>n[a]=picks.filter(p=>p.pick===a));
+  const total=picks.length, pct=a=>total?Math.round(n[a].length/total*100):0;
+  const winner=g.status==="final"&&g.us!=null?(g.us>g.them?CUR:g.us<g.them?g.oppAbbr:""):"";
+  const name=a=>a===CUR?NICK():(oppName(g).split(" ").slice(-1)[0]);
+  const btn=a=>`<button class="wp-pick${mine===a?" mine":""}${winner===a?" won":""}" ${locked||!ACC.id?"disabled":""} data-winpick="${esc(k)}" data-pickteam="${esc(a)}" aria-pressed="${mine===a}">
+      ${badge(a)}<span class="wpk-name">${esc(name(a))}</span>${total?`<span class="wpk-pct num">${pct(a)}%</span>`:""}${winner===a?'<span class="wpk-won">✓</span>':""}</button>`;
+  const who=a=>n[a].length?`<div class="wpk-who"><span class="wpk-avs">${n[a].slice(0,8).map(p=>av(p.uid)).join("")}</span><span class="t2">${n[a].slice(0,3).map(p=>`<span data-uname="${esc(p.uid)}">${esc(personName(p.uid))}</span>`).join(", ")}${n[a].length>3?` +${n[a].length-3}`:""}</span></div>`:`<div class="wpk-who t2">No picks yet</div>`;
+  const bar=total?`<div class="wpk-bar"><span style="width:${pct(CUR)}%"></span></div>`:"";
+  const note=!ACC.id&&!locked?`<button class="tbtn" data-acct="1">Sign in to pick</button>`:`<div class="t2">${locked?(total?`${total} ${total===1?"pick":"picks"} · locked at kickoff`:"Picks are locked"):(mine?"Tap the other team to switch":"Tap a team to make your pick")}${total&&!locked?` · ${total} ${total===1?"pick":"picks"}`:""}</div>`;
+  return `<div class="wpk"><div class="label">Who wins?</div><div class="wpk-btns">${btn(CUR)}${btn(g.oppAbbr)}</div>${bar}<div class="wpk-whos">${who(CUR)}${who(g.oppAbbr)}</div>${note}</div>`;
+}
 function predCardHtml(){
   const g=nextGameForPred(); if(!g) return "";
-  const k=gameKey(g), mine=PRED.all.find(p=>p.game===k&&p.uid===ACC.id), list=predFor(g);
+  const k=gameKey(g), mine=PRED.all.find(p=>p.game===k&&p.uid===ACC.id&&p.kind!=="pick"), list=predFor(g);
   const locked=Date.now()>=Date.parse(g.kickoff)||g.status!=="scheduled";
   const vs=`${g.home?"vs":"at"} ${esc(oppName(g))}`;
   let body;
@@ -110,11 +124,12 @@ function predCardHtml(){
       :`<div class="t2">No predictions for this game.</div>`;
     if(mine) body=`<div class="t2">Your pick: <b>${esc(CUR)} ${esc(mine.us)}–${esc(mine.them)}</b></div>`+body;
   }
-  return `<section class="card pred-card" id="predCard" style="order:${(()=>{ const r=$("v-home")?.querySelector(".sb-row"); return r&&r.style.order?r.style.order:7; })()}"><div class="pred-head"><div><div class="label">Predict the score · Week ${esc(g.week)}</div><div class="t1">${esc(NICK())} ${vs}</div></div><button class="tbtn" data-predlb="1">Leaderboard</button></div>${body}</section>`;
+  body=winPickHtml(g,locked)+`<div class="pred-sub label">Predict the score</div>`+body;
+  return `<section class="card pred-card" id="predCard" style="order:${(()=>{ const r=$("v-home")?.querySelector(".sb-row"); return r&&r.style.order?r.style.order:7; })()}"><div class="pred-head"><div><div class="label">Game picks · Week ${esc(g.week)}</div><div class="t1">${esc(NICK())} ${vs}</div></div><button class="tbtn" data-predlb="1">Leaderboard</button></div>${body}</section>`;
 }
 function openPredLeaderboard(){
   const games=Object.fromEntries(S.games.map(g=>[gameKey(g),g])), tot={};
-  PRED.all.forEach(p=>{ const sc=predScore(p,games[p.game]); if(sc==null) return; const t=tot[p.uid]||(tot[p.uid]={uid:p.uid,pts:0,n:0,exact:0}); t.pts+=sc; t.n++; if(sc>=20) t.exact++; });
+  PRED.all.forEach(p=>{ if(p.kind==="pick") return; const sc=predScore(p,games[p.game]); if(sc==null) return; const t=tot[p.uid]||(tot[p.uid]={uid:p.uid,pts:0,n:0,exact:0}); t.pts+=sc; t.n++; if(sc>=20) t.exact++; });
   const rows=Object.values(tot).sort((a,b)=>b.pts-a.pts||b.exact-a.exact);
   $("sheet").innerHTML=`<div class="sheet-head"><div><div class="label">Score predictions</div><div class="nm" style="font-size:26px">Season leaderboard</div></div><button class="x" id="closeSheet" aria-label="Close">×</button></div>
     ${rows.length?`<div class="list">${rows.map((r,i)=>`<div class="row"><b class="num pred-rank">${i+1}</b>${av(r.uid)}<div class="grow"><div class="t1" data-uname="${esc(r.uid)}">${esc(personName(r.uid))}</div><div class="t2">${r.n} ${r.n===1?"game":"games"}${r.exact?` · ${r.exact} exact`:""}</div></div><b class="num">${r.pts}</b></div>`).join("")}</div>`
@@ -122,7 +137,14 @@ function openPredLeaderboard(){
     <div class="foot">Scoring: 5 for the right winner, up to 10 for how close you are, and 5 bonus for the exact score.</div>`;
   $("sheetBg").hidden=false;
 }
-document.addEventListener("click",e=>{ if(e.target.closest("[data-predlb]")) openPredLeaderboard(); });
+document.addEventListener("click",async e=>{
+  if(e.target.closest("[data-predlb]")) return openPredLeaderboard();
+  const b=e.target.closest("[data-winpick]"); if(!b||b.disabled) return;
+  if(!ACC.db||!ACC.id) return openAcct();
+  const k=b.dataset.winpick, g=S.games.find(x=>gameKey(x)===k); if(g&&Date.now()>=Date.parse(g.kickoff)) return toast("Picks are locked.");
+  try{ await ACC.db.doc(`predictions/pick-${k}__${ACC.id}`).set({uid:ACC.id, game:k, kind:"pick", pick:b.dataset.pickteam, t:nowIso()}); toast(`You picked ${b.dataset.pickteam===CUR?NICK():b.dataset.pickteam}!`); }
+  catch(err){ toast("Couldn't save your pick. Try again."); }
+});
 document.addEventListener("submit",async e=>{
   const f=e.target.closest("[data-pred]"); if(!f) return; e.preventDefault(); e.stopImmediatePropagation();
   const us=parseInt(f.us.value,10), them=parseInt(f.them.value,10);
