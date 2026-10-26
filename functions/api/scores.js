@@ -68,14 +68,15 @@ export async function onRequest(ctx) {
   const url = new URL(ctx.request.url);
   const team = (url.searchParams.get("team") || "MIN").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4);
   const event = (url.searchParams.get("event") || "").replace(/\D/g, "").slice(0, 14);
-  const key = new Request(url.origin + "/api/scores?team=" + team + (event ? "&event=" + event : ""));
+  const week = (url.searchParams.get("week") || "").replace(/\D/g, "").slice(0, 2);
+  const key = new Request(url.origin + "/api/scores?team=" + team + (event ? "&event=" + event : "") + (week ? "&week=" + week : ""));
   const cache = caches.default;
   const hit = await cache.match(key);
   if (hit) return hit;
 
   let out = { at: new Date().toISOString(), week: null, games: [], focus: null };
   try {
-    const sb = await (await fetch(SB, { headers: { "user-agent": "NorthHuddle/1.0" } })).json();
+    const sb = await (await fetch(week ? `${SB}?seasontype=2&week=${week}&dates=2026` : SB, { headers: { "user-agent": "NorthHuddle/1.0" } })).json();
     out.week = sb?.week?.number ?? null;
     out.games = (sb.events || []).map((e) => {
       const c = (e.competitions || [])[0] || {};
@@ -94,7 +95,7 @@ export async function onRequest(ctx) {
       };
     });
     const g = event ? out.games.find((x) => String(x.id) === event) : out.games.find((x) => x.home === team || x.away === team);
-    if (g && g.state !== "pre") {
+    if (g && g.state !== "pre" && !week) {
       try {
         const s = await (await fetch(SUM + g.id, { headers: { "user-agent": "NorthHuddle/1.0" } })).json();
         out.focus = {
@@ -113,7 +114,7 @@ export async function onRequest(ctx) {
     out.error = "upstream";
   }
   const resp = new Response(JSON.stringify(out), {
-    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=30" }
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": week ? "public, max-age=300" : "public, max-age=30" }
   });
   if (!out.error) ctx.waitUntil(cache.put(key, resp.clone()));
   return resp;

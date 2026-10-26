@@ -47,7 +47,7 @@ accReady.then(()=>setTimeout(route,300));
 
 /* ---------- phone alerts (web push) ---------- */
 const b64u=s=>{ const p="=".repeat((4-s.length%4)%4), b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/")); return Uint8Array.from(b,c=>c.charCodeAt(0)); };
-const PUSH_DEF={scores:true, final:true, kickoff:true};
+const PUSH_DEF={scores:true, final:true, kickoff:true, digest:true};
 async function loadPushPrefs(){
   if(!ACC.id||!APP.sub) return null;
   try{ const {data}=await NH.sb.from("push_subs").select("prefs").eq("endpoint",APP.sub.endpoint).maybeSingle(); APP.prefs=data?.prefs||null; }catch(e){}
@@ -70,8 +70,8 @@ function pushPanel(){
   const on=!!(APP.sub&&APP.prefs), p={...PUSH_DEF,...(APP.prefs||{})};
   const row=(k,l)=>`<label class="pa-row"><span>${l}</span><input type="checkbox" data-pushpref="${k}" ${p[k]?"checked":""}></label>`;
   return `<div class="card push-panel"><div class="t1">${ICO_BELL} Game alerts</div>
-    ${on?`<div class="t2">For the ${esc(TEAMS[p.team||CUR]?.[1]||"Vikings")}. Switch teams and alerts follow.</div>${row("scores","Scoring plays (touchdowns & field goals)")}${row("final","Final scores")}${row("kickoff","Kickoff reminders (1 hour before)")}<div class="pa-btns"><button class="tbtn" data-pushtest="1">Send me a test alert</button><button class="tbtn" data-pushoff="1">Turn off alerts</button></div>`
-      :`<div class="t2">Get a phone notification for touchdowns, final scores and kickoff.${isStandalone()?"":" Works best after you install the app."}</div><button class="btn-gold" data-pushon="1">Turn on game alerts</button>`}
+    ${on?`<div class="t2">For the ${esc(TEAMS[p.team||CUR]?.[1]||"Vikings")}. Switch teams and alerts follow.</div>${row("scores","Scoring plays (touchdowns & field goals)")}${row("final","Final scores")}${row("kickoff","Kickoff reminders (1 hour before)")}${row("digest","Monday morning digest")}<div class="pa-btns"><button class="tbtn" data-pushtest="1">Send me a test alert</button><button class="tbtn" data-pushoff="1">Turn off alerts</button></div>`
+      :`<div class="t2">Get a phone notification for touchdowns, final scores, kickoff and a Monday morning digest.${isStandalone()?"":" Works best after you install the app."}</div><button class="btn-gold" data-pushon="1">Turn on game alerts</button>`}
     ${!isStandalone()&&APP.prompt?`<button class="tbtn" data-install="1">Install the app</button>`:""}</div>`;
 }
 const ICO_BELL=`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico-bell"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;

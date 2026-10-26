@@ -89,7 +89,7 @@ function eventsFor(g, prev) {
 function message(ev, g, fan) {
   const { us, them, opp } = scoreLine(g, fan), mine = NICK[fan] || fan, other = NICK[opp] || opp;
   if (ev.type === "kickoff") return { title: `Kickoff soon: ${mine} ${fan === g.home ? "vs" : "at"} ${other}`, body: `Starts at ${new Date(g.kickoff).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" })} CT. Make your picks before kickoff!`, tag: `kick-${g.id}`, url: SITE + "/" };
-  if (ev.type === "final") return { title: `FINAL: ${mine} ${us}, ${other} ${them}`, body: us > them ? `${mine} win! Tap for the box score.` : us < them ? `Tough loss. Tap for the box score.` : `It ends in a tie.`, tag: `final-${g.id}`, url: `${SITE}/#game/${g.id}` };
+  if (ev.type === "final") return { title: `FINAL: ${mine} ${us}, ${other} ${them}`, body: us > them ? `${mine} win! Tap for the recap.` : us < them ? `Tough loss. Tap for the recap.` : `It ends in a tie.`, tag: `final-${g.id}`, url: `${SITE}/#game/${g.id}` };
   const what = ev.pts >= 6 ? "TOUCHDOWN" : ev.pts === 3 ? "Field goal" : ev.pts === 2 ? "Safety" : "Score";
   const who = NICK[ev.team] || ev.team, good = ev.team === fan;
   return { title: `${good ? "🏈 " : ""}${who} ${what}${good && ev.pts >= 6 ? "!" : ""}`, body: `${mine} ${us}, ${other} ${them} · ${g.detail}${g.last ? " · " + g.last.slice(0, 90) : ""}`, tag: `score-${g.id}`, url: `${SITE}/#game/${g.id}` };
@@ -97,7 +97,7 @@ function message(ev, g, fan) {
 async function run(env) {
   const r = await fetch(SCOREBOARD, { headers: { "user-agent": "Mozilla/5.0 (NorthHuddle alerts)" } });
   if (!r.ok) return "scoreboard " + r.status;
-  const games = gamesFrom(await r.json());
+  const sbj = await r.json(), games = gamesFrom(sbj), weekNo = sbj.week?.number || null;
   const tok = await sbToken(env);
   const stRes = await sb(tok, "/rest/v1/docs?select=data&path=eq.push%2Fstate");
   const stRows = stRes.ok ? await stRes.json() : [];
@@ -128,6 +128,9 @@ async function run(env) {
       }
     }
   }
+  // Monday morning digest (once a week, 8-11 AM Central)
+  let digests = 0;
+  try { digests = await digest(env, tok, state, games, weekNo); } catch (e) { console.log("digest", e.message); }
   // test alerts requested from the site ("Send me a test alert")
   let tests = 0;
   const tr = await sb(tok, "/rest/v1/docs?select=path,data&col=eq.requests&data->>kind=eq.pushtest&data->>status=eq.pending");
@@ -142,7 +145,38 @@ async function run(env) {
     }
   }
   await sb(tok, "/rest/v1/docs?on_conflict=path", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ path: "push/state", col: "push", id: "state", data: { ...state, at: new Date().toISOString() } }) });
-  return `events ${todo.length}, sent ${sent}, removed ${gone}, test alerts ${tests}${first ? " (first run: started watching)" : ""}`;
+  return `events ${todo.length}, sent ${sent}, removed ${gone}, test alerts ${tests}, digests ${digests}${first ? " (first run: started watching)" : ""}`;
+}
+// ---------- Monday digest ----------
+async function digest(env, tok, state, games, weekNo) {
+  const now = new Date(), ct = new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
+  const day = now.toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+  if (ct.getDay() !== 1 || ct.getHours() < 8 || ct.getHours() >= 11 || state.digest === day) return 0;
+  state.digest = day;
+  const subsRes = await sb(tok, "/rest/v1/push_subs?select=endpoint,sub,prefs");
+  const subs = (subsRes.ok ? await subsRes.json() : []).filter((s) => (s.prefs || {}).digest !== false);
+  if (!subs.length) return 0;
+  const key = await vapidKey(env.VAPID_PRIVATE), msgs = {};
+  const nextWk = weekNo ? (games.some((g) => g.state !== "post") ? weekNo : weekNo + 1) : null;
+  const pk = nextWk ? ` Make your Week ${nextWk} pick'em picks.` : "";
+  async function forTeam(team) {
+    if (msgs[team]) return msgs[team];
+    const g = games.find((x) => x.home === team || x.away === team), mine = NICK[team] || team;
+    if (!g) return (msgs[team] = { title: `Monday digest: ${mine} bye week`, body: `No game this week.${pk}`, tag: "digest", url: SITE + "/" });
+    const { us, them, opp } = scoreLine(g, team), other = NICK[opp] || opp;
+    if (g.state !== "post") return (msgs[team] = { title: `Monday digest: ${mine} ${team === g.home ? "vs" : "at"} ${other}`, body: g.state === "in" ? `Game in progress: ${us}-${them}.` : `Kickoff ${new Date(g.kickoff).toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" })} CT. Get your picks in!`, tag: "digest", url: SITE + "/" });
+    let line = "";
+    try { const rr = await fetch(`${SITE}/api/recap?event=${g.id}`); const d = rr.ok ? await rr.json() : null; if (d?.recap) line = d.recap.split(/(?<=[.!?])\s+/).slice(0, 2).join(" "); } catch (e) {}
+    if (line.length > 180) line = line.slice(0, 177).replace(/\s+\S*$/, "") + "…";
+    const res = us > them ? "W" : us < them ? "L" : "T";
+    return (msgs[team] = { title: `Monday digest: ${mine} ${us}, ${other} ${them} (${res})`, body: (line || "Tap for the recap and box score.") + pk, tag: "digest", url: `${SITE}/#game/${g.id}` });
+  }
+  let n = 0;
+  for (const s of subs) {
+    const team = (s.prefs || {}).team || "MIN";
+    try { const res = await sendPush(s.sub, await forTeam(team), key); if (res.ok) n++; else if (res.status === 404 || res.status === 410) await sb(tok, "/rest/v1/push_subs?endpoint=eq." + encodeURIComponent(s.endpoint), { method: "DELETE" }); } catch (e) {}
+  }
+  return n;
 }
 export default {
   async scheduled(event, env, ctx) { ctx.waitUntil(run(env).then((m) => console.log(m)).catch((e) => console.log("error", e.message))); },

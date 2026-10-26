@@ -77,7 +77,7 @@ export async function onRequest(ctx) {
     const wk = e.week?.number;
     const us = me.score?.value ?? (me.score != null ? Number(me.score) : null), them = op.score?.value ?? (op.score != null ? Number(op.score) : null);
     const g = {
-      id: "w" + String(wk).padStart(2, "0"), week: wk, opp: op.team?.displayName || "", oppAbbr: ab(op.team?.abbreviation),
+      id: "w" + String(wk).padStart(2, "0"), espnId: e.id, week: wk, opp: op.team?.displayName || "", oppAbbr: ab(op.team?.abbreviation),
       home: me.homeAway === "home", status: state === "post" ? "final" : state === "in" ? "live" : "scheduled",
       kickoff: e.date ? new Date(e.date).toISOString() : null, date: (e.date || "").slice(0, 10),
       venue: c.venue?.fullName || "", tv: (c.broadcasts || []).map((b) => b.media?.shortName).filter(Boolean).join(", "), note: ""

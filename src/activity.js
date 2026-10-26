@@ -25,7 +25,7 @@ async function loadActivity(){
 }
 function actName(r){ if(r.uid){ const u=ADM.users.find(x=>x.id===r.uid); return u?.name||(u?.email||"").split("@")[0]||"Member"; } return "Guest "+String(r.device||"").slice(0,4).toUpperCase(); }
 function admActivity(){
-  if(ACT.err==="setup") return `<div class="card"><b>One-time setup needed.</b><p class="acct-p">Copy github.com/TheOldMan21/north-huddle/blob/main/supabase/activity.sql and run it in Supabase → SQL Editor. Then tap Refresh.</p></div>`;
+  if(ACT.err==="setup") return `<div class="card"><b>One-time setup needed.</b><p class="acct-p">Copy github.com/TheOldMan21/north-huddle/blob/main/supabase/round3.sql and run it in Supabase → SQL Editor. Then tap Refresh.</p></div>`;
   if(ACT.err) return `<div class="card empty">Couldn't load activity: ${esc(ACT.err)}</div>`;
   if(ACT.loading&&!ACT.rows.length) return skelRows(5);
   const rows=ACT.rows.filter(r=>!(r.uid&&ADM.users.find(u=>u.id===r.uid&&/huddlebot@/i.test(u.email))));

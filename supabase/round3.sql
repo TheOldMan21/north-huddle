@@ -1,4 +1,4 @@
--- North Huddle round 3: visit log (admin Activity tab) + no links/spam in chat and comments.
+-- North Huddle round 3: visit log (admin Activity tab), no links in chat/comments, pick'em + fan power rankings.
 -- Run AFTER the earlier files. Paste into Supabase → SQL Editor → New query → Run. Safe to run more than once.
 
 create table if not exists public.visits (
@@ -35,7 +35,7 @@ language sql stable security definer set search_path = public as $$
     when p = 'scores/'   || auth.uid()::text then true
     when p ~ '^(chat|gamechat|comments)/[^/]+$' then coalesce(d->>'uid','') = auth.uid()::text
          and coalesce(d->>'text','') !~* '(https?://|www\.|\m[a-z0-9-]+\.(com|net|org|io|gg|ly|co|xyz|me|tv|app|link|site|info|biz|ru|cn|shop|live|click)\M)'
-    when p ~ '^(reactions|predictions|votes)/[^/]+$' then coalesce(d->>'uid','') = auth.uid()::text
+    when p ~ '^(reactions|predictions|votes|pickem|ranks)/[^/]+$' then coalesce(d->>'uid','') = auth.uid()::text
     when p ~ '^leagues/' then true
     when p ~ '^requests/[^/]+$' then true
     else false end;

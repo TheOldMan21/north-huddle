@@ -39,7 +39,7 @@ function minBlend(v,q){
   const qg=Object.fromEntries((q.games||[]).map(g=>[g.week,g]));
   out.games=(v.games||[]).map(g=>{ const e=qg[g.week]; if(!e||e.status==="bye") return g; const n={...g};
     if(e.status==="final"&&g.status!=="final"){ n.status="final"; n.us=e.us; n.them=e.them; n.result=e.result; }
-    if(!n.kickoff&&e.kickoff) n.kickoff=e.kickoff; if(!n.tv&&e.tv) n.tv=e.tv;
+    if(!n.kickoff&&e.kickoff) n.kickoff=e.kickoff; if(!n.tv&&e.tv) n.tv=e.tv; if(e.espnId) n.espnId=e.espnId;
     return n; });
   // injuries: Claude's (with body parts) plus anything new ESPN lists (skip long-term IR Claude didn't mention)
   const inj=[...(v.injuries||[])], have=new Set(inj.map(i=>nmz(i.player)));
