@@ -4038,8 +4038,8 @@ function computeEarned(){
   setInterval(()=>{ computeEarned(); decorateNames(); },15000); setTimeout(()=>{ computeEarned(); decorateNames(); },3000);
 })();
 async function setBadge(uid,key,on){
-  const cur=BADGES[uid]||{};
-  await ACC.db.doc("badges/"+uid).set({...cur,[key]:!!on,updatedAt:nowIso()});
+  const ref=ACC.db.doc("badges/"+uid), patch={[key]:!!on,updatedAt:nowIso()};
+  try{ await ref.update(patch); }catch(e){ await ref.set(patch); }
 }
 
 /* ---------- who's watching (live presence) ---------- */
