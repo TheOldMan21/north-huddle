@@ -1,0 +1,25 @@
+name: espn-player-stats
+# ESPN blocks its stats API from Cloudflare, so GitHub collects season leaders for all teams
+# and publishes them as a release file the site reads (no site rebuild needed).
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/espn_players.py", ".github/workflows/espn-data.yml"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect player stats
+        run: python3 scripts/espn_players.py > players.json && ls -la players.json
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view espn-data >/dev/null 2>&1 || gh release create espn-data --title "ESPN data (auto)" --notes "Updated automatically every 3 hours. Used by the site." --latest=false
+          gh release upload espn-data players.json --clobber

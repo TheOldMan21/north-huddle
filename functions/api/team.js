@@ -2,22 +2,22 @@
 // Builds a team hub document (same shape the site uses for teams/<abbr>) straight from ESPN.
 // Cached at the edge for 10 minutes.
 const A = "https://site.api.espn.com/apis/site/v2/sports/football/nfl";
-const C = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl";
 const FIX = { WAS: "WSH", LA: "LAR" };
 const ESPN_ABBR = { WSH: "wsh", LAR: "lar" };
 const ab = (x) => { const a = String(x || "").toUpperCase(); return FIX[a] || a; };
 const slug = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const idOf = (ref) => (String(ref || "").match(/athletes\/(\d+)/) || [])[1] || "";
 const H = { "user-agent": "Mozilla/5.0 (NorthHuddle)" };
-const DBG = [];
-const j = async (u) => {
-  try {
-    let r = await fetch(u, { headers: H, redirect: "follow" });
-    if (!r.ok && u.includes("sports.core.api")) { DBG.push([u, r.status]); r = await fetch(u.replace("https://sports.core.api.espn.com", "http://sports.core.api.espn.com"), { headers: H, redirect: "follow" }); }
-    DBG.push([u, r.status]);
-    return r.ok ? await r.json() : null;
-  } catch (e) { DBG.push([u, "err " + e.message]); return null; }
-};
+const j = async (u) => { try { const r = await fetch(u, { headers: H }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
+// Season player stats come from a GitHub job (ESPN's stats API blocks Cloudflare).
+const PLAYERS_URL = "https://github.com/TheOldMan21/north-huddle/releases/download/espn-data/players.json";
+async function allPlayers(origin) {
+  const key = new Request(origin + "/api/_players"), cache = caches.default;
+  const hit = await cache.match(key); if (hit) return hit.json();
+  const d = await j(PLAYERS_URL);
+  if (d) await cache.put(key, new Response(JSON.stringify(d), { headers: { "content-type": "application/json", "cache-control": "public, max-age=900" } }));
+  return d;
+}
 
 const OFF = new Set(["wr", "lt", "lg", "c", "rg", "rt", "qb", "te", "rb", "fb"]);
 const SPEC = new Set(["pk", "p", "h", "pr", "kr", "ls", "ko"]);
@@ -29,19 +29,17 @@ export async function onRequest(ctx) {
   if (!abbr) return new Response('{"error":"abbr"}', { status: 400, headers: { "content-type": "application/json" } });
   const key = new Request(url.origin + "/api/team?abbr=" + abbr);
   const cache = caches.default;
-  const debug = url.searchParams.has("debug");
-  const hit = debug ? null : await cache.match(key);
+  const hit = await cache.match(key);
   if (hit) return hit;
-  DBG.length = 0;
 
   const ea = (ESPN_ABBR[abbr] || abbr).toLowerCase();
   const teamJ = await j(`${A}/teams/${ea}`);
   const team = teamJ?.team;
   if (!team) return new Response('{"error":"not_found"}', { status: 404, headers: { "content-type": "application/json" } });
   const tid = team.id;
-  const [sched, roster, news, depth, leaders] = await Promise.all([
+  const [sched, roster, news, depth, pl] = await Promise.all([
     j(`${A}/teams/${ea}/schedule`), j(`${A}/teams/${ea}/roster`), j(`${A}/news?team=${tid}&limit=40`),
-    j(`${C}/seasons/2026/teams/${tid}/depthcharts`), j(`${C}/seasons/2026/types/2/teams/${tid}/leaders`)
+    j(`${A}/teams/${tid}/depthcharts`), allPlayers(url.origin)
   ]);
   const now = new Date().toISOString();
 
@@ -92,69 +90,26 @@ export async function onRequest(ctx) {
   games.sort((a, b) => a.week - b.week);
   const lastFinal = games.filter((g) => g.status === "final").slice(-1)[0];
 
-  // ---- players from season leaders ----
-  const P = {};
-  const touch = (ref) => {
-    const id = idOf(ref); const r = R[id]; if (!r) return null;
-    return P[id] || (P[id] = { id: slug(r.name), name: r.name, pos: r.pos, unit: r.unit || "offense", status: r.status || undefined, stats: {} });
-  };
-  const num = (v) => (v == null ? null : Number(v));
-  for (const cat of leaders?.categories || []) {
-    for (const l of cat.leaders || []) {
-      const p = touch(l.athlete?.$ref); if (!p) continue;
-      const s = p.stats, v = num(l.value), dv = String(l.displayValue || "");
-      switch (cat.name) {
-        case "passingYards": (s.pass ||= {}).yds = v; break;
-        case "passingTouchdowns": (s.pass ||= {}).td = v; break;
-        case "quarterbackRating": (s.pass ||= {}).rate = v; break;
-        case "passingLeader": { const m = dv.match(/(\d+)\/(\d+).*?(\d+)\s*INT/); const ps = (s.pass ||= {}); if (m) { ps.cmp = +m[1]; ps.att = +m[2]; ps.int = +m[3]; } break; }
-        case "rushingYards": (s.rush ||= {}).yds = v; break;
-        case "rushingTouchdowns": (s.rush ||= {}).td = v; break;
-        case "rushingLeader": { const m = dv.match(/(\d+)\s*CAR/); if (m) (s.rush ||= {}).att = +m[1]; break; }
-        case "receptions": (s.rec ||= {}).rec = v; break;
-        case "receivingYards": (s.rec ||= {}).yds = v; break;
-        case "receivingTouchdowns": (s.rec ||= {}).td = v; break;
-        case "totalTackles": (s.def ||= {}).tkl = v; break;
-        case "sacks": (s.def ||= {}).sacks = v; break;
-        case "interceptions": (s.def ||= {}).int = v; break;
-      }
-    }
-  }
-  const players = Object.values(P).map((p) => {
-    const s = p.stats;
-    if (s.pass && !s.pass.yds) delete s.pass; // rating-only entries for non-passers
-    if (s.pass) s.pass = { cmp: 0, att: 0, yds: 0, td: 0, int: 0, rate: null, ...s.pass };
-    if (s.rush) s.rush = { att: null, yds: 0, td: 0, ...s.rush };
-    if (s.rec) s.rec = { rec: 0, tgt: null, yds: 0, td: 0, ...s.rec };
-    if (s.def) { s.def = { tkl: 0, sacks: 0, int: 0, ff: 0, ...s.def }; if (p.unit === "offense") p.unit = "defense"; }
-    p.rank = (s.pass?.yds || 0) + (s.rush?.yds || 0) + (s.rec?.yds || 0) + 5 * (s.def?.tkl || 0) + 20 * (s.def?.sacks || 0);
-    return p;
-  }).sort((a, b) => b.rank - a.rank);
+  // ---- players (season leaders, from the GitHub job) ----
+  const players = (pl?.teams?.[abbr] || []).map((p) => {
+    const r = Object.values(R).find((x) => x.name === p.name);
+    return r && r.status ? { ...p, status: r.status } : p;
+  });
 
   // ---- depth chart ----
   const depthOut = [];
-  for (const it of depth?.items || []) {
+  const WR = { wr1: "LWR", wr2: "RWR", wr3: "SWR" };
+  for (const it of depth?.depthchart || []) {
     const keys = Object.keys(it.positions || {});
     const is34 = keys.includes("nt") || keys.includes("lilb");
     for (const k of keys) {
-      const p = it.positions[k], unit = OFF.has(k) ? "offense" : SPEC.has(k) ? "special" : "defense";
-      const ath = (p.athletes || []).slice().sort((a, b) => (a.slot || 0) - (b.slot || 0));
-      if (k === "wr") {
-        const slots = [...new Set(ath.map((a) => a.slot))].sort((a, b) => a - b);
-        const ids = ["LWR", "RWR", "SWR"];
-        // Some feeds put all receivers in one slot: deal them out across the three spots.
-        let groups = slots.length >= 2 ? slots.map((s) => ath.filter((a) => a.slot === s)) : [[], [], []];
-        if (slots.length < 2) ath.forEach((a, i) => groups[i % 3].push(a));
-        groups.slice(0, 3).forEach((grp, i) => {
-          const list = grp.map((a) => R[idOf(a.athlete?.$ref)]).filter(Boolean);
-          if (list.length) depthOut.push({ id: ids[i].toLowerCase(), unit, pos: ids[i], players: list.map((r) => r.name), numbers: list.map((r) => r.jersey) });
-        });
-        continue;
-      }
-      let pos = k.toUpperCase();
+      const base = k.replace(/\d+$/, "");
+      const unit = OFF.has(base) ? "offense" : SPEC.has(base) ? "special" : "defense";
+      let pos = WR[k] || k.toUpperCase();
       if (pos === "P") pos = "PT";
       if (is34 && MAP34[k]) pos = MAP34[k];
-      const list = ath.map((a) => R[idOf(a.athlete?.$ref)]).filter(Boolean);
+      if (depthOut.some((d) => d.pos === pos)) continue;
+      const list = (it.positions[k].athletes || []).map((a) => R[a.id] || { name: a.displayName, jersey: null }).filter((r) => r.name);
       if (list.length) depthOut.push({ id: pos.toLowerCase(), unit, pos, players: list.map((r) => r.name), numbers: list.map((r) => r.jersey) });
     }
   }
@@ -183,16 +138,6 @@ export async function onRequest(ctx) {
     },
     games, players, depth: depthOut, injuries, news: newsOut, videos: []
   };
-  if (debug) {
-    const cands = [`${A}/teams/${tid}/depthcharts`, `https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/teams/${tid}/depthcharts`,
-      `https://site.web.api.espn.com/apis/common/v3/sports/football/nfl/statistics/byathlete?team=${tid}&limit=60`,
-      `https://site.web.api.espn.com/apis/site/v3/sports/football/nfl/teams/${tid}/leaders`, `${A}/teams/${ea}?enable=stats`,
-      `https://site.web.api.espn.com/apis/v2/sports/football/nfl/teams/${tid}/depthcharts`];
-    const res = [];
-    for (const c of cands) { try { const r = await fetch(c, { headers: H }); const t = await r.text(); res.push([c, r.status, t.length, t.slice(0, 160)]); } catch (e) { res.push([c, "err"]); } }
-    return new Response(JSON.stringify({ dbg: DBG, cands: res }), { headers: { "content-type": "application/json" } });
-  }
-  if (false) return new Response(JSON.stringify({ dbg: DBG, depth: depthOut.length, players: players.length }), { headers: { "content-type": "application/json" } });
   const resp = new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" } });
   ctx.waitUntil(cache.put(key, new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=600" } })));
   return resp;
