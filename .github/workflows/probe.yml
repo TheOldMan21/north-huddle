@@ -12,10 +12,15 @@ jobs:
         run: |
           mkdir -p out && cd out
           S="https://north-huddle.pages.dev"
-          sleep 110; curl -s -m 60 "$S/api/team?abbr=GB&debug=1" -o debug.json; curl -s -m 60 -o core-direct.json -w "%{http_code}" "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/9/depthcharts" > core-code.txt
-          curl -s -m 40 -D scores.headers "$S/api/scores?team=MIN" -o scores.json
-          curl -s -m 40 -D index.headers "$S/" -o index.html
-          curl -s -m 30 -A "Mozilla/5.0" -o espn-direct.json -w "%{http_code}" "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/gb" > espn-code.txt
+          A="https://site.api.espn.com/apis/site/v2/sports/football/nfl"
+          get(){ curl -s -m 40 -A "Mozilla/5.0" "$2" -o "$1.json"; echo "$1 $(wc -c < $1.json)"; }
+          get depth2 "$A/teams/9/depthcharts"
+          get lead_a "$A/teams/9/leaders"
+          get lead_b "$A/teams/gb/leaders"
+          get stats_a "$A/teams/9/statistics"
+          get stats_b "$A/teams/gb/statistics"
+          get lead_c "https://site.api.espn.com/apis/site/v3/sports/football/nfl/teams/9/leaders"
+          get lead_d "$A/leaders?team=9"
           ls -la
       - name: Commit
         run: |
