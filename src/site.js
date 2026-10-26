@@ -99,13 +99,57 @@ function applyLive(){
   const home=lg.home===CUR, us=home?lg.hs:lg.as, them=home?lg.as:lg.hs;
   if(lg.state==="in"){
     g.status="live"; g.us=us; g.them=them;
-    g.note=[lg.detail, lg.downDist?(lg.possession?lg.possession+" ball · ":"")+lg.downDist:""].filter(Boolean).join(" · ");
+    g.note=lg.posText&&lg.possession ? lg.detail : [lg.detail, lg.downDist?(lg.possession?lg.possession+" ball · ":"")+lg.downDist:""].filter(Boolean).join(" · ");
     const sc=LIVE.data.focus?.scoring;
     if(sc&&sc.length) g.plays=sc.slice().reverse().map(p=>`Q${p.q} ${p.clock||""} · ${p.team||""} · ${p.text}`.replace(/\s+·\s+·/g," ·"));
     g.liveAt=LIVE.at;
+    g.field=fieldState(lg);
   } else if(lg.state==="post" && g.status!=="final"){
     g.status="final"; g.us=us; g.them=them; g.result=us>them?"W":us<them?"L":"T";
   }
+}
+/* ---------- live field: who has the ball and where ---------- */
+// x = yards from OUR goal line (0) to theirs (100). We attack to the right.
+function fieldState(lg){
+  const opp=lg.home===CUR?lg.away:lg.home;
+  const fix=a=>({WAS:"WSH",LA:"LAR"}[a]||a);
+  const m=String(lg.posText||"").trim().match(/^([A-Z]{2,4})?\s*(\d{1,2})$/i);
+  if(!lg.possession || !m) return null;
+  const side=m[1]?fix(m[1].toUpperCase()):"", n=Math.max(0,Math.min(50,Number(m[2])));
+  const x = !side||n===50 ? 50 : side===CUR ? n : 100-n;
+  const ours=lg.possession===CUR, dir=ours?1:-1;
+  const dist=Number(lg.distance)||0;
+  const toGoal=ours?100-x:x;
+  const fd = dist>0 && dist<toGoal ? x+dir*dist : null;
+  return {x, ours, team:lg.possession, opp, fd, dd:lg.shortDD||"", posText:lg.posText, red: toGoal<=20, last:lg.lastPlay||""};
+}
+function fieldSvg(f){
+  const c1=TEAM[CUR]||["#4F2683","#FFC62F","#fff"], c2=TEAM[f.opp]||["#555","#999","#fff"];
+  const X=v=>10+v; // field starts after 10-unit end zone
+  let lines="";
+  for(let y=10;y<100;y+=10){ lines+=`<line x1="${X(y)}" y1="0" x2="${X(y)}" y2="30" class="lf-yl"/>`; const lab=y<=50?y:100-y; if(y%10===0) lines+=`<text x="${X(y)}" y="27.6" class="lf-num">${lab}</text>`; }
+  for(let y=5;y<100;y+=10) lines+=`<line x1="${X(y)}" y1="13.5" x2="${X(y)}" y2="16.5" class="lf-tick"/>`;
+  const bx=X(f.x), arrow=f.ours?`M${bx+4} 5.4 l3.2 2.2 -3.2 2.2z`:`M${bx-4} 5.4 l-3.2 2.2 3.2 2.2z`;
+  return `<svg class="lf" viewBox="0 0 120 30" role="img" aria-label="${esc(f.team)} ball, ${esc(f.dd)} at ${esc(f.posText)}">
+    <rect x="0" y="0" width="120" height="30" rx="2" class="lf-grass"/>
+    ${f.red?`<rect x="${f.ours?X(80):X(0)}" y="0" width="20" height="30" class="lf-red"/>`:""}
+    <rect x="0" y="0" width="10" height="30" rx="2" fill="${c1[0]}"/><rect x="110" y="0" width="10" height="30" rx="2" fill="${c2[0]}"/>
+    <text x="5" y="15" class="lf-ez" fill="${c1[2]}" transform="rotate(-90 5 15)">${esc(CUR)}</text>
+    <text x="115" y="15" class="lf-ez" fill="${c2[2]}" transform="rotate(90 115 15)">${esc(f.opp)}</text>
+    ${lines}
+    ${f.fd!=null?`<line x1="${X(f.fd)}" y1="0" x2="${X(f.fd)}" y2="30" class="lf-fd"/>`:""}
+    <line x1="${bx}" y1="0" x2="${bx}" y2="30" class="lf-los"/>
+    <path d="${arrow}" class="lf-arrow"/>
+    <ellipse cx="${bx}" cy="15" rx="3.3" ry="2" class="lf-ball"/><line x1="${bx-1.4}" y1="15" x2="${bx+1.4}" y2="15" class="lf-lace"/>
+  </svg>`;
+}
+function fieldHtml(f){
+  if(!f) return "";
+  return `<div class="gd-field">
+    <div class="lf-top">${badge(f.team)}<b>${esc(f.ours?NICK():(TEAMS[f.team]?.[1]||f.team))} ball</b><span class="lf-dd">${esc(f.dd)}${f.posText?` · ${esc(f.posText)}`:""}</span>${f.red?'<span class="chip live lf-rz">RED ZONE</span>':""}</div>
+    ${fieldSvg(f)}
+    ${f.last?`<div class="lf-last"><span class="label">Last play</span> ${esc(f.last)}</div>`:""}
+  </div>`;
 }
 const _syncViewNH=syncView;
 syncView=function(){ _syncViewNH(); try{ applyLive(); }catch(e){} };
@@ -132,6 +176,7 @@ pollLive();
 const _gameDayHtmlNH=gameDayHtml;
 gameDayHtml=function(g){
   let h=_gameDayHtmlNH(g);
+  if(g.field) h=h.replace(/(<div class="gd-score">[\s\S]*?<\/div>)/, "$1"+fieldHtml(g.field));
   h=h.replace(/Scores refresh about every hour during the game · updated [^<]*/, g.liveAt?`Live · updates every minute · ${esc(ago(new Date(g.liveAt).toISOString()))}`:"Live · updates every minute");
   const others=(LIVE.data?.games||[]).filter(x=>x.state!=="pre" && x.home!==CUR && x.away!==CUR).slice(0,8);
   if(others.length){

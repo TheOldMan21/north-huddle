@@ -28,7 +28,9 @@ export async function onRequest(ctx) {
       return {
         id: e.id, kickoff: e.date, state: st.state || "pre", detail: st.shortDetail || st.detail || "",
         home: ab(h.team), away: ab(a.team), hs: Number(h.score || 0), as: Number(a.score || 0),
-        possession: poss, downDist: sit.downDistanceText || "", lastPlay: sit.lastPlay?.text || "",
+        possession: poss, downDist: sit.downDistanceText || "", shortDD: sit.shortDownDistanceText || "",
+        posText: sit.possessionText || "", down: sit.down ?? null, distance: sit.distance ?? null,
+        lastPlay: sit.lastPlay?.text || "",
         redZone: !!sit.isRedZone, tv: (c.broadcasts || []).flatMap((b) => b.names || []).join(", ")
       };
     });

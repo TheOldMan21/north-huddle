@@ -11,3 +11,23 @@
 .auth-link{background:none;border:0;color:var(--purple-ink);font:600 14px var(--body);padding:10px 0;cursor:pointer;align-self:flex-start}
 .auth-out{margin-top:12px;width:100%}
 .nh-foot{font-size:11.5px;line-height:1.45;color:var(--muted);text-align:center;padding:18px 12px 8px;max-width:640px;margin:0 auto}
+/* live field */
+.gd-field{background:rgba(255,255,255,.08);border-radius:12px;padding:10px 10px 8px;display:flex;flex-direction:column;gap:8px}
+.lf-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
+.lf-top .tb{transform:scale(.85)}
+.lf-dd{opacity:.85;font-variant-numeric:tabular-nums}
+.lf-rz{margin-left:auto}
+.lf{width:100%;height:auto;display:block}
+.lf-grass{fill:#2E7D3A}
+.lf-red{fill:#C62828;opacity:.22}
+.lf-yl{stroke:#fff;stroke-opacity:.55;stroke-width:.25}
+.lf-tick{stroke:#fff;stroke-opacity:.5;stroke-width:.2}
+.lf-num{fill:#fff;fill-opacity:.8;font:700 4px var(--display);text-anchor:middle}
+.lf-ez{font:800 4.2px var(--display);text-anchor:middle;dominant-baseline:middle;letter-spacing:.3px}
+.lf-los{stroke:#4FA3FF;stroke-width:.6}
+.lf-fd{stroke:#FFD400;stroke-width:.6}
+.lf-ball{fill:#7B4A21;stroke:#3E2310;stroke-width:.25}
+.lf-lace{stroke:#fff;stroke-width:.3}
+.lf-arrow{fill:#fff}
+.lf-last{font-size:13px;line-height:1.35;opacity:.9}
+.lf-last .label{color:var(--gold);margin-right:4px}
