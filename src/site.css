@@ -54,3 +54,55 @@ body.adm-open{overflow:hidden}
 .adm-chips{display:flex;flex-wrap:wrap;gap:6px}
 .adm-btn{width:100%;margin-top:12px}
 .adm-hdr{border-color:var(--gold);color:var(--gold)}
+/* win probability */
+.gd-wp .wp-bar{height:10px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden}
+.gd-wp .wp-us{display:block;height:100%;background:var(--gold);border-radius:99px;transition:width .6s}
+.gd-wp .wp-lab{display:flex;justify-content:space-between;font-size:13px;margin-top:4px}
+.gd-wp .wp-lab b{color:var(--gold)}
+.wp-spark{width:100%;height:34px;display:block;margin-top:4px}
+.wp-mid{stroke:#fff;stroke-opacity:.25;stroke-dasharray:2 2;stroke-width:.5;vector-effect:non-scaling-stroke}
+.wp-line{fill:none;stroke:var(--gold);stroke-width:1.6;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+/* plays / box / game chat panel */
+.gx{background:var(--surface);color:var(--fg);border-radius:12px;overflow:hidden}
+.gx-seg{display:flex;border-bottom:1px solid var(--line)}
+.gx-seg button{flex:1;border:0;background:none;font:700 14px var(--body);color:var(--muted);padding:11px 6px;cursor:pointer;border-bottom:3px solid transparent}
+.gx-seg button[aria-selected="true"]{color:var(--purple-ink);border-bottom-color:var(--gold)}
+.gx-n{display:inline-block;min-width:18px;padding:0 5px;border-radius:99px;background:var(--surface-2);font-size:11px}
+.gx-pane{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.gx-empty{color:var(--muted);font-size:14px;padding:6px 0}
+.gx-play{border-left:3px solid var(--line);padding:2px 0 2px 10px}
+.gx-play.score{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(255,198,47,.14),transparent)}
+.gx-pm{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gx-pt{font-size:14px;line-height:1.35}
+.gx-more{align-self:center}
+.gx-teams{display:flex;gap:6px}
+.gx-teams button{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:5px 14px;font:700 13px var(--body);color:var(--muted);cursor:pointer}
+.gx-teams button[aria-pressed="true"]{background:var(--purple);border-color:var(--purple);color:#fff}
+.gx-box{width:100%;border-collapse:collapse;font-size:13px}
+.gx-box th{text-align:right;font:700 11px var(--body);color:var(--muted);text-transform:uppercase;padding:6px 4px;border-bottom:1px solid var(--line)}
+.gx-box th:first-child,.gx-box td:first-child{text-align:left}
+.gx-box td{text-align:right;padding:5px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+.gx-box td:first-child{white-space:normal}
+.gc-list{max-height:320px}
+/* predictions */
+.pred-card{display:flex;flex-direction:column;gap:10px}
+.pred-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.pred-form{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pred-form label{display:flex;align-items:center;gap:6px}
+.pred-form input{width:58px;font:800 22px var(--display);text-align:center;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+.pred-form .btn-gold{flex:1;min-width:120px}
+.pred-dash{font:800 22px var(--display);color:var(--muted)}
+.pred-rank{width:22px;text-align:center;color:var(--muted)}
+/* reactions */
+.rx-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center;position:relative}
+.rx-chip,.rx-add{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:1px 8px;font-size:13px;line-height:1.6;cursor:pointer;color:var(--fg)}
+.rx-chip.mine{border-color:var(--purple);background:var(--surface-2)}
+.rx-add{color:var(--muted);font-size:12px}
+.rx-pick{display:flex;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:2px 4px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.rx-pick button{border:0;background:none;font-size:20px;padding:2px 4px;cursor:pointer;border-radius:8px}
+.rx-pick button:hover{background:var(--surface-2)}
+/* google */
+.g-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;color:#1f1f1f;font:600 15px var(--body);cursor:pointer}
+.g-btn svg{width:20px;height:20px}
+.or-line{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px;margin:10px 0 2px}
+.or-line:before,.or-line:after{content:"";flex:1;height:1px;background:var(--line)}

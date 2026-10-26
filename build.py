@@ -26,13 +26,16 @@ rep('''${isC?"Invite each friend's email to this hub: open the Share menu, add t
 rep("Couldn't send the request. Ask the hub owner to invite you as an Editor.", "Couldn't send the request. Try signing out and back in.")
 rep("Couldn't send. Ask the hub owner to invite you as an Editor.", "Couldn't send. Try signing out and back in.")
 
+# --- reactions need message ids on fan chat rows ---
+rep('''`<div class="fc-msg${m.uid===ACC.id?" me":""}">${av(m.uid)}''', '''`<div class="fc-msg${m.uid===ACC.id?" me":""}" data-mid="${esc(m.id)}" data-mcol="chat">${av(m.uid)}''')
+
 # --- inject data layer before the app scripts ---
 shim = (R / "src/shim.js").read_text()
 rep('<script id="hub-snapshot"', '<script src="/js/supabase.js"></script>\n<script>\n' + shim + '\n</script>\n<script id="hub-snapshot"')
 
 # --- styles + site script at the end ---
 css = (R / "src/site.css").read_text()
-site = (R / "src/site.js").read_text() + "\n" + (R / "src/admin.js").read_text()
+site = "\n".join((R / f).read_text() for f in ["src/site.js", "src/live.js", "src/social.js", "src/admin.js"])
 h = h + "\n<style>\n" + css + "\n</style>\n<script>\n" + site + "\n</script>\n"
 
 if not h.lstrip().lower().startswith("<!doctype"):

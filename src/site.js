@@ -123,7 +123,7 @@ function fieldState(lg){
   const fd = dist>0 && dist<toGoal ? x+dir*dist : null;
   return {x, ours, team:lg.possession, opp, fd, dd:lg.shortDD||"", posText:lg.posText, red: toGoal<=20, last:lg.lastPlay||""};
 }
-function fieldSvg(f){
+function liveFieldSvg(f){
   const c1=TEAM[CUR]||["#4F2683","#FFC62F","#fff"], c2=TEAM[f.opp]||["#555","#999","#fff"];
   const X=v=>10+v; // field starts after 10-unit end zone
   let lines="";
@@ -147,9 +147,9 @@ function fieldHtml(f){
   if(!f) return "";
   return `<div class="gd-field">
     <div class="lf-top">${badge(f.team)}<b>${esc(f.ours?NICK():(TEAMS[f.team]?.[1]||f.team))} ball</b><span class="lf-dd">${esc(f.dd)}${f.posText?` · ${esc(f.posText)}`:""}</span>${f.red?'<span class="chip live lf-rz">RED ZONE</span>':""}</div>
-    ${fieldSvg(f)}
+    ${liveFieldSvg(f)}
     ${f.last?`<div class="lf-last"><span class="label">Last play</span> ${esc(f.last)}</div>`:""}
-  </div>`;
+  </div><!--/gd-field-->`;
 }
 const _syncViewNH=syncView;
 syncView=function(){ _syncViewNH(); try{ applyLive(); }catch(e){} };
