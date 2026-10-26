@@ -3228,6 +3228,47 @@ body.adm-open{overflow:hidden}
 .sl-pf{min-width:70px;text-align:right}
 .gs-sec .wp-lab{display:flex;justify-content:space-between;font-size:13px}
 .sl-pl .grow,.sl-team .grow,.sl-head .grow{flex:1;min-width:0}
+/* news comments */
+.news-wrap{position:relative}
+.nc-btn{display:inline-flex;align-items:center;gap:5px;border:0;background:none;color:var(--purple-ink);font:600 13px var(--body);padding:4px 14px 10px;cursor:pointer}
+.nc-btn svg{width:15px;height:15px}
+.nc-title{font-size:20px!important;line-height:1.2}
+.nc-list{max-height:55vh}
+/* polls */
+.poll-card{display:flex;flex-direction:column;gap:8px}
+.pl-opt{position:relative;display:flex;align-items:center;gap:8px;width:100%;padding:11px 12px;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--fg);font:600 15px var(--body);cursor:pointer;overflow:hidden;text-align:left}
+.pl-opt.mine{border-color:var(--purple)}
+.pl-opt[disabled]{cursor:default}
+.pl-bar{position:absolute;inset:0 auto 0 0;background:var(--surface-2);z-index:0;transition:width .5s}
+.pl-txt,.pl-pct{position:relative;z-index:1}
+.pl-txt{flex:1}
+.pl-pct{font:800 16px var(--display);color:var(--purple-ink)}
+.linkish{border:0;background:none;color:var(--purple-ink);font:inherit;font-weight:700;padding:0;cursor:pointer}
+.adm-pollf{display:flex;flex-direction:column;gap:8px}
+.adm-pollf input{font:15px var(--body);padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+/* name badges */
+.nbs{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}
+.nb{display:inline-flex;align-items:center;gap:2px;height:16px;padding:0 5px;border-radius:99px;font:800 10px/1 var(--display);letter-spacing:.04em;text-transform:uppercase;vertical-align:middle}
+.nb svg{width:10px;height:10px;fill:currentColor}
+.nb-vip{background:linear-gradient(135deg,#FFD84D,#E8A800);color:#3A2600}
+.nb-donor{background:#C2185B;color:#fff}
+.nb-exact,.nb-called{background:var(--surface-2);color:var(--purple-ink);padding:0 3px}
+.av.av-vip{box-shadow:0 0 0 2px #F2B705}
+.adm-badges{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+.adm-bt{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:99px;padding:3px 10px;font:700 12px var(--body);cursor:pointer}
+.adm-bt svg{width:12px;height:12px;fill:currentColor}
+.adm-bt.on[data-admbadge="vip"]{background:linear-gradient(135deg,#FFD84D,#E8A800);color:#3A2600;border-color:#E8A800}
+.adm-bt.on[data-admbadge="donor"]{background:#C2185B;color:#fff;border-color:#C2185B}
+/* presence */
+.presence{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.upd-line .presence{margin-left:auto}
+.upd-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.presence-slot{margin-left:auto}
+.pr-dot{width:8px;height:8px;border-radius:50%;background:#2EBD5F;box-shadow:0 0 0 3px rgba(46,189,95,.25);animation:pulse 1.6s infinite}
+.pr-faces{display:flex}
+.pr-faces .av{width:20px;height:20px;margin-right:-6px;border:2px solid var(--bg)}
+.pr-faces:not(:empty){margin-right:6px}
+.gd-pres .presence{color:rgba(255,255,255,.85)}.gd-pres .pr-faces .av{border-color:var(--purple)}
 
 </style>
 <script>
@@ -3945,6 +3986,161 @@ document.addEventListener("click",async e=>{
   }catch(err){}
 })();
 
+/* ===================== North Huddle: badges (VIP, donor, earned), who's watching ===================== */
+
+/* ---------- badges ---------- */
+// badges/<uid> = {vip:bool, donor:bool} — only the site admin can set these.
+const BADGES={};
+const EARNED={};
+const ICO_STAR=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 16.8l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>`;
+const ICO_HEART=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.6 3.8 4.5 7.1 4.5c2 0 3.6 1.1 4.9 2.8 1.3-1.7 2.9-2.8 4.9-2.8 3.3 0 5.5 3.1 4.3 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/></svg>`;
+const ICO_TARGET=`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="1.3"/></svg>`;
+const ICO_EYE=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5C6.5 5 2.7 9.4 1.5 12c1.2 2.6 5 7 10.5 7s9.3-4.4 10.5-7C21.3 9.4 17.5 5 12 5zm0 11.2A4.2 4.2 0 1 1 12 7.8a4.2 4.2 0 0 1 0 8.4z"/></svg>`;
+function badgeList(uid){
+  const b=BADGES[uid]||{}, e=EARNED[uid]||{}, out=[];
+  if(b.vip) out.push({k:"vip",label:"VIP",ico:ICO_STAR,title:"VIP member"});
+  if(b.donor) out.push({k:"donor",label:"Donor",ico:ICO_HEART,title:"Supports North Huddle"});
+  if(e.exact) out.push({k:"exact",label:"",ico:ICO_TARGET,title:`Exact score called (${e.exact}×)`});
+  if(e.called>=3) out.push({k:"called",label:"",ico:ICO_EYE,title:`Called ${e.called} winners`});
+  return out;
+}
+function badgesHtml(uid){ return badgeList(uid).map(x=>`<span class="nb nb-${x.k}" title="${esc(x.title)}" aria-label="${esc(x.title)}">${x.ico}${x.label?`<span>${x.label}</span>`:""}</span>`).join(""); }
+let nbBusy=false;
+function decorateNames(root){
+  if(nbBusy) return; nbBusy=true;
+  try{
+    (root||document).querySelectorAll("[data-uname]").forEach(n=>{
+      const uid=n.dataset.uname, html=badgesHtml(uid), nx=n.nextElementSibling;
+      const has=nx&&nx.classList.contains("nbs")&&nx.dataset.for===uid;
+      if(!html){ if(has) nx.remove(); return; }
+      if(has){ if(nx.innerHTML!==html) nx.innerHTML=html; return; }
+      n.insertAdjacentHTML("afterend",`<span class="nbs" data-for="${esc(uid)}">${html}</span>`);
+    });
+    document.querySelectorAll("img.av[data-uid]").forEach(i=>i.classList.toggle("av-vip",!!BADGES[i.dataset.uid]?.vip));
+  } finally { nbBusy=false; }
+}
+let nbT=0; new MutationObserver(()=>{ if(nbBusy) return; clearTimeout(nbT); nbT=setTimeout(()=>decorateNames(),80); }).observe(document.body,{childList:true,subtree:true});
+function computeEarned(){
+  if(typeof PRED==="undefined") return;
+  const games=Object.fromEntries(S.games.map(g=>[gameKey(g),g]));
+  for(const k in EARNED) delete EARNED[k];
+  PRED.all.forEach(p=>{
+    const g=games[p.game]; if(!g||g.status!=="final"||g.us==null) return;
+    const e=EARNED[p.uid]||(EARNED[p.uid]={called:0,exact:0});
+    const win=g.us>g.them?CUR:g.us<g.them?g.oppAbbr:"";
+    if(p.kind==="pick"){ if(p.pick===win) e.called++; }
+    else if(p.us===g.us&&p.them===g.them) e.exact++;
+  });
+}
+(async()=>{
+  await accReady; if(!ACC.db) return;
+  ACC.db.collection("badges").onSnapshot(s=>{ for(const k in BADGES) delete BADGES[k]; s.docs.forEach(d=>BADGES[d.id]=d.data()); decorateNames(); if(!$("adminView")?.hidden&&typeof renderAdmin==="function") renderAdmin(); },e=>console.warn("badges",e));
+  setInterval(()=>{ computeEarned(); decorateNames(); },15000); setTimeout(()=>{ computeEarned(); decorateNames(); },3000);
+})();
+async function setBadge(uid,key,on){
+  const cur=BADGES[uid]||{};
+  await ACC.db.doc("badges/"+uid).set({...cur,[key]:!!on,updatedAt:nowIso()});
+}
+
+/* ---------- who's watching (live presence) ---------- */
+const PRES={n:0, faces:[], ch:null};
+function presenceHtml(){
+  if(PRES.n<1) return "";
+  const faces=PRES.faces.slice(0,6).map(u=>u?av(u):`<img class="av" src="${BLANK_AV}" alt="">`).join("");
+  return `<div class="presence" title="People on North Huddle right now"><span class="pr-dot"></span><span class="pr-faces">${faces}</span><b class="num">${PRES.n}</b> ${PRES.n===1?"fan":"fans"} here now</div>`;
+}
+function renderPresence(){ document.querySelectorAll(".presence-slot").forEach(s=>s.innerHTML=presenceHtml()); }
+(async()=>{
+  await accReady;
+  const key=ACC.id||("anon-"+Math.random().toString(36).slice(2,10));
+  const ch=NH.sb.channel("presence-site",{config:{presence:{key}}});
+  ch.on("presence",{event:"sync"},()=>{
+    const st=ch.presenceState(), keys=Object.keys(st);
+    PRES.n=keys.length; PRES.faces=keys.filter(k=>!k.startsWith("anon-")); renderPresence();
+  }).subscribe(async s=>{ if(s==="SUBSCRIBED") await ch.track({t:Date.now()}); });
+  PRES.ch=ch;
+})();
+const _renderHomeCM=renderHome;
+renderHome=function(){
+  _renderHomeCM();
+  const up=$("v-home")?.querySelector(".upd-line"); if(up&&!up.querySelector(".presence-slot")){ up.insertAdjacentHTML("beforeend",`<span class="presence-slot"></span>`); renderPresence(); }
+  const gd=$("v-home")?.querySelector(".gameday .gd-top"); if(gd&&!gd.querySelector(".presence-slot")){ gd.insertAdjacentHTML("beforeend",`<span class="presence-slot gd-pres"></span>`); renderPresence(); }
+};
+
+/* ===================== North Huddle: news comments + polls ===================== */
+const nid=h=>{ let x=0; const s=String(h||""); for(let i=0;i<s.length;i++){ x=(x*31+s.charCodeAt(i))|0; } return "n"+(x>>>0).toString(36); };
+
+/* ---------- comments on news ---------- */
+const CMT={all:[], open:null, last:0};
+function cmtFor(id){ return CMT.all.filter(c=>c.nid===id).sort((a,b)=>String(a.t).localeCompare(String(b.t))); }
+const _newsItemT=newsItem;
+newsItem=function(n){
+  const id=nid(n.headline), c=cmtFor(id).length;
+  return `<div class="news-wrap" data-nid="${id}">${_newsItemT(n)}<button class="nc-btn" data-ncom="${id}" data-nhead="${esc(n.headline)}">${ICO_CHAT}<span>${c?`${c} ${c===1?"comment":"comments"}`:"Comment"}</span></button></div>`;
+};
+const ICO_CHAT=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+function openComments(id,head){
+  CMT.open={id,head}; renderComments(); $("sheetBg").hidden=false;
+  setTimeout(()=>$("ncList")&&($("ncList").scrollTop=1e6),30);
+}
+function renderComments(){
+  const o=CMT.open; if(!o) return;
+  const list=cmtFor(o.id), inp=$("ncForm")?.querySelector("input"), keep=inp&&document.activeElement===inp, val=inp?.value||"";
+  $("sheet").innerHTML=`<div class="sheet-head"><div><div class="label">Comments</div><div class="nm nc-title">${esc(o.head)}</div></div><button class="x" id="closeSheet" aria-label="Close">×</button></div>
+    <div class="fc-list nc-list" id="ncList">${list.length?list.map(m=>`<div class="fc-msg${m.uid===ACC.id?" me":""}" data-mid="${esc(m.id)}" data-mcol="comments">${av(m.uid)}<div class="fc-body"><div class="fc-who"><b data-uname="${esc(m.uid)}">${esc(personName(m.uid))}</b> · ${esc(ago(m.t))}${ACC.owner||m.uid===ACC.id?` <button class="fc-del" data-ncdel="${esc(m.id)}" aria-label="Delete comment">×</button>`:""}</div><div class="fc-text">${esc(m.text)}</div></div></div>`).join(""):`<div class="fc-empty">No comments yet. Start the conversation!</div>`}</div>
+    ${ACC.db&&ACC.id?`<form class="chat-in fc-form" id="ncForm">${av(ACC.id,"me")}<input maxlength="400" autocomplete="off" placeholder="Add a comment…" aria-label="Your comment"><button class="tbtn" type="submit">Post</button></form>`:`<button class="btn-gold" data-acct="1">Sign in to comment</button>`}`;
+  const ni=$("ncForm")?.querySelector("input"); if(ni){ ni.value=val; if(keep) ni.focus(); }
+  const l=$("ncList"); if(l) l.scrollTop=l.scrollHeight;
+  if(typeof decorateReactions==="function") decorateReactions($("sheet"));
+}
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-ncom]"); if(b){ e.preventDefault(); openComments(b.dataset.ncom,b.dataset.nhead); return; }
+  const d=e.target.closest("[data-ncdel]"); if(d){ try{ await ACC.db.doc("comments/"+d.dataset.ncdel).delete(); }catch(err){ toast("Couldn't delete."); } }
+  if(e.target.closest("#closeSheet")) CMT.open=null;
+});
+document.addEventListener("submit",async e=>{
+  if(e.target.id!=="ncForm") return; e.preventDefault(); e.stopImmediatePropagation();
+  const i=e.target.querySelector("input"), t=i.value.trim().slice(0,400); if(!t||!CMT.open) return;
+  if(Date.now()-CMT.last<2500) return toast("Slow down a sec.");
+  CMT.last=Date.now(); i.value="";
+  try{ await ACC.db.collection("comments").add({uid:ACC.id, nid:CMT.open.id, head:CMT.open.head.slice(0,140), text:t, t:nowIso()}); }catch(err){ toast("Couldn't post. Try again."); }
+},true);
+(async()=>{
+  await accReady; if(!ACC.db) return;
+  ACC.db.collection("comments").orderBy("t","desc").limit(800).onSnapshot(s=>{
+    CMT.all=s.docs.map(d=>({id:d.id,...d.data()}));
+    document.querySelectorAll("[data-ncom]").forEach(b=>{ const c=cmtFor(b.dataset.ncom).length; b.querySelector("span").textContent=c?`${c} ${c===1?"comment":"comments"}`:"Comment"; });
+    if(CMT.open&&!$("sheetBg").hidden) renderComments();
+  },e=>console.warn("comments",e));
+})();
+
+/* ---------- polls ---------- */
+// polls/<id> = {q, options:[...], open:bool, t}   (admin only)   votes/<pollId>__<uid> = {uid, poll, choice}
+const POLL={polls:[], votes:[]};
+function curPoll(){ return POLL.polls.filter(p=>p.open!==false).sort((a,b)=>String(b.t).localeCompare(String(a.t)))[0]||POLL.polls.slice().sort((a,b)=>String(b.t).localeCompare(String(a.t)))[0]||null; }
+function pollHtml(){
+  const p=curPoll(); if(!p) return "";
+  const vs=POLL.votes.filter(v=>v.poll===p.id), mine=vs.find(v=>v.uid===ACC.id)?.choice, total=vs.length;
+  const showRes=mine!=null||p.open===false||!ACC.id;
+  const opts=(p.options||[]).map((o,i)=>{ const n=vs.filter(v=>v.choice===i).length, pct=total?Math.round(n/total*100):0;
+    return `<button class="pl-opt${mine===i?" mine":""}" data-vote="${esc(p.id)}" data-choice="${i}" ${p.open===false||!ACC.id?"disabled":""}>${showRes?`<span class="pl-bar" style="width:${pct}%"></span>`:""}<span class="pl-txt">${esc(o)}</span>${showRes?`<span class="num pl-pct">${pct}%</span>`:""}</button>`; }).join("");
+  return `<section class="card poll-card" id="pollCard" style="order:7"><div class="pred-head"><div><div class="label">Fan poll${p.open===false?" · closed":""}</div><div class="t1">${esc(p.q)}</div></div></div>${opts}
+    <div class="t2">${total} ${total===1?"vote":"votes"}${!ACC.id&&p.open!==false?' · <button class="linkish" data-acct="1">Sign in to vote</button>':mine!=null&&p.open!==false?" · tap another answer to change":""}</div></section>`;
+}
+function placePoll(){ const el=$("v-home"); el?.querySelector("#pollCard")?.remove(); const h=pollHtml(); if(!h) return; const a=el.querySelector("#predCard")||el.querySelector(".sb-row")||el.querySelector(".upd-line"); a?.insertAdjacentHTML("afterend",h); }
+const _renderHomeT=renderHome;
+renderHome=function(){ _renderHomeT(); if(S.meta) placePoll(); };
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-vote]"); if(!b||b.disabled) return;
+  if(!ACC.db||!ACC.id) return openAcct();
+  try{ await ACC.db.doc(`votes/${b.dataset.vote}__${ACC.id}`).set({uid:ACC.id, poll:b.dataset.vote, choice:Number(b.dataset.choice), t:nowIso()}); }catch(err){ toast("Couldn't save your vote."); }
+});
+(async()=>{
+  await accReady; if(!ACC.db) return;
+  ACC.db.collection("polls").onSnapshot(s=>{ POLL.polls=s.docs.map(d=>({id:d.id,...d.data()})); if(S.tab==="home") placePoll(); if(!$("adminView")?.hidden&&ADM.tab==="polls") renderAdmin(); },e=>console.warn("polls",e));
+  ACC.db.collection("votes").orderBy("t","desc").limit(1000).onSnapshot(s=>{ POLL.votes=s.docs.map(d=>({id:d.id,...d.data()})); if(S.tab==="home") placePoll(); if(!$("adminView")?.hidden&&ADM.tab==="polls") renderAdmin(); },e=>console.warn("votes",e));
+})();
+
 /* ===================== North Huddle: admin page (site owner only) ===================== */
 const ADM={tab:"members", users:[], chat:[], leagues:[], loading:false, err:"", arm:null};
 function admDate(t){ return t?fmtDate(t,{month:"short",day:"numeric",year:"numeric"}):"—"; }
@@ -3971,7 +4167,8 @@ function admMembers(){
   const chatDay=ADM.chat.filter(m=>now-Date.parse(m.t)<864e5).length;
   const stats=`<div class="adm-stats">${[["Members",real.length],["New this week",newWk],["Active this week",act],["Chats today",chatDay]].map(([l,v])=>`<div class="adm-stat"><b class="num">${v}</b><span>${l}</span></div>`).join("")}</div>`;
   const rows=real.map(u=>`<div class="row adm-user">${admAv(u)}<div class="grow"><div class="t1">${esc(u.name||"(no name)")}${u.is_admin?' <span class="chip pos">ADMIN</span>':""}${u.banned?' <span class="chip live">BANNED</span>':""}</div>
-      <div class="t2">${esc(u.email)}</div><div class="t2">Joined ${esc(admDate(u.created_at))} · Last visit ${esc(admAgo(u.last_sign_in_at))}</div></div>
+      <div class="t2">${esc(u.email)}</div><div class="t2">Joined ${esc(admDate(u.created_at))} · Last visit ${esc(admAgo(u.last_sign_in_at))}</div>
+      <div class="adm-badges"><span class="t2">Badges:</span>${[["vip","VIP"],["donor","Donor"]].map(([k,l])=>`<button class="adm-bt${(typeof BADGES!=="undefined"&&BADGES[u.id]?.[k])?" on":""}" data-admbadge="${k}" data-uid="${esc(u.id)}" aria-pressed="${!!(typeof BADGES!=="undefined"&&BADGES[u.id]?.[k])}">${k==="vip"?ICO_STAR:ICO_HEART}${l}</button>`).join("")}</div></div>
       ${u.is_admin?"":u.banned?`<button class="tbtn" data-adm-unban="${esc(u.id)}">Unban</button>`:admArm("ban:"+u.id,"Ban")}</div>`).join("");
   return stats+`<h2>Members</h2><div class="list">${rows||`<div class="card empty">No members yet. Share the site link with friends!</div>`}</div>
     <div class="foot">Banned members can still view the site but can't chat, post or play. To delete an account completely, use Supabase → Authentication → Users.</div>`;
@@ -3986,6 +4183,25 @@ function admLeagues(){
       <div class="adm-chips">${(L.members||[]).map(u=>`<span class="chip">${esc(L.teams?.[u]?.name||admName(u))} · ${esc(admName(u))}</span>`).join("")}</div></div>`).join("");
   return `<h2>Fantasy leagues</h2>${rows||`<div class="card empty">No leagues yet.</div>`}`;
 }
+function admPolls(){
+  const ps=(typeof POLL!=="undefined"?POLL.polls:[]).slice().sort((a,b)=>String(b.t).localeCompare(String(a.t)));
+  const form=`<form class="card adm-pollf" id="admPollForm"><div class="t1">New poll</div><input name="q" maxlength="120" placeholder="Question, e.g. Who's the MVP so far?" required>
+    ${[1,2,3,4].map(i=>`<input name="o${i}" maxlength="60" placeholder="Answer ${i}${i>2?" (optional)":""}" ${i<=2?"required":""}>`).join("")}
+    <button class="btn-gold" type="submit">Post poll</button><div class="t2">New polls show on everyone's Home page. Posting a new one replaces the current poll there.</div></form>`;
+  const list=ps.map(p=>{ const vs=POLL.votes.filter(v=>v.poll===p.id), tot=vs.length;
+    return `<div class="card adm-lg"><div class="adm-lg-h"><div><div class="t1">${esc(p.q)}</div><div class="t2">${tot} votes · ${p.open===false?"Closed":"Open"} · ${esc(admDate(p.t))}</div></div>${admArm("poll:"+p.id,"Delete")}</div>
+      ${(p.options||[]).map((o,i)=>{ const n=vs.filter(v=>v.choice===i).length; return `<div class="t2">${esc(o)}: <b>${n}</b>${tot?` (${Math.round(n/tot*100)}%)`:""}</div>`; }).join("")}
+      <button class="tbtn" data-pollopen="${esc(p.id)}" data-open="${p.open===false?"1":"0"}">${p.open===false?"Reopen":"Close voting"}</button></div>`; }).join("");
+  return form+`<h2>Polls</h2>`+(list||`<div class="card empty">No polls yet.</div>`);
+}
+document.addEventListener("submit",async e=>{
+  if(e.target.id!=="admPollForm") return; e.preventDefault(); e.stopImmediatePropagation();
+  const f=e.target, q=f.q.value.trim(), options=[f.o1,f.o2,f.o3,f.o4].map(x=>x.value.trim()).filter(Boolean);
+  if(!q||options.length<2) return toast("Add a question and at least two answers.");
+  try{ for(const p of POLL.polls.filter(p=>p.open!==false)) await ACC.db.doc("polls/"+p.id).update({open:false});
+    await ACC.db.collection("polls").add({q, options, open:true, t:nowIso()}); f.reset(); toast("Poll posted!"); }catch(err){ toast("Couldn't post the poll."); }
+},true);
+document.addEventListener("click",async e=>{ const b=e.target.closest("[data-pollopen]"); if(!b) return; try{ await ACC.db.doc("polls/"+b.dataset.pollopen).update({open:b.dataset.open==="1"}); }catch(err){ toast("Couldn't update the poll."); } });
 function renderAdmin(){
   const ov=$("adminView"); if(!ov) return;
   const body=ov.querySelector(".adm-body");
@@ -3993,14 +4209,14 @@ function renderAdmin(){
   if(ADM.loading&&!ADM.users.length){ body.innerHTML=skelRows(5); return; }
   if(ADM.err==="setup"){ body.innerHTML=`<div class="card"><b>One-time setup needed.</b><p class="acct-p">Open github.com/TheOldMan21/north-huddle/blob/main/supabase/admin.sql, copy it, and run it in Supabase → SQL Editor → New query. Then tap Refresh.</p></div>`; return; }
   if(ADM.err){ body.innerHTML=`<div class="card empty">Couldn't load: ${esc(ADM.err)}</div>`; return; }
-  body.innerHTML=ADM.tab==="members"?admMembers():ADM.tab==="chat"?admChat():admLeagues();
+  body.innerHTML=ADM.tab==="members"?admMembers():ADM.tab==="chat"?admChat():ADM.tab==="polls"?admPolls():admLeagues();
 }
 function openAdmin(){
   let ov=$("adminView");
   if(!ov){
     ov=document.createElement("div"); ov.id="adminView"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Admin");
     ov.innerHTML=`<div class="adm-top"><div class="adm-title">Admin</div><button class="tbtn" data-adm-refresh="1">Refresh</button><button class="x" data-adm-close="1" aria-label="Close">×</button></div>
-      <div class="auth-seg adm-tabs" role="group"><button data-adm-tab="members">Members</button><button data-adm-tab="chat">Chat</button><button data-adm-tab="leagues">Leagues</button></div>
+      <div class="auth-seg adm-tabs" role="group"><button data-adm-tab="members">Members</button><button data-adm-tab="chat">Chat</button><button data-adm-tab="leagues">Leagues</button><button data-adm-tab="polls">Polls</button></div>
       <div class="adm-body"></div>`;
     document.body.appendChild(ov);
   }
@@ -4015,11 +4231,13 @@ document.addEventListener("click",async e=>{
   const tab=t.closest("[data-adm-tab]"); if(tab){ ADM.tab=tab.dataset.admTab; ADM.arm=null; renderAdmin(); return; }
   const arm=t.closest("[data-adm-arm]"); if(arm){ ADM.arm=arm.dataset.admArm; renderAdmin(); setTimeout(()=>{ if(ADM.arm===arm.dataset.admArm){ ADM.arm=null; renderAdmin(); } },4000); return; }
   const un=t.closest("[data-adm-unban]"); if(un){ const {error}=await NH.sb.from("banned").delete().eq("uid",un.dataset.admUnban); toast(error?"Couldn't unban.":"Member unbanned."); admLoad(); return; }
+  const bd=t.closest("[data-admbadge]"); if(bd){ const k=bd.dataset.admbadge, uid=bd.dataset.uid, on=!BADGES[uid]?.[k]; try{ await setBadge(uid,k,on); toast(`${k==="vip"?"VIP":"Donor"} badge ${on?"added":"removed"}.`); }catch(err){ toast("Couldn't change the badge."); } return; }
   const go=t.closest("[data-adm-go]"); if(!go) return;
   const [kind,id]=go.dataset.admGo.split(/:(.+)/); ADM.arm=null;
   try{
     if(kind==="ban"){ const {error}=await NH.sb.from("banned").insert({uid:id}); if(error) throw error; toast("Member banned."); }
     else if(kind==="msg"){ await ACC.db.doc("chat/"+id).delete(); toast("Message deleted."); }
+    else if(kind==="poll"){ await ACC.db.doc("polls/"+id).delete(); toast("Poll deleted."); }
     else if(kind==="lg"){ const ch=await ACC.db.collection("leagues/"+id+"/chat").get(); for(const d of ch.docs) await ACC.db.doc("leagues/"+id+"/chat/"+d.id).delete(); await ACC.db.doc("leagues/"+id).delete(); toast("League deleted."); }
   }catch(err){ toast("Couldn't do that: "+(err?.message||err)); }
   admLoad();
