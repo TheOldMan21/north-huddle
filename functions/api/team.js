@@ -183,7 +183,16 @@ export async function onRequest(ctx) {
     },
     games, players, depth: depthOut, injuries, news: newsOut, videos: []
   };
-  if (debug) return new Response(JSON.stringify({ dbg: DBG, depth: depthOut.length, players: players.length }), { headers: { "content-type": "application/json" } });
+  if (debug) {
+    const cands = [`${A}/teams/${tid}/depthcharts`, `https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/teams/${tid}/depthcharts`,
+      `https://site.web.api.espn.com/apis/common/v3/sports/football/nfl/statistics/byathlete?team=${tid}&limit=60`,
+      `https://site.web.api.espn.com/apis/site/v3/sports/football/nfl/teams/${tid}/leaders`, `${A}/teams/${ea}?enable=stats`,
+      `https://site.web.api.espn.com/apis/v2/sports/football/nfl/teams/${tid}/depthcharts`];
+    const res = [];
+    for (const c of cands) { try { const r = await fetch(c, { headers: H }); const t = await r.text(); res.push([c, r.status, t.length, t.slice(0, 160)]); } catch (e) { res.push([c, "err"]); } }
+    return new Response(JSON.stringify({ dbg: DBG, cands: res }), { headers: { "content-type": "application/json" } });
+  }
+  if (false) return new Response(JSON.stringify({ dbg: DBG, depth: depthOut.length, players: players.length }), { headers: { "content-type": "application/json" } });
   const resp = new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" } });
   ctx.waitUntil(cache.put(key, new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=600" } })));
   return resp;
