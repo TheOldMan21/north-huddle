@@ -14,20 +14,21 @@ jobs:
           S="https://north-huddle.pages.dev"
           S="https://north-huddle.pages.dev"
           sleep 90
-          curl -s -m 30 "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873014" -o sum.json
-          curl -s -m 30 "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=50" -o news.json
           curl -s -m 30 "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard" -o sb.json
+          E=$(python3 -c "import json;print(json.load(open('sb.json'))['events'][0]['id'])")
+          curl -s -m 30 "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=$E" -o sum.json
+          curl -s -m 30 "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week=7&dates=2026" -o sb7.json
           python3 - <<'PY' > stat.txt
           import json
+          sb=json.load(open("sb.json")); e=sb["events"][0]; h=e["competitions"][0].get("headlines",[])
+          print("event", e["id"], e["name"])
+          for x in h: v=x.get("video") or []; print("headline video", type(v).__name__, json.dumps(v)[:900])
           s=json.load(open("sum.json")); v=s.get("videos",[])
           print("summary videos", len(v))
-          for x in v[:4]: print(json.dumps({k:x.get(k) for k in ["id","headline","description","duration","thumbnail","originalPublishDate"]}), "| links:", list((x.get("links") or {}).keys()), (x.get("links") or {}).get("web",{}).get("href"), "| src:", list(((x.get("links") or {}).get("source") or {}).keys()))
-          n=json.load(open("news.json")); m=[a for a in n.get("articles",[]) if a.get("type")=="Media"]
-          print("news media", len(m), "of", len(n.get("articles",[])))
-          for a in m[:5]: print(a.get("headline"), "|", a.get("published"), "|", (a.get("images") or [{}])[0].get("url"), "|", (a.get("links") or {}).get("web",{}).get("href"), "| cats:", [c.get("description") for c in a.get("categories",[])][:4], "| dur", a.get("duration"))
-          sb=json.load(open("sb.json")); 
-          for e in sb.get("events",[])[:2]:
-              c=e["competitions"][0]; print("sb headlines keys", [ (h.get("type"), h.get("shortLinkText"), list(h.keys())) for h in c.get("headlines",[])][:2])
+          for x in v[:6]: print(json.dumps({k:x.get(k) for k in ["id","headline","duration","thumbnail","originalPublishDate"]})[:400], "| web:", (x.get("links") or {}).get("web",{}).get("href"), "| src keys:", list(((x.get("links") or {}).get("source") or {}).keys())[:6])
+          s7=json.load(open("sb7.json")); 
+          for e in s7.get("events",[])[:3]:
+              h=e["competitions"][0].get("headlines",[]); print("wk7", e["id"], [len(x.get("video") or []) for x in h])
           PY
           ls -la
       - name: Commit
