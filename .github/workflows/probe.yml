@@ -13,9 +13,19 @@ jobs:
           mkdir -p out && cd out
           S="https://north-huddle.pages.dev"
           S="https://north-huddle.pages.dev"
-          sleep 100
-          curl -s -m 60 "$S/api/team?abbr=MIN" | python3 -c "import json,sys;d=json.load(sys.stdin);print(json.dumps([(n['source'],n.get('image','')[:90]) for n in d.get('news',[])[:5]],indent=0))" > team_news.txt
-          for u in "https://www.vikings.com/news/" "https://www.cbssports.com/nfl/teams/MIN/minnesota-vikings/" "https://www.espn.com/nfl/team/_/name/min/minnesota-vikings"; do echo "$u" >> thumbs.txt; curl -s -m 30 -o /dev/null -w "%{http_code} %{redirect_url}\n" "$S/api/thumb?u=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1],safe=''))" "$u")" >> thumbs.txt; done
+          curl -s -m 60 "$S/api/scores?event=401873014&team=MIN" -o ev.json
+          curl -s -m 60 "$S/api/scores?team=MIN" -o cur.json
+          curl -s -m 60 "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873014" -o sum.json
+          python3 - <<'PY' > box.txt
+          import json
+          for f in ["ev.json","cur.json"]:
+              d=json.load(open(f)); fo=d.get("focus") or {}
+              print(f, "week",d.get("week"),"focus id",fo.get("id"),"box teams",[ (b["team"],{k:len(v["rows"]) for k,v in b["cats"].items()}) for b in fo.get("box",[])])
+          s=json.load(open("sum.json"))
+          for t in s.get("boxscore",{}).get("players",[]):
+              print(t["team"].get("abbreviation"), [(st.get("name"), st.get("labels"), len(st.get("athletes",[]))) for st in t.get("statistics",[])][:4])
+          print("teams stats keys", [ [x.get("name") for x in t.get("statistics",[])][:5] for t in s.get("boxscore",{}).get("teams",[])])
+          PY
           ls -la
       - name: Commit
         run: |
