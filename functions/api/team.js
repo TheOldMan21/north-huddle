@@ -45,11 +45,13 @@ export async function onRequest(ctx) {
 
   // ---- roster lookup ----
   const R = {}; // espn athlete id -> {name, pos, jersey, unit, status}
+  const photos = {}; // player name -> headshot url
   const injuries = [];
   for (const g of roster?.athletes || []) {
     const unit = g.position === "offense" ? "offense" : g.position === "defense" ? "defense" : g.position === "specialTeam" ? "special" : "";
     for (const a of g.items || []) {
       const inj = (a.injuries || [])[0];
+      if (a.headshot?.href && a.displayName) photos[a.displayName] = a.headshot.href;
       let status = inj?.status || (g.position === "injuredReserveOrOut" ? "Injured reserve" : "");
       if (/^IR$|reserve/i.test(status)) status = "Injured reserve";
       if (!R[a.id]) R[a.id] = { name: a.displayName, pos: a.position?.abbreviation || "", jersey: a.jersey ? Number(a.jersey) : null, unit, status };
@@ -136,7 +138,7 @@ export async function onRequest(ctx) {
       alert: alertItem?.headline || "", alertAt: alertItem?.published || "",
       statsAsOf: lastFinal ? "Week " + lastFinal.week : "", depthAsOf: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/Chicago" })
     },
-    games, players, depth: depthOut, injuries, news: newsOut, videos: []
+    games, players, depth: depthOut, injuries, news: newsOut, videos: [], photos
   };
   const resp = new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" } });
   ctx.waitUntil(cache.put(key, new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=600" } })));

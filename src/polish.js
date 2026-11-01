@@ -88,3 +88,34 @@ openAcct=function(){
 };
 const _renderHomeIB=renderHome; renderHome=function(){ _renderHomeIB(); installButtons(); };
 setTimeout(installButtons,1200);
+
+/* ---------- Starters on the field: player photos in place of the helmet ---------- */
+let PHOTO_MODE=(()=>{ try{ return localStorage.getItem("nh_fieldphotos")!=="0"; }catch(e){ return true; } })();
+function photoFor(name){
+  const ph=QUICK[CUR]?.photos; if(!ph||!name) return "";
+  if(ph[name]) return ph[name];
+  const k=nmz(name); for(const n in ph) if(nmz(n)===k) return ph[n];
+  const lastOf=s=>String(s).toLowerCase().replace(/\b(jr|sr|ii|iii|iv)\b\.?/g,"").trim().split(/\s+/).pop().replace(/[^a-z]/g,"");
+  const last=lastOf(name); const hits=Object.keys(ph).filter(n=>lastOf(n)===last&&nmz(n)[0]===k[0]); return hits.length===1?ph[hits[0]]:"";
+}
+const _fieldSvgPH=fieldSvg;
+fieldSvg=function(unit){
+  let h=_fieldSvgPH(unit); if(!h) return h;
+  const hasPhotos=QUICK[CUR]?.photos&&Object.keys(QUICK[CUR].photos).length;
+  const toggle=hasPhotos?`<div class="fp-toggle auth-seg" role="group" aria-label="Player view"><button data-fieldph="1" aria-pressed="${PHOTO_MODE}">Photos</button><button data-fieldph="0" aria-pressed="${!PHOTO_MODE}">Figures</button></div>`:"";
+  if(!hasPhotos||!PHOTO_MODE) return toggle+h;
+  const c1=(TEAM[CUR]||["#4F2683","#FFC62F"])[0], c2=(TEAM[CUR]||["#4F2683","#FFC62F"])[1];
+  let n=0, defs="";
+  h=h.replace(/(<g class="pl([^"]*)" data-pname="([^"]+)"[^>]*tabindex="0"[^>]*><g class="fig" transform="translate\([^)]*\)">)([\s\S]*?)<text class="pos[^"]*"[^>]*>([^<]*)<\/text>/g,(m,open,cls,nameEsc,fig,num)=>{
+    const name=nameEsc.replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"'), src=photoFor(name); if(!src) return m;
+    const id="fph"+(n++), R=14.5, cy=-6; defs+=`<clipPath id="${id}"><circle cx="0" cy="${cy}" r="${R}"/></clipPath>`;
+    const hurt=/hurt/.test(cls);
+    const isNum=/^\d+$/.test(num.trim());
+    return open+`<circle class="hs-ring" cx="0" cy="${cy}" r="${R+2}" fill="${hurt?"var(--hurt)":c2}"/><circle cx="0" cy="${cy}" r="${R}" fill="${c1}"/>`
+      +`<image href="${esc(src)}" x="${-R*1.75}" y="${cy-R-1}" width="${R*3.5}" height="${R*2.55}" preserveAspectRatio="xMidYMin slice" clip-path="url(#${id})"/>`
+      +`<circle cx="${R*0.78}" cy="${cy+R*0.78}" r="6.2" fill="${c1}" stroke="${c2}" stroke-width="1.2"/><text class="hs-no" x="${R*0.78}" y="${cy+R*0.78}">${esc(num)}</text>`;
+  });
+  if(defs) h=h.replace(/(<svg viewBox="0 0 360 \d+"[^>]*>)/,`$1<defs>${defs}</defs>`);
+  return toggle+h;
+};
+document.addEventListener("click",e=>{ const b=e.target.closest("[data-fieldph]"); if(!b) return; PHOTO_MODE=b.dataset.fieldph==="1"; try{ localStorage.setItem("nh_fieldphotos",PHOTO_MODE?"1":"0"); }catch(err){} renderDepth(); });

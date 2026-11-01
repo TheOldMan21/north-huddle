@@ -471,3 +471,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .acct-install img{width:42px;height:42px;border-radius:10px;flex:none}
 .acct-install .grow{display:flex;flex-direction:column;gap:2px}
 .inst-steps{margin:4px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:15.5px;line-height:1.45}
+.fp-toggle{margin:0 0 8px auto;width:max-content}
+.field-wrap image{pointer-events:none}
+.hs-no{font:700 7.5px "Barlow Condensed",system-ui;fill:#fff;text-anchor:middle;dominant-baseline:central}
+.pl:focus-visible .hs-ring,.pl:hover .hs-ring{stroke:#fff;stroke-width:1.5}
