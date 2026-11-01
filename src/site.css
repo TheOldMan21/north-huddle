@@ -530,3 +530,24 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 #teamBtn:active{transform:scale(.97)}
 #teamBtn[aria-expanded="true"] .chev-d{transform:rotate(180deg)}
 @media (max-width:440px){#teamBtn{padding:5px 8px 5px 5px}#teamBtn .nh-mark{width:26px;height:26px}}
+/* header layout: phones = logo button + icons on one row, search below; computers = logo | centered search | icons */
+header.top>.brand{flex:0 1 auto;min-width:0}
+header.top>.hdr-right{flex:0 0 auto;margin-left:auto}
+#teamBtn{min-width:0;overflow:hidden}
+#teamBtn #brandName,#teamBtn .hubw{white-space:nowrap}
+@media (max-width:520px){
+  header.top{column-gap:6px}
+  #teamBtn{font-size:16px;gap:4px;padding:4px 7px 4px 4px}
+  #teamBtn .nh-mark{width:24px;height:24px}
+  #teamBtn .chev-d{width:17px;height:17px}
+  .hdr-right{gap:5px}
+  .hdr-right .refresh,.hdr-right .acct,.hdr-right #acctBtn{width:32px;height:32px;padding:0}
+  .hdr-right .refresh svg{width:15px;height:15px}
+}
+@media (max-width:360px){ #teamBtn{font-size:14px} #teamBtn .nh-mark{width:20px;height:20px} .hdr-right .refresh,.hdr-right #acctBtn{width:30px;height:30px} }
+@media (min-width:900px){
+  header.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,640px) minmax(0,1fr);align-items:center;column-gap:20px}
+  header.top>.brand{grid-column:1;grid-row:1;justify-self:start}
+  header.top>.hsearch{grid-column:2;grid-row:1;flex-basis:auto;width:100%;max-width:none;margin:0}
+  header.top>.hdr-right{grid-column:3;grid-row:1;justify-self:end;margin-left:0}
+}
