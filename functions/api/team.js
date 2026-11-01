@@ -121,7 +121,7 @@ export async function onRequest(ctx) {
     const teams = (a.categories || []).filter((c) => c.type === "team").map((c) => String(c.teamId || c.team?.id || ""));
     if (!teams.includes(String(tid)) || teams.length > 3 || a.type === "Media") continue;
     const href = a.links?.web?.href; if (!href) continue;
-    newsOut.push({ id: slug(a.headline).slice(0, 60), headline: a.headline, summary: "", date: a.published, source: "ESPN", url: href });
+    newsOut.push({ id: slug(a.headline).slice(0, 60), headline: a.headline, summary: "", date: a.published, source: "ESPN", url: href, image: (a.images || []).find((i) => i.url && (i.type === "header" || i.type === "Media"))?.url || a.images?.[0]?.url || "" });
     if (newsOut.length >= 15) break;
   }
   const alertItem = (news?.articles || []).find((a) => a.type === "HeadlineNews" && (a.categories || []).some((c) => c.type === "team" && String(c.teamId) === String(tid)));

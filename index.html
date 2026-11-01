@@ -3421,6 +3421,11 @@ header.top{flex-wrap:wrap;row-gap:10px}
 .wpv-list{flex:1;overflow-y:auto;padding:10px 12px;max-height:none}
 .wpv-in{padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 @media (orientation:portrait) and (max-width:820px){#wpv{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.wpv-game{max-height:55vh}.wpv-score b{font-size:40px}}
+/* news thumbnails */
+.news-item.nt{display:grid;grid-template-columns:minmax(0,1fr) 104px;column-gap:12px;row-gap:4px;align-items:start}
+.news-item.nt>*:not(.nthumb){grid-column:1}
+.nthumb{grid-column:2;grid-row:1 / span 4;width:104px;height:72px;object-fit:cover;border-radius:10px;background:var(--surface-2);align-self:center}
+@media(min-width:900px){.news-item.nt{grid-template-columns:minmax(0,1fr) 140px}.nthumb{width:140px;height:92px}}
 
 </style>
 <script>
@@ -4217,6 +4222,20 @@ renderHome=function(){
   _renderHomeCM();
   const up=$("v-home")?.querySelector(".upd-line"); if(up&&!up.querySelector(".presence-slot")){ up.insertAdjacentHTML("beforeend",`<span class="presence-slot"></span>`); renderPresence(); }
   const gd=$("v-home")?.querySelector(".gameday .gd-top"); if(gd&&!gd.querySelector(".presence-slot")){ gd.insertAdjacentHTML("beforeend",`<span class="presence-slot gd-pres"></span>`); renderPresence(); }
+};
+
+/* ===================== North Huddle: news thumbnails ===================== */
+// ESPN stories carry their own photo; for other sources /api/thumb finds the article's preview image.
+function newsThumb(n){
+  if(n.image) return n.image;
+  if(n.url&&/^https?:\/\//.test(n.url)) return "/api/thumb?u="+encodeURIComponent(n.url);
+  return "";
+}
+const _newsItemTH=newsItem;
+newsItem=function(n){
+  const h=_newsItemTH(n), src=newsThumb(n); if(!src) return h;
+  const img=`<img class="nthumb" src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.closest('.news-item')?.classList.remove('nt');this.remove()">`;
+  return h.replace('class="news-item"','class="news-item nt"').replace(/(<\/a>|<\/div>)\s*$/, img+"$1");
 };
 
 /* ===================== North Huddle: news comments + polls ===================== */
