@@ -456,3 +456,10 @@ img.av{object-fit:cover}
 .hl-box{margin-left:auto}
 .hl-card{display:flex;flex-direction:column;gap:10px}
 @media(min-width:900px){.hl-vid{flex-basis:230px}}
+/* page background: soft header glow + faint yard lines with edge hash marks (cards stay solid) */
+body{background:linear-gradient(180deg,color-mix(in srgb,var(--purple) 22%,var(--bg)) 0,var(--bg) 420px) no-repeat,var(--bg);isolation:isolate}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0 118px,color-mix(in srgb,var(--fg) 7%,transparent) 118px 120px),
+  repeating-linear-gradient(0deg,transparent 0 22px,color-mix(in srgb,var(--fg) 9%,transparent) 22px 24px) left 6px top 0/10px 100% no-repeat,
+  repeating-linear-gradient(0deg,transparent 0 22px,color-mix(in srgb,var(--fg) 9%,transparent) 22px 24px) right 6px top 0/10px 100% no-repeat}
+@media print{body::before{display:none}}
