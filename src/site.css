@@ -475,3 +475,9 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .field-wrap image{pointer-events:none}
 .hs-no{font:700 7.5px "Barlow Condensed",system-ui;fill:#fff;text-anchor:middle;dominant-baseline:central}
 .pl:focus-visible .hs-ring,.pl:hover .hs-ring{stroke:#fff;stroke-width:1.5}
+/* realistic figure details */
+.pl .belt{fill:var(--shoe);opacity:.75}
+.pl .pstripe{fill:none;stroke:var(--purple);stroke-width:1;stroke-linecap:round;opacity:.9}
+.pl .shade{fill:rgba(0,0,0,.18);pointer-events:none}
+.pl .collar{fill:none;stroke:var(--gold);stroke-width:1.1;stroke-linejoin:round}
+.pl .shoe{stroke:rgba(255,255,255,.35);stroke-width:.4}

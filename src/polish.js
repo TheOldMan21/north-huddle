@@ -120,3 +120,26 @@ fieldSvg=function(unit){
   return toggle+h;
 };
 document.addEventListener("click",e=>{ const b=e.target.closest("[data-fieldph]"); if(!b) return; PHOTO_MODE=b.dataset.fieldph==="1"; try{ localStorage.setItem("nh_fieldphotos",PHOTO_MODE?"1":"0"); }catch(err){} renderDepth(); });
+
+/* ---------- more realistic player bodies (same injury zones: head, torso, arms, hands, thighs, knees, shins) ---------- */
+figureSvg=function(parts){
+  const c=(name,base)=>`class="${base}${parts.has(name)?" injured":""}"`;
+  const leg=(s,k)=>`
+    <path ${c("thigh"+s,"pant")} d="M${k*0.4} 4.6 L${k*7.9} 4.6 C${k*8.3} 7.6 ${k*7.6} 10.6 ${k*6.9} 12.6 L${k*2.1} 12.6 C${k*1.3} 10 ${k*0.5} 7.4 ${k*0.4} 4.6 Z"/>
+    <path class="pstripe" d="M${k*7.6} 5.2 C${k*7.9} 8 ${k*7.4} 10.4 ${k*6.8} 12.3"/>
+    <rect ${c("knee"+s,"kneepad")} x="${k>0?1.9:-6.9}" y="11.4" width="5" height="3.4" rx="1.6"/>
+    <path ${c("shin"+s,"sock")} d="M${k*2.1} 14.4 L${k*6.7} 14.4 C${k*7.3} 16 ${k*6.9} 18.6 ${k*6.1} 20.6 L${k*2.7} 20.6 C${k*2.2} 18.6 ${k*1.8} 16.2 ${k*2.1} 14.4 Z"/>
+    <path ${c("shin"+s,"shoe")} d="M${k*2.2} 20.2 L${k*6.4} 20.2 C${k*7.6} 20.4 ${k*8.6} 21.4 ${k*8.4} 22.6 L${k*1.8} 22.8 C${k*1.6} 21.8 ${k*1.7} 20.8 ${k*2.2} 20.2 Z"/>`;
+  const arm=(s,k)=>`
+    <path ${c("arm"+s,"sleeve")} d="M${k*9.6} -7 C${k*12.4} -6.8 ${k*14.2} -4.8 ${k*14.6} -1.8 L${k*14.9} 2.4 C${k*14.8} 4.8 ${k*14.2} 6.6 ${k*13.6} 8 L${k*10.8} 8 C${k*10.8} 6.2 ${k*10.9} 4.2 ${k*10.6} 2.6 L${k*9.4} -1.4 Z"/>
+    <path ${c("hand"+s,"glove")} d="M${k*10.7} 7.6 L${k*13.7} 7.6 C${k*14.2} 8.6 ${k*14.1} 10.4 ${k*13} 11 C${k*12.2} 11.4 ${k*11.2} 10.8 ${k*10.9} 9.8 Z"/>`;
+  return `${leg("R",-1)}${leg("L",1)}${arm("R",-1)}${arm("L",1)}
+    <rect class="belt" x="-7.6" y="3.8" width="15.2" height="1.6" rx=".6"/>
+    <path ${c("torso","jer")} d="M-12.8 -6.4 C-13 -10.4 -10.2 -12.6 -6.2 -12.8 L-2.6 -12.8 L0 -10.6 L2.6 -12.8 L6.2 -12.8 C10.2 -12.6 13 -10.4 12.8 -6.4 L11.2 -2.6 L8.4 -1.8 L7.8 4.4 L-7.8 4.4 L-8.4 -1.8 L-11.2 -2.6 Z"/>
+    <path class="shade" d="M-8.4 -1.8 L-7.8 4.4 L-5.6 4.4 L-6.6 -2.4 Z M8.4 -1.8 L7.8 4.4 L5.6 4.4 L6.6 -2.4 Z"/>
+    <path class="collar" d="M-2.6 -12.6 L0 -10.4 L2.6 -12.6"/>
+    <path class="shade" d="M-12.8 -6.4 C-12.6 -4.6 -12 -3.4 -11.2 -2.6 L-8.4 -1.8 L-9.4 -5 Z M12.8 -6.4 C12.6 -4.6 12 -3.4 11.2 -2.6 L8.4 -1.8 L9.4 -5 Z"/>
+    <path ${c("head","helm")} d="M-6 -13.4 C-6.8 -20.6 -3.6 -23.2 0 -23.2 C3.6 -23.2 6.8 -20.6 6 -13.4 C5.8 -11.8 4 -10.6 0 -10.6 C-4 -10.6 -5.8 -11.8 -6 -13.4 Z"/>
+    <rect class="stripe${parts.has("head")?" injured-stripe":""}" x="-0.8" y="-23" width="1.6" height="6.2" rx="0.8"/>
+    <path class="mask" d="M-4.2 -15.4 L4.2 -15.4 M-3.8 -13.3 L3.8 -13.3 M0 -15.4 L0 -11"/>`;
+};
