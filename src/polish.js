@@ -106,14 +106,15 @@ fieldSvg=function(unit){
   if(!hasPhotos||!PHOTO_MODE) return toggle+h;
   const c1=(TEAM[CUR]||["#4F2683","#FFC62F"])[0], c2=(TEAM[CUR]||["#4F2683","#FFC62F"])[1];
   let n=0, defs="";
-  h=h.replace(/(<g class="pl([^"]*)" data-pname="([^"]+)"[^>]*tabindex="0"[^>]*><g class="fig" transform="translate\([^)]*\)">)([\s\S]*?)<text class="pos[^"]*"[^>]*>([^<]*)<\/text>/g,(m,open,cls,nameEsc,fig,num)=>{
+  // keep the body (so injured body parts still light up red) and put the player's headshot where the helmet was
+  h=h.replace(/(<g class="pl([^"]*)" data-pname="([^"]+)"[^>]*tabindex="0"[^>]*><g class="fig" transform="translate\([^)]*\)">)([\s\S]*?)(<text class="pos[^"]*"[^>]*>[^<]*<\/text>)([\s\S]*?<\/g><\/g>)/g,(m,open,cls,nameEsc,fig,numText,tail)=>{
     const name=nameEsc.replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"'), src=photoFor(name); if(!src) return m;
-    const id="fph"+(n++), R=14.5, cy=-6; defs+=`<clipPath id="${id}"><circle cx="0" cy="${cy}" r="${R}"/></clipPath>`;
-    const hurt=/hurt/.test(cls);
-    const isNum=/^\d+$/.test(num.trim());
-    return open+`<circle class="hs-ring" cx="0" cy="${cy}" r="${R+2}" fill="${hurt?"var(--hurt)":c2}"/><circle cx="0" cy="${cy}" r="${R}" fill="${c1}"/>`
-      +`<image href="${esc(src)}" x="${-R*1.75}" y="${cy-R-1}" width="${R*3.5}" height="${R*2.55}" preserveAspectRatio="xMidYMin slice" clip-path="url(#${id})"/>`
-      +`<circle cx="${R*0.78}" cy="${cy+R*0.78}" r="6.2" fill="${c1}" stroke="${c2}" stroke-width="1.2"/><text class="hs-no" x="${R*0.78}" y="${cy+R*0.78}">${esc(num)}</text>`;
+    const id="fph"+(n++), R=10.5, cy=-20.5; defs+=`<clipPath id="${id}"><circle cx="0" cy="${cy}" r="${R}"/></clipPath>`;
+    const headHurt=/class="helm injured"/.test(fig);
+    const body=fig.replace(/<path class="helm[^>]*\/>\s*<rect class="stripe[^>]*\/>\s*<path class="mask"[^>]*\/>/,"");
+    const head=`<circle class="hs-ring" cx="0" cy="${cy}" r="${R+1.6}" fill="${headHurt?"var(--hurt)":c2}"/><circle cx="0" cy="${cy}" r="${R}" fill="${c1}"/>`
+      +`<image href="${esc(src)}" x="${-R*1.75}" y="${cy-R-0.5}" width="${R*3.5}" height="${R*2.55}" preserveAspectRatio="xMidYMin slice" clip-path="url(#${id})"/>`;
+    return open+body+numText+head+tail.replace('<g class="itag">','<g class="itag" transform="translate(13.5,4)">');
   });
   if(defs) h=h.replace(/(<svg viewBox="0 0 360 \d+"[^>]*>)/,`$1<defs>${defs}</defs>`);
   return toggle+h;
