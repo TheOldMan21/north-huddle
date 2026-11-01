@@ -13,7 +13,8 @@ jobs:
           mkdir -p out && cd out
           S="https://north-huddle.pages.dev"
           S="https://north-huddle.pages.dev"
-          curl -s -m 60 "$S/api/scores?event=401873014&team=MIN" -o ev.json
+          sleep 90
+          curl -s -m 60 "$S/api/scores?event=401873014&team=MIN&v=2" -o ev.json
           curl -s -m 60 "$S/api/scores?team=MIN" -o cur.json
           curl -s -m 60 "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873014" -o sum.json
           python3 - <<'PY' > box.txt
