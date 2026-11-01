@@ -522,3 +522,11 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .nf-brand span{background:var(--nh-aurora);-webkit-background-clip:text;background-clip:text;color:transparent}
 .nf-brand img{background:var(--nh-bg)}
 #teamBtn .hubw{background:linear-gradient(90deg,#5EF2D6,#B3A4FF);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* team switcher: a real button with an aurora glow on hover */
+#teamBtn{position:relative;padding:6px 10px 6px 7px;border-radius:999px;background:rgba(11,18,32,.38);border:1.5px solid rgba(255,255,255,.22);transition:box-shadow .2s,border-color .2s,background .2s,transform .1s}
+#teamBtn .chev-d{width:20px;height:20px;padding:2px;border-radius:50%;background:rgba(255,255,255,.14);opacity:1;transition:transform .2s,background .2s}
+#teamBtn:hover,#teamBtn:focus-visible{border-color:#5EF2D6;background:rgba(11,18,32,.55);box-shadow:0 0 0 1px rgba(124,92,255,.6),0 0 12px rgba(46,230,197,.55),0 0 26px rgba(124,92,255,.45);outline:none}
+#teamBtn:hover .chev-d,#teamBtn:focus-visible .chev-d{background:linear-gradient(135deg,#2EE6C5,#7C5CFF);transform:translateY(1px)}
+#teamBtn:active{transform:scale(.97)}
+#teamBtn[aria-expanded="true"] .chev-d{transform:rotate(180deg)}
+@media (max-width:440px){#teamBtn{padding:5px 8px 5px 5px}#teamBtn .nh-mark{width:26px;height:26px}}
