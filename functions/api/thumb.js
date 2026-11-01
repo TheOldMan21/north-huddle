@@ -25,6 +25,8 @@ export async function onRequest(ctx) {
     }
   } catch (e) {}
   if (img && img.startsWith("http://")) img = "https://" + img.slice(7);
+  // skip team logos and generic placeholder art (the site shows no team logos)
+  if (/teamlogos|\/logos?\/|logo[-_.]|default[-_]?(article|image|share)|placeholder|fallback/i.test(img)) img = "";
   const resp = img
     ? new Response(null, { status: 302, headers: { location: img, "cache-control": "public, max-age=604800" } })
     : new Response("no image", { status: 404, headers: { "cache-control": "public, max-age=86400" } });

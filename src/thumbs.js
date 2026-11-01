@@ -1,7 +1,7 @@
 /* ===================== North Huddle: news thumbnails ===================== */
 // ESPN stories carry their own photo; for other sources /api/thumb finds the article's preview image.
 function newsThumb(n){
-  if(n.image) return n.image;
+  if(n.image&&!/teamlogos|logo/i.test(n.image)) return n.image;
   if(n.url&&/^https?:\/\//.test(n.url)) return "/api/thumb?u="+encodeURIComponent(n.url);
   return "";
 }
