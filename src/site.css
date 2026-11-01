@@ -566,3 +566,9 @@ header.top>.hdr-right{flex:0 0 auto;margin-left:auto}
   .home-grid{align-items:stretch}
   .home-grid .col-main>*,.home-grid .col-side>*{width:auto;max-width:none;align-self:stretch}
 }
+/* team switcher: North Huddle brand look on every team (midnight pill, aurora edge) */
+#teamBtn{background:linear-gradient(#0B1220,#0B1220) padding-box,linear-gradient(90deg,rgba(46,230,197,.75),rgba(124,92,255,.75)) border-box;border:1.5px solid transparent;color:#fff}
+#teamBtn .chev-d{background:rgba(46,230,197,.16);color:#5EF2D6}
+#teamBtn .hubw{background:linear-gradient(90deg,#2EE6C5,#7C5CFF);-webkit-background-clip:text;background-clip:text;color:transparent}
+#teamBtn:hover,#teamBtn:focus-visible{background:linear-gradient(#0E1730,#0E1730) padding-box,linear-gradient(90deg,#2EE6C5,#7C5CFF) border-box;border-color:transparent;box-shadow:0 0 12px rgba(46,230,197,.55),0 0 26px rgba(124,92,255,.5)}
+#teamBtn:hover .chev-d,#teamBtn:focus-visible .chev-d{color:#fff}
