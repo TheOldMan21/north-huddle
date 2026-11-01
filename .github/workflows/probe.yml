@@ -14,14 +14,12 @@ jobs:
           S="https://north-huddle.pages.dev"
           S="https://north-huddle.pages.dev"
           sleep 90
-          sleep 150
-          curl -s -m 60 "$S/g/401873014" -A "facebookexternalhit/1.1" -o g.html
-          curl -s -m 60 "$S/api/og?event=401873014" -o og.png -w "og %{http_code} %{content_type} %{size_download}\n" > stat.txt
-          curl -s -m 30 "$S/terms.html" -o /dev/null -w "terms %{http_code}\n" >> stat.txt
-          curl -s -m 30 "$S/some-bad-page" -o nf.html -w "404 %{http_code}\n" >> stat.txt
-          curl -s -m 30 "$S/" -H "accept-encoding: br" -o /dev/null -w "home %{http_code} %{size_download} bytes br\n" >> stat.txt
-          curl -s -m 30 -I "$S/js/supabase.js" | grep -i cache-control >> stat.txt
-          curl -s -m 30 "$S/" | grep -c "nh-mark" >> stat.txt
+          U="https://www.vikings.com/video/kyler-murray-colts-run-game-week-7-2026"
+          curl -s -m 30 -A "Mozilla/5.0 (compatible; NorthHuddleBot/1.0; link preview)" "$U" -o v.html -w "runner %{http_code} %{size_download}\n" > stat.txt
+          grep -o '<meta[^>]*og:image[^>]*>' v.html | head -3 >> stat.txt
+          E=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1],safe=''))" "$U")
+          curl -s -m 40 -o /dev/null -w "cf-thumb %{http_code} %{redirect_url}\n" "$S/api/thumb?u=$E" >> stat.txt
+          curl -s -m 30 -A "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130 Mobile Safari/537.36" "$U" -o v2.html -w "runner-browserUA %{http_code} %{size_download}\n" >> stat.txt
           ls -la
       - name: Commit
         run: |
