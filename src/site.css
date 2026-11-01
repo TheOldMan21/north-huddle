@@ -551,3 +551,18 @@ header.top>.hdr-right{flex:0 0 auto;margin-left:auto}
   header.top>.hsearch{grid-column:2;grid-row:1;flex-basis:auto;width:100%;max-width:none;margin:0}
   header.top>.hdr-right{grid-column:3;grid-row:1;justify-self:end;margin-left:0}
 }
+/* computers: one centered column for Home (chat + game in the flow, not off to the side) and a wider page for every tab */
+@media(min-width:900px){
+  main{max-width:1080px}
+  section.view:not(#v-home){max-width:1040px}
+  .home-grid{display:flex;flex-direction:column;gap:20px;max-width:1040px;margin:0 auto;width:100%}
+  .home-grid>.col-main,.home-grid>.col-side{display:contents}
+  .home-grid .col-side{position:static}
+  .home-grid #fanChat{order:10!important}
+  .home-grid .fg-card{order:20!important}
+  .fanchat .fc-list{max-height:360px}
+}
+@media(min-width:900px){
+  .home-grid{align-items:stretch}
+  .home-grid .col-main>*,.home-grid .col-side>*{width:auto;max-width:none;align-self:stretch}
+}
