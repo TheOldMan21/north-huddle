@@ -13,10 +13,9 @@ jobs:
           mkdir -p out && cd out
           S="https://north-huddle.pages.dev"
           S="https://north-huddle.pages.dev"
-          sleep 120
-          curl -s -m 90 "$S/api/recap?event=401873014" -o recap.json
-          curl -s -m 30 "$S/api/scores?week=6" -o week6.json
-          curl -s -m 30 "$S/" | grep -c "round 3" > build.txt || true
+          sleep 100
+          curl -s -m 60 "$S/api/team?abbr=MIN" | python3 -c "import json,sys;d=json.load(sys.stdin);print(json.dumps([(n['source'],n.get('image','')[:90]) for n in d.get('news',[])[:5]],indent=0))" > team_news.txt
+          for u in "https://www.vikings.com/news/" "https://www.cbssports.com/nfl/teams/MIN/minnesota-vikings/" "https://www.espn.com/nfl/team/_/name/min/minnesota-vikings"; do echo "$u" >> thumbs.txt; curl -s -m 30 -o /dev/null -w "%{http_code} %{redirect_url}\n" "$S/api/thumb?u=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1],safe=''))" "$u")" >> thumbs.txt; done
           ls -la
       - name: Commit
         run: |
