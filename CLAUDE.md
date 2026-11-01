@@ -11,6 +11,7 @@ Unofficial Minnesota football fan hub (owner: TheOldMan21). Hosted on Cloudflare
 - `js/supabase.js` — vendored supabase-js 2.45.4 UMD.
 - `supabase/admin.sql` — admin page support (banned table, admin_users RPC, can_write with ban check). Run AFTER setup.sql whenever setup.sql is re-run.
 - `src/round3.js` — spam filter (no links/repeats), pick'em, fan power rankings, member profiles, AI recaps (`functions/api/recap.js`), watch party.
+- `src/stadium.js` — Depth "Stadium" view: starters on img/field/stadium.jpg, bodies built in-browser from img/field/body*.png (recolor, skin match, headshot via /api/hs, injury glow). Classic SVG view kept behind a toggle.
 - `src/admin.js` — owner-only admin page (Members / Chat / Leagues), opened from the account sheet or /#admin.
 - `supabase/setup.sql` — database schema, access rules, RPCs (`doc_update` deep merge, `doc_acquire` lease). Re-runnable in the Supabase SQL Editor.
 - `scripts/nh.py` — CLI for scheduled updates to read/write docs as the bot (`NH_BOT_PW` env var).

@@ -481,3 +481,29 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .pl .shade{fill:rgba(0,0,0,.18);pointer-events:none}
 .pl .collar{fill:none;stroke:var(--gold);stroke-width:1.1;stroke-linejoin:round}
 .pl .shoe{stroke:rgba(255,255,255,.35);stroke-width:.4}
+/* stadium depth view */
+.st-wrap{container-type:inline-size;container-name:stad}
+.stadium{position:relative;aspect-ratio:1170/872;background:#0b0f1a url(/img/field/stadium.jpg) center/cover no-repeat;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);-webkit-user-select:none;user-select:none}
+.st-line{position:absolute;height:.45%;transform:translateY(-50%);pointer-events:none}
+.st-los{background:rgba(59,130,246,.85)}.st-fd{background:rgba(255,198,47,.9)}
+.st-pl{position:absolute;display:block;aspect-ratio:257/541;cursor:pointer;outline:none}
+.st-pl img{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.st-shadow{position:absolute;left:8%;right:8%;bottom:-1.2%;height:3.2%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.55),rgba(0,0,0,0));pointer-events:none}
+.st-glow{animation:stPulse 1.5s ease-in-out infinite}
+@keyframes stPulse{0%,100%{opacity:.6}50%{opacity:1}}
+.st-pl:focus-visible .st-body,.st-pl:hover .st-body{filter:drop-shadow(0 0 3px #fff)}
+.st-tag{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;height:4.1cqw;min-width:6cqw;padding:0 .9cqw;border-radius:.8cqw;background:rgba(14,24,18,.86);border:1px solid rgba(255,198,47,.4);color:#fff;font:600 1.8cqw/1 "Barlow Condensed",system-ui;cursor:pointer;white-space:nowrap}
+.st-tag .pos{color:#FFC62F;font-weight:800;font-size:1.2cqw;letter-spacing:.04em;margin-bottom:.2cqw}
+.st-ptr{position:absolute;width:2px;margin-left:-1px;background:rgba(255,255,255,.6);pointer-events:none;z-index:1099}
+.st-loading{position:absolute;inset:auto 0 4% 0;text-align:center;color:#fff;font:600 13px var(--body);text-shadow:0 1px 3px #000;opacity:.9}
+.stadium.ready .st-loading{display:none}
+.st-legend{display:none;flex-wrap:wrap;gap:6px;margin-top:8px}
+.st-chip{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:4px 10px;font:600 13px var(--display);cursor:pointer}
+.st-chip b{color:var(--purple-ink);font-weight:800;margin-right:2px}
+.st-hurtdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--hurt);vertical-align:1px}
+@container stad (max-width:560px){ .st-tag,.st-ptr{display:none} .st-legend{display:flex} }
+.st-toggle{margin-bottom:8px}
+.st-tag.st-side{transform:none}
+.st-tag.st-left{transform:translateX(-100%)}
+.st-itag{position:absolute;left:66%;top:1%;min-width:30%;padding:2% 4%;border-radius:999px;background:#E5322B;color:#fff;font:800 clamp(7px,1.5cqw,14px)/1.1 "Barlow Condensed",sans-serif;text-align:center;box-shadow:0 0 0 2px #fff,0 0 8px rgba(229,50,43,.9);animation:stPulse 1.5s ease-in-out infinite;pointer-events:none}
+.st-pl.hurt::after{content:"";position:absolute;left:10%;right:10%;bottom:-2.5%;height:5%;border-radius:50%;border:2px solid rgba(255,59,48,.9);box-shadow:0 0 10px rgba(255,59,48,.9);animation:stPulse 1.5s ease-in-out infinite;pointer-events:none}
