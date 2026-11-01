@@ -517,3 +517,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .st-tag .pos{font-size:clamp(8px,1.2cqw,12px);margin-bottom:1px}
 .st-pl>.st-itag{display:none}
 @container stad (max-width:560px){ .st-tag,.st-ptr{display:flex} .st-ptr{display:block} .st-legend{display:none} }
+/* North Huddle brand (Northern Lights): logo + wordmark stay the same for every team */
+:root{--nh-bg:#0B1220;--nh-teal:#2EE6C5;--nh-violet:#7C5CFF;--nh-aurora:linear-gradient(90deg,#2EE6C5,#7C5CFF)}
+.nf-brand span{background:var(--nh-aurora);-webkit-background-clip:text;background-clip:text;color:transparent}
+.nf-brand img{background:var(--nh-bg)}
+#teamBtn .hubw{background:linear-gradient(90deg,#5EF2D6,#B3A4FF);-webkit-background-clip:text;background-clip:text;color:transparent}
