@@ -558,7 +558,7 @@ header.top>.hdr-right{flex:0 0 auto;margin-left:auto}
   .home-grid{display:flex;flex-direction:column;gap:20px;max-width:1040px;margin:0 auto;width:100%}
   .home-grid>.col-main,.home-grid>.col-side{display:contents}
   .home-grid .col-side{position:static}
-  .home-grid #fanChat{order:10!important}
+  .home-grid #fanChat{order:4!important}
   .home-grid .fg-card{order:20!important}
   .fanchat .fc-list{max-height:360px}
 }
