@@ -95,14 +95,16 @@ async function stadPlayer(key,o){
   return STAD.pending[key];
 }
 function stadLast(n){ const t=String(n||"").replace(/\s+(Jr\.?|Sr\.?|II|III|IV|V)$/i,"").trim().split(/\s+/); let i=t.length-1; while(i>1&&/^(van|von|de|del|der|da|di|du|la|le|st\.?|mc)$/i.test(t[i-1])) i--; return t.slice(Math.max(1,i)).join(" "); }
+// width the field will actually have (the Depth tab may be hidden while it renders)
+function stadWidth(){ const w=$("depthBody")?.clientWidth||document.querySelector("main")?.clientWidth||Math.min(window.innerWidth-32,1100); return Math.max(280,w); }
 function stadiumHtml(unit){
-  const cw0=Math.max(280,$("depthBody")?.clientWidth||360), F=cw0<600?STAD_FORM_PHONE:STAD_FORM;
+  const cw0=stadWidth(), F=cw0<600?STAD_FORM_PHONE:STAD_FORM;
   const form=unit==="offense"?F.offense:(is43()?F.defense43:F.defense34);
   const byPos=Object.fromEntries(S.depth.map(d=>[d.pos,d]));
   const ps=[]; for(const [pos,[X,d]] of Object.entries(form)){ const dp=byPos[pos]; const name=dp?.players?.[0]; if(!name) continue; const num=dp.numbers?.[0]; ps.push({pos,X,d,name,num:(num===0||num)?num:"",inj:findInjury(name)}); }
   if(!ps.length) return "";
   const pct=(v,of)=>(v/of*100).toFixed(3)+"%";
-  const cw=Math.max(280,$("depthBody")?.clientWidth||360); STAD.cw=cw;
+  const cw=cw0; STAD.cw=cw;
   const phone=cw<600;
   const fpx=Math.max(10,Math.min(16,cw*0.018)), tagW=n=>(String(n).length*fpx*0.52+16)/cw*CAM.W, clampX=(x,w)=>Math.max(w/2+4,Math.min(CAM.W-w/2-4,x));
   const Dpx=Math.max(30,Math.min(56,cw*0.065)), Dph=Dpx/cw*CAM.W;           // one photo size for everyone
@@ -128,7 +130,7 @@ function stadiumHtml(unit){
   return `<div class="st-wrap"><div class="stadium" style="--hd:${Dpx}px;--th:${THpx}px" role="img" aria-label="${unit==="offense"?"Offense":"Defense"} lined up on the field, seen from behind">${lines}${sprites}${heads}${tags}<div class="st-loading">Lining up the starters…</div></div><div class="st-legend">${legend}</div></div>`;
 }
 async function fillStadium(root){
-  const el=root?.querySelector?.(".stadium"); if(!el) return;
+  const el=root?.querySelector?.(".stadium"); if(!el) return; stadRO?.observe(el.parentElement);
   await stadReady();
   const c=TEAM[CUR]||["#4F2683","#FFC62F","#fff"];
   await Promise.all([...el.querySelectorAll(".st-pl[data-stkey]")].map(async sp=>{
@@ -154,4 +156,6 @@ document.addEventListener("click",e=>{ const b=e.target.closest("[data-fieldview
 document.addEventListener("keydown",e=>{ if((e.key==="Enter"||e.key===" ")&&e.target.classList?.contains("st-pl")){ e.preventDefault(); openByName(e.target.dataset.pname,e.target.dataset.dpos); } });
 
 // re-lay out when the screen width changes a lot (rotate, unfold)
+// if the field ends up a different width than it was laid out for (hidden tab, rotate, unfold), lay it out again
+const stadRO=typeof ResizeObserver!=="undefined"?new ResizeObserver(es=>{ for(const e of es){ const w=e.contentRect.width; if(w>0&&STAD.view==="stadium"&&Math.abs(w-(STAD.cw||0))>40){ clearTimeout(STAD.rt2); STAD.rt2=setTimeout(()=>renderDepth(),60); } } }):null;
 let stadW=0; window.addEventListener("resize",()=>{ clearTimeout(STAD.rt); STAD.rt=setTimeout(()=>{ const w=$("depthBody")?.clientWidth||0; if(STAD.view==="stadium"&&S.tab==="depth"&&Math.abs(w-(STAD.cw||0))>60) renderDepth(); },250); });
