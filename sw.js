@@ -1,6 +1,6 @@
 // North Huddle service worker: app install, offline fallback, phone notifications.
-const CACHE = "nh-v4";
-const CORE = ["/", "/js/supabase.js", "/icon.svg?v=3", "/icon-192.png?v=3", "/icon-512.png?v=3", "/manifest.webmanifest?v=3"];
+const CACHE = "nh-v5";
+const CORE = ["/", "/js/supabase.js"];
 
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -19,7 +19,7 @@ self.addEventListener("fetch", (e) => {
 self.addEventListener("push", (e) => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: "North Huddle", body: e.data && e.data.text() }; }
   e.waitUntil(self.registration.showNotification(d.title || "North Huddle", {
-    body: d.body || "", icon: "/icon-192.png", badge: "/icon-192.png", tag: d.tag || undefined, renotify: !!d.tag,
+    body: d.body || "", icon: "/img/brand/nh-icon-192.png", badge: "/img/brand/nh-icon-192.png", tag: d.tag || undefined, renotify: !!d.tag,
     data: { url: d.url || "/" }
   }));
 });

@@ -60,7 +60,7 @@ function installHelpHtml(){
   else if(firefox) steps=["Firefox can't install sites as apps on computers.","Open <b>north-huddle.pages.dev</b> in <b>Chrome</b> or <b>Edge</b>, then use the install button there."];
   else if(edge) steps=["Click the <b>…</b> menu at the top right of Edge.","Click <b>Apps</b> → <b>Install this site as an app</b>.","Click <b>Install</b>."];
   else steps=["Click the <b>install icon</b> at the right end of the address bar (a monitor with a down arrow), or","Click the <b>⋮</b> menu → <b>Cast, save and share</b> → <b>Install page as app</b>.","Click <b>Install</b>."];
-  return `<div class="sheet-head"><div class="acct-hd"><img src="/icon-192.png?v=3" alt="" style="width:46px;height:46px;border-radius:12px"><div><div class="label">Get the app</div><div class="nm" style="font-size:24px">Install North Huddle</div></div></div><button class="x" id="closeSheet" aria-label="Close">×</button></div>
+  return `<div class="sheet-head"><div class="acct-hd"><img src="/img/brand/nh-icon-192.png" alt="" style="width:46px;height:46px;border-radius:12px"><div><div class="label">Get the app</div><div class="nm" style="font-size:24px">Install North Huddle</div></div></div><button class="x" id="closeSheet" aria-label="Close">×</button></div>
     <p class="acct-p">Opens full screen from your home screen or taskbar, loads faster, and gets game alerts.</p>
     <ol class="inst-steps">${steps.map(s=>`<li>${s}</li>`).join("")}</ol>
     <div class="foot">It's free, takes a few seconds, and you stay signed in.</div>`;
@@ -74,7 +74,7 @@ doInstall=async function(){
 function installButtons(){
   const show=!isStandalone();
   const f=$("nhFoot")?.querySelector(".nf-links");
-  if(f&&show&&!f.querySelector("[data-install]")) f.insertAdjacentHTML("afterbegin",`<button class="nf-app" data-install="1"><img src="/icon.svg?v=3" alt="" width="18" height="18">Get the app</button>`);
+  if(f&&show&&!f.querySelector("[data-install]")) f.insertAdjacentHTML("afterbegin",`<button class="nf-app" data-install="1"><img src="/img/brand/nh-icon.svg" alt="" width="18" height="18">Get the app</button>`);
 }
 const _openAcctIB=openAcct;
 openAcct=function(){
@@ -83,7 +83,7 @@ openAcct=function(){
   const sh=$("sheet"); if(sh.querySelector(".acct-install")) return;
   sh.querySelector(".push-panel [data-install]")?.remove();
   const anchor=sh.querySelector(".push-panel")||sh.querySelector("[data-signout]");
-  const html=`<button class="card acct-install" data-install="1"><img src="/icon-192.png?v=3" alt=""><span class="grow"><b>Get the North Huddle app</b><span class="t2">Home screen icon, full screen, game alerts</span></span><span class="tbtn">Install</span></button>`;
+  const html=`<button class="card acct-install" data-install="1"><img src="/img/brand/nh-icon-192.png" alt=""><span class="grow"><b>Get the North Huddle app</b><span class="t2">Home screen icon, full screen, game alerts</span></span><span class="tbtn">Install</span></button>`;
   if(anchor) anchor.insertAdjacentHTML("beforebegin",html); else sh.insertAdjacentHTML("beforeend",html);
 };
 const _renderHomeIB=renderHome; renderHome=function(){ _renderHomeIB(); installButtons(); };
@@ -143,3 +143,7 @@ figureSvg=function(parts){
     <rect class="stripe${parts.has("head")?" injured-stripe":""}" x="-0.8" y="-23" width="1.6" height="6.2" rx="0.8"/>
     <path class="mask" d="M-4.2 -15.4 L4.2 -15.4 M-3.8 -13.3 L3.8 -13.3 M0 -15.4 L0 -11"/>`;
 };
+
+/* ---------- profile button: always opens something, even if a feature throws ---------- */
+(function(){ const b=$("acctBtn"); if(!b) return; const nb=b.cloneNode(true); b.replaceWith(nb);
+  nb.addEventListener("click",e=>{ e.preventDefault(); try{ openAcct(); if($("sheetBg").hidden) throw new Error("closed"); }catch(err){ console.warn("acct",err); try{ AMODE="in"; $("sheet").innerHTML=authSheet(); $("sheetBg").hidden=false; }catch(e2){} } }); })();

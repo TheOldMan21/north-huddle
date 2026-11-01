@@ -8,7 +8,7 @@ function iosInstallHint(force){
   if(!IOS||IOS_STANDALONE) return;
   if(!force&&(store.get("nh_install_x")||document.getElementById("installBar"))) return;
   document.getElementById("installBar")?.remove();
-  document.body.insertAdjacentHTML("beforeend",`<div class="install-bar ios-bar" id="installBar" role="region" aria-label="Add to Home Screen"><img src="/apple-touch-icon.png" alt=""><div class="grow"><b>Add North Huddle to your iPhone</b><span>Tap ${ICO_IOS_SHARE} <b>Share</b> below, then <b>Add to Home Screen</b>. Needed for game alerts.</span></div><button class="x" data-install-x="1" aria-label="Dismiss">×</button></div>`);
+  document.body.insertAdjacentHTML("beforeend",`<div class="install-bar ios-bar" id="installBar" role="region" aria-label="Add to Home Screen"><img src="/img/brand/nh-apple-touch-icon.png" alt=""><div class="grow"><b>Add North Huddle to your iPhone</b><span>Tap ${ICO_IOS_SHARE} <b>Share</b> below, then <b>Add to Home Screen</b>. Needed for game alerts.</span></div><button class="x" data-install-x="1" aria-label="Dismiss">×</button></div>`);
 }
 if(IOS) setTimeout(()=>iosInstallHint(false),4000);
 const _doInstallI=doInstall;

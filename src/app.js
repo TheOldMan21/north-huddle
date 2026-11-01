@@ -7,7 +7,7 @@ window.addEventListener("appinstalled",()=>{ APP.prompt=null; document.getElemen
 const isStandalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone;
 function showInstallBanner(){
   if(isStandalone()||store.get("nh_install_x")||document.getElementById("installBar")) return;
-  document.body.insertAdjacentHTML("beforeend",`<div class="install-bar" id="installBar" role="region" aria-label="Install app"><img src="/icon-192.png" alt=""><div class="grow"><b>Get the North Huddle app</b><span>Home screen icon, full screen, game alerts.</span></div><button class="btn-gold" data-install="1">Install</button><button class="x" data-install-x="1" aria-label="Dismiss">×</button></div>`);
+  document.body.insertAdjacentHTML("beforeend",`<div class="install-bar" id="installBar" role="region" aria-label="Install app"><img src="/img/brand/nh-icon-192.png" alt=""><div class="grow"><b>Get the North Huddle app</b><span>Home screen icon, full screen, game alerts.</span></div><button class="btn-gold" data-install="1">Install</button><button class="x" data-install-x="1" aria-label="Dismiss">×</button></div>`);
 }
 async function doInstall(){ if(!APP.prompt) return toast("Open your browser menu (⋮) and choose Add to Home screen."); APP.prompt.prompt(); try{ await APP.prompt.userChoice; }catch(e){} APP.prompt=null; document.getElementById("installBar")?.remove(); }
 document.addEventListener("click",e=>{

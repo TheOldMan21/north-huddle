@@ -70,7 +70,7 @@ updateBrand=function(){ _updateBrandNH(); const b=$("brandName"); if(b){ b.textC
 updateBrand();
 (function(){
   const m=document.querySelector("main");
-  if(m && !$("nhFoot")) m.insertAdjacentHTML("beforeend",`<footer id="nhFoot" class="nh-foot"><div class="nf-brand"><img src="/icon.svg?v=3" alt="" width="26" height="26"><b>North <span>Huddle</span></b></div><nav class="nf-links"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/terms.html#rules">Community rules</a></nav><div>© ${new Date().getFullYear()} North Huddle. An unofficial fan site. Not affiliated with, endorsed by, or connected to the Minnesota Vikings, any NFL team, or the National Football League. Team names are used only to identify teams.</div></footer>`);
+  if(m && !$("nhFoot")) m.insertAdjacentHTML("beforeend",`<footer id="nhFoot" class="nh-foot"><div class="nf-brand"><img src="/img/brand/nh-icon.svg" alt="" width="26" height="26"><b>North <span>Huddle</span></b></div><nav class="nf-links"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/terms.html#rules">Community rules</a></nav><div>© ${new Date().getFullYear()} North Huddle. An unofficial fan site. Not affiliated with, endorsed by, or connected to the Minnesota Vikings, any NFL team, or the National Football League. Team names are used only to identify teams.</div></footer>`);
 })();
 
 /* ---------- updates: everyone uses requests ---------- */
