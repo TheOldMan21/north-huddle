@@ -65,11 +65,12 @@ NH.sb.auth.onAuthStateChange(async ev=>{
 
 /* ---------- branding ---------- */
 const _updateBrandNH=updateBrand;
-updateBrand=function(){ _updateBrandNH(); const b=$("brandName"); if(b){ b.textContent="North"; } const w=document.querySelector("#teamBtn .hubw"); if(w) w.textContent="Huddle"; };
+const NH_MARK=`<svg class="nh-mark" viewBox="0 0 512 512" aria-hidden="true"><circle cx="396.9" cy="178.5" r="20" fill="#FFC62F"/><circle cx="422.2" cy="294.6" r="20" fill="#FFC62F"/><circle cx="364.3" cy="398.4" r="20" fill="#FFC62F"/><circle cx="252.2" cy="438.0" r="20" fill="#FFC62F"/><circle cx="142.0" cy="393.4" r="20" fill="#FFC62F"/><circle cx="88.9" cy="287.1" r="20" fill="#FFC62F"/><circle cx="119.4" cy="172.3" r="20" fill="#FFC62F"/><circle cx="218.2" cy="106.3" r="20" fill="#FFC62F"/><path d="M190 352V196l130 156V150" fill="none" stroke="#fff" stroke-width="46" stroke-linejoin="round" stroke-linecap="round"/><path d="M320 70l-52 68h104z" fill="#FFC62F" stroke="#FFC62F" stroke-width="16" stroke-linejoin="round"/></svg>`;
+updateBrand=function(){ _updateBrandNH(); const b=$("brandName"); if(b){ b.textContent="North"; } const tb=$("teamBtn"); if(tb&&!tb.querySelector(".nh-mark")) tb.insertAdjacentHTML("afterbegin",NH_MARK); const w=document.querySelector("#teamBtn .hubw"); if(w) w.textContent="Huddle"; };
 updateBrand();
 (function(){
   const m=document.querySelector("main");
-  if(m && !$("nhFoot")) m.insertAdjacentHTML("beforeend",`<footer id="nhFoot" class="nh-foot">North Huddle is an unofficial fan site. Not affiliated with, endorsed by, or connected to the Minnesota Vikings, any NFL team, or the National Football League. Team names are used only to identify teams.</footer>`);
+  if(m && !$("nhFoot")) m.insertAdjacentHTML("beforeend",`<footer id="nhFoot" class="nh-foot"><div class="nf-brand"><img src="/icon.svg" alt="" width="26" height="26"><b>North <span>Huddle</span></b></div><nav class="nf-links"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/terms.html#rules">Community rules</a></nav><div>© ${new Date().getFullYear()} North Huddle. An unofficial fan site. Not affiliated with, endorsed by, or connected to the Minnesota Vikings, any NFL team, or the National Football League. Team names are used only to identify teams.</div></footer>`);
 })();
 
 /* ---------- updates: everyone uses requests ---------- */

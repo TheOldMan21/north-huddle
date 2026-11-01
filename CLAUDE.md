@@ -20,3 +20,11 @@ Collections (doc paths like `players/justin-jefferson`): hub/meta, news, players
 
 ## Trademark care
 Public site: no team logos, no team names in the site name. Keep the footer disclaimer.
+
+## Build notes
+- `build.py` minifies inline JS/CSS when esbuild is available (`NH_ESBUILD=/path/to/esbuild` or `esbuild` on PATH); otherwise it writes a readable, unminified index.html (also fine to deploy). It also trims the built-in data snapshot and refreshes its meta from Supabase.
+- Share previews: `functions/g/[id].js` (game links) and `functions/api/og.js` (1200x630 score image) use `lib/og/` (resvg wasm + Barlow Condensed fonts, OFL).
+- Static pages: `privacy.html`, `terms.html` (#rules), `404.html`. Email templates to paste into Supabase: `supabase/emails/`.
+
+## Moving to a custom domain
+Update `SITE` in build.py and worker/alerts.js, the links in supabase/emails/*.html and privacy.html, then: Supabase → Authentication → URL Configuration (Site URL + redirect URLs), Google Cloud OAuth client (authorized JavaScript origins), re-paste the worker.
