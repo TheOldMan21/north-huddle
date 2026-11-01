@@ -1,6 +1,6 @@
 // North Huddle service worker: app install, offline fallback, phone notifications.
-const CACHE = "nh-v2";
-const CORE = ["/", "/js/supabase.js", "/icon.svg", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"];
+const CACHE = "nh-v3";
+const CORE = ["/", "/js/supabase.js", "/icon.svg?v=2", "/icon-192.png?v=2", "/icon-512.png?v=2", "/manifest.webmanifest?v=2"];
 
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -13,7 +13,7 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(fetch(req).then((r) => { if (url.pathname === "/" && r.ok) { const c = r.clone(); caches.open(CACHE).then((x) => x.put("/", c)); } return r; }).catch(() => url.pathname === "/" ? caches.match("/") : caches.match("/404.html").then((x) => x || caches.match("/"))));
     return;
   }
-  if (CORE.includes(url.pathname)) e.respondWith(caches.match(req).then((hit) => hit || fetch(req)));
+  if (CORE.includes(url.pathname + url.search)) e.respondWith(caches.match(req).then((hit) => hit || fetch(req)));
 });
 
 self.addEventListener("push", (e) => {

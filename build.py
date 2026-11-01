@@ -15,7 +15,7 @@ def rep(old, new, count=1, must=True):
 # --- branding ---
 rep("<title>Vikings Gameday Hub</title>",
     '<title>North Huddle</title>\n<meta name="description" content="Unofficial Minnesota football fan hub: news, stats, live scores, fantasy leagues and fan chat.">\n'
-    '<meta name="theme-color" content="#4F2683">\n<link rel="icon" href="/icon.svg" type="image/svg+xml">\n<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n<link rel="manifest" href="/manifest.webmanifest">\n'
+    '<meta name="theme-color" content="#4F2683">\n<link rel="icon" href="/icon.svg?v=2" type="image/svg+xml">\n<link rel="icon" href="/favicon-32.png?v=2" sizes="32x32" type="image/png">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">\n<link rel="manifest" href="/manifest.webmanifest?v=2">\n'
     '<meta property="og:type" content="website">\n<meta property="og:site_name" content="North Huddle">\n<meta property="og:title" content="North Huddle">\n'
     '<meta property="og:description" content="Live scores, fantasy leagues, game picks and fan chat. An unofficial Minnesota football fan hub.">\n'
     '<meta property="og:image" content="' + SITE + '/og.png">\n<meta property="og:url" content="' + SITE + '/">\n'
