@@ -94,10 +94,24 @@ export async function onRequest(ctx) {
         redZone: !!sit.isRedZone, tv: (c.broadcasts || []).flatMap((b) => b.names || []).join(", ")
       };
     });
-    const g = event ? out.games.find((x) => String(x.id) === event) : out.games.find((x) => x.home === team || x.away === team);
+    let g = event ? out.games.find((x) => String(x.id) === event) : out.games.find((x) => x.home === team || x.away === team);
+    let pre = null;
+    if (event && !g) {
+      // a game from another week (recap card, alert links, past pick'em weeks): build it from the game summary
+      try {
+        pre = await (await fetch(SUM + event, { headers: { "user-agent": "NorthHuddle/1.0" } })).json();
+        const c = pre.header?.competitions?.[0] || {}, cs = c.competitors || [];
+        const h = cs.find((x) => x.homeAway === "home") || {}, a = cs.find((x) => x.homeAway === "away") || {}, st = c.status?.type || {};
+        if (h.team && a.team) {
+          g = { id: event, kickoff: c.date, state: st.state || "post", detail: st.shortDetail || st.detail || "", home: ab(h.team), away: ab(a.team), hs: Number(h.score || 0), as: Number(a.score || 0),
+            possession: "", downDist: "", shortDD: "", posText: "", down: null, distance: null, lastPlay: "", redZone: false, tv: (c.broadcasts || []).map((b) => b.media?.shortName).filter(Boolean).join(", ") };
+          out.games.push(g);
+        }
+      } catch (e) {}
+    }
     if (g && g.state !== "pre" && !week) {
       try {
-        const s = await (await fetch(SUM + g.id, { headers: { "user-agent": "NorthHuddle/1.0" } })).json();
+        const s = pre || await (await fetch(SUM + g.id, { headers: { "user-agent": "NorthHuddle/1.0" } })).json();
         out.focus = {
           id: g.id,
           scoring: (s.scoringPlays || []).map((p) => ({
