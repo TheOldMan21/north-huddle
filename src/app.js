@@ -39,6 +39,7 @@ async function route(){
   else if(k==="league"&&a){ setTab("fantasy"); FX.sec="league"; renderFantasy(); setTimeout(()=>{ const i=document.querySelector('form[data-lform=join] input[name=code]'); if(i){ i.value=a; i.closest("form").scrollIntoView({block:"center"}); toast("Enter a team name and tap Join."); } else if(!ACC.id){ toast("Sign in to join the league."); } },600); }
   else if(k==="scores"||k==="standings"){ setTab("games"); GM.mode=k; renderGames(); }
   else if(k==="news") setTab("news");
+  else if(k==="highlights"){ S.ntype="highlights"; setTab("news"); document.querySelectorAll("#newsSeg button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.ntype==="highlights"))); renderNews(); }
   else return;
   history.replaceState(null,"",location.pathname);
 }
