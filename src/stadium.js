@@ -12,6 +12,12 @@ const STAD_FORM={
   defense34:{LCB:[-8,15.5],LOLB:[-5.6,15.8],LDE:[-2.9,16.0],NT:[0,15.9],RDE:[2.9,16.0],ROLB:[5.6,15.8],RCB:[8,15.5],WLB:[-1.7,13.2],MLB:[1.7,13.2],SS:[-3.6,11.0],FS:[3.6,11.2]},
   defense43:{LCB:[-8,15.5],LDE:[-4.2,16.0],LDT:[-1.4,15.9],RDT:[1.4,15.9],RDE:[4.2,16.0],RCB:[8,15.5],WLB:[-4.4,13.4],MLB:[0,13.0],SLB:[4.4,13.4],SS:[-3.6,11.0],FS:[3.6,11.2]}
 };
+// phones: two clean levels so equal-size photos never overlap (line at ~16 yds, everyone else at ~11)
+const STAD_FORM_PHONE={
+  offense:{LWR:[-8.3,15.9],LT:[-3.6,16.0],LG:[-1.8,16.0],C:[0,16.0],RG:[1.8,16.0],RT:[3.6,16.0],TE:[5.6,16.1],RWR:[8.3,16.1],SWR:[-4.9,9.9],RB:[-1.7,9.9],QB:[1.6,9.9]},
+  defense34:{LCB:[-8.3,15.9],LOLB:[-5.5,16],LDE:[-2.8,16],NT:[0,16],RDE:[2.8,16],ROLB:[5.5,16],RCB:[8.3,15.9],SS:[-4.9,9.9],WLB:[-1.65,9.9],MLB:[1.65,9.9],FS:[4.9,9.9]},
+  defense43:{LCB:[-8.3,15.9],LDE:[-4.4,16],LDT:[-1.5,16],RDT:[1.5,16],RDE:[4.4,16],RCB:[8.3,15.9],SS:[-5.0,9.9],WLB:[-2.5,9.9],MLB:[0,9.9],SLB:[2.5,9.9],FS:[5.0,9.9]}
+};
 const STAD_LINE_D=15.3, BODY_YD=2.05*0.9;
 function hex2rgb(h){ const m=String(h||"").replace("#",""); const n=parseInt(m.length===3?m.split("").map(c=>c+c).join(""):m,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
 function loadImg(src){ return new Promise((res,rej)=>{ const i=new Image(); i.crossOrigin="anonymous"; i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
@@ -90,22 +96,36 @@ async function stadPlayer(key,o){
 }
 function stadLast(n){ const t=String(n||"").replace(/\s+(Jr\.?|Sr\.?|II|III|IV|V)$/i,"").trim().split(/\s+/); let i=t.length-1; while(i>1&&/^(van|von|de|del|der|da|di|du|la|le|st\.?|mc)$/i.test(t[i-1])) i--; return t.slice(Math.max(1,i)).join(" "); }
 function stadiumHtml(unit){
-  const form=unit==="offense"?STAD_FORM.offense:(is43()?STAD_FORM.defense43:STAD_FORM.defense34);
+  const cw0=Math.max(280,$("depthBody")?.clientWidth||360), F=cw0<600?STAD_FORM_PHONE:STAD_FORM;
+  const form=unit==="offense"?F.offense:(is43()?F.defense43:F.defense34);
   const byPos=Object.fromEntries(S.depth.map(d=>[d.pos,d]));
   const ps=[]; for(const [pos,[X,d]] of Object.entries(form)){ const dp=byPos[pos]; const name=dp?.players?.[0]; if(!name) continue; const num=dp.numbers?.[0]; ps.push({pos,X,d,name,num:(num===0||num)?num:"",inj:findInjury(name)}); }
   if(!ps.length) return "";
   const pct=(v,of)=>(v/of*100).toFixed(3)+"%";
+  const cw=Math.max(280,$("depthBody")?.clientWidth||360); STAD.cw=cw;
+  const phone=cw<600;
+  const fpx=Math.max(10,Math.min(16,cw*0.018)), tagW=n=>(String(n).length*fpx*0.52+16)/cw*CAM.W, clampX=(x,w)=>Math.max(w/2+4,Math.min(CAM.W-w/2-4,x));
+  const Dpx=Math.max(30,Math.min(56,cw*0.065)), Dph=Dpx/cw*CAM.W;           // one photo size for everyone
+  const THpx=Math.max(26,Math.min(40,cw*0.041)), THph=THpx/cw*CAM.W, GAP=6/cw*CAM.W;
   // geometry in photo pixels
-  ps.forEach(p=>{ const c=camP(p.X,p.d); p.x=c.x; p.y=c.y; p.s=c.s; p.bh=BODY_YD*c.s; p.h=p.bh*(STAD.meta?STAD.meta.h/(STAD.meta.h-STAD.meta.pad):1.45); p.w=p.h*(STAD.meta?STAD.meta.w/STAD.meta.h:0.475); p.top=p.y-p.h*0.985; });
+  ps.forEach(p=>{ const c=camP(p.X,p.d); p.x=c.x; p.y=c.y; p.s=c.s; p.bh=BODY_YD*c.s; p.h=p.bh*(STAD.meta?STAD.meta.h/(STAD.meta.h-STAD.meta.pad):1.45); p.w=p.h*(STAD.meta?STAD.meta.w/STAD.meta.h:0.475); p.top=p.y-p.h*0.985; p.hy=p.top+(STAD.meta?STAD.meta.head.cy/STAD.meta.h:0.17)*p.h; p.btop=p.hy-Dph/2; });
   const line=ps.filter(p=>p.d>=STAD_LINE_D).sort((a,b)=>a.x-b.x), back=ps.filter(p=>p.d<STAD_LINE_D);
-  const row0=Math.min(...line.map(p=>p.top))-44, row1=row0-46;
+  const row0=Math.min(...line.map(p=>p.btop))-THph-GAP*2, row1=row0-THph-GAP;
   const lines=(unit==="offense"?[[16.6,"los"],[26.6,"fd"]]:[[16.6,"los"]]).map(([d,cls])=>{ const a=camP(-26.7,d), b=camP(26.7,d); return `<i class="st-line st-${cls}" style="left:${pct(Math.max(0,a.x),CAM.W)};width:${pct(Math.min(CAM.W,b.x)-Math.max(0,a.x),CAM.W)};top:${pct(a.y,CAM.H)}"></i>`; }).join("");
-  const tag=(p,ty,ptr)=>`${ptr?`<i class="st-ptr" style="left:${pct(p.x,CAM.W)};top:${pct(ty+36,CAM.H)};height:${pct(p.top+6-(ty+36),CAM.H)}"></i>`:""}<button class="st-tag" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(p.x,CAM.W)};top:${pct(ty,CAM.H)};z-index:${ptr?1100:Math.round(1000-p.d*10)+1}"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`;
-  let tags=""; line.forEach((p,i)=>{ tags+=tag(p,i%2?row1:row0,true); }); back.forEach(p=>{ const lf=p.X<-3.5; tags+=`<button class="st-tag st-side${lf?" st-left":""}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(lf?p.x-p.w*0.36:p.x+p.w*0.36,CAM.W)};top:${pct(p.y-p.bh*0.62,CAM.H)};z-index:${Math.round(1000-p.d*10)+1}"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`; });
+  const tag=(p,ty,ptr)=>`${ptr?`<i class="st-ptr" style="left:${pct(p.x,CAM.W)};top:${pct(ty+THph,CAM.H)};height:${pct(p.btop-(ty+THph),CAM.H)}"></i>`:""}<button class="st-tag" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(clampX(p.x,tagW(stadLast(p.name))),CAM.W)};top:${pct(ty,CAM.H)};z-index:${ptr?1100:Math.round(1000-p.d*10)+1}"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`;
+  const heads=ps.map(p=>{ const ph=photoFor(p.name), headHurt=injuryParts(p.inj).has("head"), tg=injuryTag(p.inj);
+    return `<button class="st-head${headHurt?" hurt":""}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(p.x,CAM.W)};top:${pct(p.hy,CAM.H)};z-index:${Math.round(1000-p.d*10)+1}" aria-label="${esc(p.name)}">${ph?`<img src="/api/hs?u=${encodeURIComponent(ph)}" alt="" loading="lazy">`:`<span>${esc(p.num)}</span>`}${tg?`<b class="st-itag">${esc(tg)}</b>`:""}</button>`; }).join("");
+  let tags=""; line.forEach((p,i)=>{ tags+=tag(p,i%2?row1:row0,true); }); if(true){ const placedB=[]; back.slice().sort((a,b)=>a.x-b.x).forEach(p=>{ const tw_=tagW(stadLast(p.name)), y0=p.hy-THph/2;
+      const hit=(x0,x1)=>x0<4||x1>CAM.W-4||ps.some(q=>q!==p&&Math.abs(q.hy-p.hy)<Dph&&x1>q.x-Dph/2&&x0<q.x+Dph/2)||placedB.some(b=>x1>b[0]&&x0<b[1]);
+      let cls="st-side", left=p.x+Dph*0.55, box=[left,left+tw_];
+      if(hit(...box)){ left=p.x-Dph*0.55; box=[left-tw_,left]; cls="st-side st-left"; }
+      if(hit(...box)){ cls=""; left=clampX(p.x,tw_); box=[left-tw_/2,left+tw_/2]; }
+      placedB.push(box); const top=cls?y0:p.hy+Dph/2+GAP;
+      tags+=`<button class="st-tag ${cls}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(left,CAM.W)};top:${pct(top,CAM.H)};z-index:1050"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`; }); } else { back.forEach(p=>{ const tw_=tagW(stadLast(p.name)); const lf=(p.X<-3.5&&(p.x-Dph*0.62-tw_)>4)||(p.x+Dph*0.62+tw_>CAM.W-4); tags+=`<button class="st-tag st-side${lf?" st-left":""}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(lf?p.x-Dph*0.62:p.x+Dph*0.62,CAM.W)};top:${pct(p.hy-THph/2,CAM.H)};z-index:${Math.round(1000-p.d*10)+1}"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`; }); }
   const sprites=ps.slice().sort((a,b)=>b.d-a.d).map(p=>{ const parts=[...injuryParts(p.inj)]; const key=[CUR,p.name,p.num,parts.join("+"),photoFor(p.name)].join("|");
     return `<span class="st-pl${p.inj?" hurt":""}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" data-stkey="${esc(key)}" data-parts="${esc(parts.join(","))}" data-num="${esc(p.num)}" data-itag="${esc(injuryTag(p.inj)||"")}" role="button" tabindex="0" aria-label="${esc(DLABEL[p.pos]||p.pos)}: ${esc(p.name)}${p.inj?", "+esc(p.inj.status+" "+(p.inj.injury||"")):""}" style="left:${pct(p.x-p.w/2,CAM.W)};top:${pct(p.top,CAM.H)};width:${pct(p.w,CAM.W)};z-index:${Math.round(1000-p.d*10)}"><i class="st-shadow"></i></span>`; }).join("");
   const legend=ps.slice().sort((a,b)=>(b.d>=STAD_LINE_D)-(a.d>=STAD_LINE_D)||a.x-b.x).map(p=>`<button class="st-chip" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}"><b>${esc(CIRCLE[p.pos]||p.pos)}</b> ${esc(stadLast(p.name))}${p.inj?' <span class="st-hurtdot" aria-label="injured"></span>':""}</button>`).join("");
-  return `<div class="st-wrap"><div class="stadium" role="img" aria-label="${unit==="offense"?"Offense":"Defense"} lined up on the field, seen from behind">${lines}${sprites}${tags}<div class="st-loading">Lining up the starters…</div></div><div class="st-legend">${legend}</div></div>`;
+  return `<div class="st-wrap"><div class="stadium" style="--hd:${Dpx}px;--th:${THpx}px" role="img" aria-label="${unit==="offense"?"Offense":"Defense"} lined up on the field, seen from behind">${lines}${sprites}${heads}${tags}<div class="st-loading">Lining up the starters…</div></div><div class="st-legend">${legend}</div></div>`;
 }
 async function fillStadium(root){
   const el=root?.querySelector?.(".stadium"); if(!el) return;
@@ -115,7 +135,7 @@ async function fillStadium(root){
     const name=sp.dataset.pname, parts=sp.dataset.parts?sp.dataset.parts.split(","):[];
     const r=await stadPlayer(sp.dataset.stkey,{num:sp.dataset.num, c1:c[0], c2:c[1], parts, photo:photoFor(name)}); const tg=sp.dataset.itag;
     if(!sp.isConnected) return;
-    sp.insertAdjacentHTML("beforeend",`<img class="st-body" src="${r.body}" alt="">${r.glow?`<img class="st-glow" src="${r.glow}" alt="">`:""}${tg?`<b class="st-itag">${esc(tg)}</b>`:""}`);
+    sp.insertAdjacentHTML("beforeend",`<img class="st-body" src="${r.body}" alt="">${r.glow?`<img class="st-glow" src="${r.glow}" alt="">`:""}`);
   }));
   el.classList.add("ready");
 }
@@ -132,3 +152,6 @@ const _renderDepthST=renderDepth;
 renderDepth=function(){ _renderDepthST(); if(STAD.view==="stadium") fillStadium($("depthBody")); };
 document.addEventListener("click",e=>{ const b=e.target.closest("[data-fieldview]"); if(!b) return; STAD.view=b.dataset.fieldview; try{ localStorage.setItem("nh_fieldview",STAD.view); }catch(err){} renderDepth(); });
 document.addEventListener("keydown",e=>{ if((e.key==="Enter"||e.key===" ")&&e.target.classList?.contains("st-pl")){ e.preventDefault(); openByName(e.target.dataset.pname,e.target.dataset.dpos); } });
+
+// re-lay out when the screen width changes a lot (rotate, unfold)
+let stadW=0; window.addEventListener("resize",()=>{ clearTimeout(STAD.rt); STAD.rt=setTimeout(()=>{ const w=$("depthBody")?.clientWidth||0; if(STAD.view==="stadium"&&S.tab==="depth"&&Math.abs(w-(STAD.cw||0))>60) renderDepth(); },250); });

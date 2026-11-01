@@ -507,3 +507,13 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 .st-tag.st-left{transform:translateX(-100%)}
 .st-itag{position:absolute;left:66%;top:1%;min-width:30%;padding:2% 4%;border-radius:999px;background:#E5322B;color:#fff;font:800 clamp(7px,1.5cqw,14px)/1.1 "Barlow Condensed",sans-serif;text-align:center;box-shadow:0 0 0 2px #fff,0 0 8px rgba(229,50,43,.9);animation:stPulse 1.5s ease-in-out infinite;pointer-events:none}
 .st-pl.hurt::after{content:"";position:absolute;left:10%;right:10%;bottom:-2.5%;height:5%;border-radius:50%;border:2px solid rgba(255,59,48,.9);box-shadow:0 0 10px rgba(255,59,48,.9);animation:stPulse 1.5s ease-in-out infinite;pointer-events:none}
+/* stadium: one photo size for every player, tags on the field on every screen */
+.st-head{position:absolute;width:var(--hd);height:var(--hd);transform:translate(-50%,-50%);border-radius:50%;padding:0;border:3px solid #FFC62F;background:#4F2683;overflow:visible;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.45)}
+.st-head img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 8%;transform:scale(1.15);transform-origin:50% 10%;clip-path:circle(43.5% at 50% 43.5%)}
+.st-head span{color:#FFC62F;font:800 calc(var(--hd)*.45) "Barlow Condensed",sans-serif}
+.st-head.hurt{border-color:#ff3b30;box-shadow:0 0 0 2px #fff,0 0 12px 3px rgba(255,40,40,.95);animation:stPulse 1.5s ease-in-out infinite}
+.st-head .st-itag{left:auto;right:-30%;top:-18%;min-width:0;padding:1px 5px;font-size:max(9px,calc(var(--hd)*.26))}
+.st-tag{height:var(--th);min-width:0;padding:0 7px;border-radius:7px;font-size:clamp(10px,1.8cqw,16px)}
+.st-tag .pos{font-size:clamp(8px,1.2cqw,12px);margin-bottom:1px}
+.st-pl>.st-itag{display:none}
+@container stad (max-width:560px){ .st-tag,.st-ptr{display:flex} .st-ptr{display:block} .st-legend{display:none} }
