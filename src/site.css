@@ -463,3 +463,11 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   repeating-linear-gradient(0deg,transparent 0 22px,color-mix(in srgb,var(--fg) 9%,transparent) 22px 24px) left 6px top 0/10px 100% no-repeat,
   repeating-linear-gradient(0deg,transparent 0 22px,color-mix(in srgb,var(--fg) 9%,transparent) 22px 24px) right 6px top 0/10px 100% no-repeat}
 @media print{body::before{display:none}}
+/* install buttons */
+.nf-app{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--purple-ink);color:var(--purple-ink);background:none;border-radius:999px;padding:4px 12px 4px 6px;font:700 13.5px var(--display);letter-spacing:.03em;cursor:pointer}
+.nf-app img{border-radius:5px}
+.nf-links{align-items:center}
+.acct-install{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;cursor:pointer;font:inherit;color:inherit;background:var(--surface)}
+.acct-install img{width:42px;height:42px;border-radius:10px;flex:none}
+.acct-install .grow{display:flex;flex-direction:column;gap:2px}
+.inst-steps{margin:4px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:15.5px;line-height:1.45}
