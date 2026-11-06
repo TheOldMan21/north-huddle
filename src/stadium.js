@@ -74,16 +74,13 @@ async function stadPlayer(key,o){
     // jersey number on the back
     const N=M.number; g.font=`800 ${N.size}px "Barlow Condensed","Arial Narrow",sans-serif`; g.textAlign="center"; g.textBaseline="middle";
     g.lineJoin="round"; g.lineWidth=N.size*0.06; g.strokeStyle="rgba(255,255,255,.85)"; g.strokeText(String(o.num??""),N.x,N.y); g.fillStyle=`rgb(${c2})`; g.fillText(String(o.num??""),N.x,N.y);
-    // headshot in a ring where the head is
-    const Hd=M.head, headHurt=(o.parts||[]).includes("head");
-    g.beginPath(); g.arc(Hd.cx,Hd.cy,Hd.r+Hd.ring,0,7); g.fillStyle=headHurt?"#ff3b30":`rgb(${c2})`; g.fill();
-    g.beginPath(); g.arc(Hd.cx,Hd.cy,Hd.r,0,7); g.fillStyle=`rgb(${c1})`; g.fill();
-    if(hs.img){ g.save(); g.beginPath(); g.arc(Hd.cx,Hd.cy,Hd.r,0,7); g.clip(); const fs=3.5*Hd.r/600*(600/hs.img.naturalWidth), w=hs.img.naturalWidth*fs, h=hs.img.naturalHeight*fs; g.drawImage(hs.img,Hd.cx-w/2,Hd.cy-Hd.r-4*M.scale,w,h); g.restore(); }
-    else { g.fillStyle=`rgb(${c2})`; g.font=`800 ${Hd.r*0.9}px "Barlow Condensed",sans-serif`; g.fillText(String(o.num??""),Hd.cx,Hd.cy); }
+    // just a neck here; the player's photo sits on top of it as a separate, equal-size circle
+    const Hd=M.head, headHurt=(o.parts||[]).includes("head"), sk=STAD.skinBase.map((v,i)=>Math.min(255,v*ratio[i]));
+    g.fillStyle=`rgb(${sk.map(Math.round)})`; const nk=M.neck||{x:Hd.cx,y0:Hd.cy+Hd.r*0.55,y1:Hd.cy+Hd.r*0.98,w:Hd.r*0.42};
+    g.beginPath(); g.roundRect?g.roundRect(nk.x-nk.w/2,nk.y0,nk.w,nk.y1-nk.y0,nk.w*0.35):g.rect(nk.x-nk.w/2,nk.y0,nk.w,nk.y1-nk.y0); g.fill();
     let glowURL=null;
-    if(anyRed||headHurt){
+    if(anyRed){
       const rc=document.createElement("canvas"); rc.width=W; rc.height=H; rc.getContext("2d").putImageData(red,0,0);
-      if(headHurt){ const x=rc.getContext("2d"); x.beginPath(); x.arc(Hd.cx,Hd.cy,Hd.r+Hd.ring*0.5,0,7); x.lineWidth=Hd.ring*1.8; x.strokeStyle="#ff3b30"; x.stroke(); }
       gg.shadowColor="rgba(255,255,255,.95)"; gg.shadowBlur=3; gg.drawImage(rc,0,0);
       gg.shadowColor="rgba(255,30,30,1)"; gg.shadowBlur=22; gg.drawImage(rc,0,0); gg.drawImage(rc,0,0); gg.shadowBlur=10; gg.drawImage(rc,0,0);
       gg.shadowBlur=0; gg.drawImage(rc,0,0);
@@ -110,7 +107,7 @@ function stadiumHtml(unit){
   const Dpx=Math.max(30,Math.min(56,cw*0.065)), Dph=Dpx/cw*CAM.W;           // one photo size for everyone
   const THpx=Math.max(26,Math.min(40,cw*0.041)), THph=THpx/cw*CAM.W, GAP=6/cw*CAM.W;
   // geometry in photo pixels
-  ps.forEach(p=>{ const c=camP(p.X,p.d); p.x=c.x; p.y=c.y; p.s=c.s; p.bh=BODY_YD*c.s; p.h=p.bh*(STAD.meta?STAD.meta.h/(STAD.meta.h-STAD.meta.pad):1.45); p.w=p.h*(STAD.meta?STAD.meta.w/STAD.meta.h:0.475); p.top=p.y-p.h*0.985; p.hy=p.top+(STAD.meta?STAD.meta.head.cy/STAD.meta.h:0.17)*p.h; p.btop=p.hy-Dph/2; });
+  ps.forEach(p=>{ const c=camP(p.X,p.d); p.x=c.x; p.y=c.y; p.s=c.s; p.bh=BODY_YD*c.s; p.h=p.bh*(STAD.meta?STAD.meta.h/(STAD.meta.h-STAD.meta.pad):1.45); p.w=p.h*(STAD.meta?STAD.meta.w/STAD.meta.h:0.475); p.top=p.y-p.h*0.985; p.hy=p.top+0.283*p.h-Dph/2; p.btop=p.hy-Dph/2; });
   const line=ps.filter(p=>p.d>=STAD_LINE_D).sort((a,b)=>a.x-b.x), back=ps.filter(p=>p.d<STAD_LINE_D);
   const row0=Math.min(...line.map(p=>p.btop))-THph-GAP*2, row1=row0-THph-GAP;
   const lines=(unit==="offense"?[[16.6,"los"],[26.6,"fd"]]:[[16.6,"los"]]).map(([d,cls])=>{ const a=camP(-26.7,d), b=camP(26.7,d); return `<i class="st-line st-${cls}" style="left:${pct(Math.max(0,a.x),CAM.W)};width:${pct(Math.min(CAM.W,b.x)-Math.max(0,a.x),CAM.W)};top:${pct(a.y,CAM.H)}"></i>`; }).join("");
