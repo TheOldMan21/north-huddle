@@ -9,8 +9,8 @@ function camP(X,d){ const s=CAM.f/d; return {x:CAM.vx+X*s, y:CAM.hz+s*CAM.ch-CAM
 // field spots (X = yards from the middle, + is the right side of the screen; d = distance from the camera)
 const STAD_FORM={
   offense:{LWR:[-7.6,15.7],SWR:[-5.2,14.7],LT:[-2.8,16.0],LG:[-1.4,15.9],C:[0,15.85],RG:[1.4,15.9],RT:[2.8,16.0],TE:[4.4,16.2],RWR:[7.6,16.2],QB:[0.4,10.0],RB:[-2.5,10.3]},
-  defense34:{LCB:[-8,15.5],LOLB:[-5.6,15.8],LDE:[-2.9,16.0],NT:[0,15.9],RDE:[2.9,16.0],ROLB:[5.6,15.8],RCB:[8,15.5],WLB:[-1.7,13.2],MLB:[1.7,13.2],SS:[-3.6,11.0],FS:[3.6,11.2]},
-  defense43:{LCB:[-8,15.5],LDE:[-4.2,16.0],LDT:[-1.4,15.9],RDT:[1.4,15.9],RDE:[4.2,16.0],RCB:[8,15.5],WLB:[-4.4,13.4],MLB:[0,13.0],SLB:[4.4,13.4],SS:[-3.6,11.0],FS:[3.6,11.2]}
+  defense34:{LCB:[-8,15.5],LOLB:[-5.6,15.8],LDE:[-2.9,16.0],NT:[0,15.9],RDE:[2.9,16.0],ROLB:[5.6,15.8],RCB:[8,15.5],WLB:[-1.45,12.6],MLB:[1.45,12.6],SS:[-4.3,11.0],FS:[4.3,11.0]},
+  defense43:{LCB:[-8,15.5],LDE:[-4.2,16.0],LDT:[-1.4,15.9],RDT:[1.4,15.9],RDE:[4.2,16.0],RCB:[8,15.5],WLB:[-2.8,12.8],MLB:[0,12.6],SLB:[2.8,12.8],SS:[-6.0,11.0],FS:[6.0,11.0]}
 };
 // phones: two clean levels so equal-size photos never overlap (line at ~16 yds, everyone else at ~11)
 const STAD_FORM_PHONE={
@@ -117,13 +117,23 @@ function stadiumHtml(unit){
   const tag=(p,ty,ptr)=>`${ptr?`<i class="st-ptr" style="left:${pct(p.x,CAM.W)};top:${pct(ty+THph,CAM.H)};height:${pct(p.btop-(ty+THph),CAM.H)}"></i>`:""}<button class="st-tag" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(clampX(p.x,tagW(stadLast(p.name))),CAM.W)};top:${pct(ty,CAM.H)};z-index:${ptr?1100:Math.round(1000-p.d*10)+1}"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`;
   const heads=ps.map(p=>{ const ph=photoFor(p.name), headHurt=injuryParts(p.inj).has("head"), tg=injuryTag(p.inj);
     return `<button class="st-head${headHurt?" hurt":""}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(p.x,CAM.W)};top:${pct(p.hy,CAM.H)};z-index:${Math.round(1000-p.d*10)+1}" aria-label="${esc(p.name)}">${ph?`<img src="/api/hs?u=${encodeURIComponent(ph)}" alt="" loading="lazy">`:`<span>${esc(p.num)}</span>`}${tg?`<b class="st-itag">${esc(tg)}</b>`:""}</button>`; }).join("");
-  let tags=""; line.forEach((p,i)=>{ tags+=tag(p,i%2?row1:row0,true); }); if(true){ const placedB=[]; back.slice().sort((a,b)=>a.x-b.x).forEach(p=>{ const tw_=tagW(stadLast(p.name)), y0=p.hy-THph/2;
-      const hit=(x0,x1)=>x0<4||x1>CAM.W-4||ps.some(q=>q!==p&&Math.abs(q.hy-p.hy)<Dph&&x1>q.x-Dph/2&&x0<q.x+Dph/2)||placedB.some(b=>x1>b[0]&&x0<b[1]);
-      let cls="st-side", left=p.x+Dph*0.55, box=[left,left+tw_];
-      if(hit(...box)){ left=p.x-Dph*0.55; box=[left-tw_,left]; cls="st-side st-left"; }
-      if(hit(...box)){ cls=""; left=clampX(p.x,tw_); box=[left-tw_/2,left+tw_/2]; }
-      placedB.push(box); const top=cls?y0:p.hy+Dph/2+GAP;
-      tags+=`<button class="st-tag ${cls}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(left,CAM.W)};top:${pct(top,CAM.H)};z-index:1050"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`; }); } else { back.forEach(p=>{ const tw_=tagW(stadLast(p.name)); const lf=(p.X<-3.5&&(p.x-Dph*0.62-tw_)>4)||(p.x+Dph*0.62+tw_>CAM.W-4); tags+=`<button class="st-tag st-side${lf?" st-left":""}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(lf?p.x-Dph*0.62:p.x+Dph*0.62,CAM.W)};top:${pct(p.hy-THph/2,CAM.H)};z-index:${Math.round(1000-p.d*10)+1}"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`; }); }
+  let tags=""; line.forEach((p,i)=>{ tags+=tag(p,i%2?row1:row0,true); }); if(true){ const placedB=[]; const TOPMAX=CAM.H-THph-6;
+      // backfield names go on the grass right under each player's feet, never over anyone's body
+      const bodyBox=q=>[q.x-q.w*0.32,q.top+q.h*0.17,q.x+q.w*0.32,q.y];
+      const hitsBody=(b)=>ps.some(q=>{ const r=bodyBox(q); return b[0]<r[2]&&b[2]>r[0]&&b[1]<r[3]&&b[3]>r[1]; });
+      const hitsTag=(b)=>placedB.some(t=>b[0]<t[2]&&b[2]>t[0]&&b[1]<t[3]&&b[3]>t[1]);
+      back.slice().sort((a,b)=>a.x-b.x).forEach(p=>{ const tw_=tagW(stadLast(p.name));
+        const cands=[];
+        const under=Math.min(p.y+GAP*1.5,TOPMAX);
+        cands.push([clampX(p.x,tw_),under,""]);
+        for(const dx of [tw_*0.6,-tw_*0.6,tw_*1.1,-tw_*1.1]) cands.push([clampX(p.x+dx,tw_),under,""]);
+        cands.push([p.x+Dph*0.55,p.hy-THph/2,"st-side"],[p.x-Dph*0.55,p.hy-THph/2,"st-side st-left"]);
+        let pick=null;
+        for(const [x,y,cls] of cands){ const b=cls==="st-side"?[x,y,x+tw_,y+THph]:cls?[x-tw_,y,x,y+THph]:[x-tw_/2,y,x+tw_/2,y+THph];
+          if(b[0]<4||b[2]>CAM.W-4) continue; if(!hitsBody(b)&&!hitsTag(b)){ pick=[x,y,cls,b]; break; } }
+        if(!pick){ const x=clampX(p.x,tw_); pick=[x,under,"",[x-tw_/2,under,x+tw_/2,under+THph]]; }
+        placedB.push(pick[3]);
+        tags+=`<button class="st-tag ${pick[2]}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(pick[0],CAM.W)};top:${pct(pick[1],CAM.H)};z-index:1050"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`; }); } else { back.forEach(p=>{ const tw_=tagW(stadLast(p.name)); const lf=(p.X<-3.5&&(p.x-Dph*0.62-tw_)>4)||(p.x+Dph*0.62+tw_>CAM.W-4); tags+=`<button class="st-tag st-side${lf?" st-left":""}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" style="left:${pct(lf?p.x-Dph*0.62:p.x+Dph*0.62,CAM.W)};top:${pct(p.hy-THph/2,CAM.H)};z-index:${Math.round(1000-p.d*10)+1}"><span class="pos">${esc(CIRCLE[p.pos]||p.pos)}</span><span class="nm">${esc(stadLast(p.name))}</span></button>`; }); }
   const sprites=ps.slice().sort((a,b)=>b.d-a.d).map(p=>{ const parts=[...injuryParts(p.inj)]; const key=[CUR,p.name,p.num,parts.join("+"),photoFor(p.name)].join("|");
     return `<span class="st-pl${p.inj?" hurt":""}" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}" data-stkey="${esc(key)}" data-parts="${esc(parts.join(","))}" data-num="${esc(p.num)}" data-itag="${esc(injuryTag(p.inj)||"")}" role="button" tabindex="0" aria-label="${esc(DLABEL[p.pos]||p.pos)}: ${esc(p.name)}${p.inj?", "+esc(p.inj.status+" "+(p.inj.injury||"")):""}" style="left:${pct(p.x-p.w/2,CAM.W)};top:${pct(p.top,CAM.H)};width:${pct(p.w,CAM.W)};z-index:${Math.round(1000-p.d*10)}"><i class="st-shadow"></i></span>`; }).join("");
   const legend=ps.slice().sort((a,b)=>(b.d>=STAD_LINE_D)-(a.d>=STAD_LINE_D)||a.x-b.x).map(p=>`<button class="st-chip" data-pname="${esc(p.name)}" data-dpos="${esc(p.pos)}"><b>${esc(CIRCLE[p.pos]||p.pos)}</b> ${esc(stadLast(p.name))}${p.inj?' <span class="st-hurtdot" aria-label="injured"></span>':""}</button>`).join("");
