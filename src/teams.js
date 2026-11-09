@@ -51,6 +51,13 @@ function minBlend(v,q){
     for(const [grp,keys] of Object.entries({pass:["yds","td","cmp","att","int"],rush:["yds","td","att"],rec:["rec","yds","td"],def:["tkl","sacks","int"]})){
       if(!e.stats?.[grp]) continue; s[grp]=s[grp]||{}; keys.forEach(k=>{ const a=Number(s[grp][k]||0), b=Number(e.stats[grp][k]||0); if(b>a) s[grp][k]=b; }); }
     const n={...p, stats:s}; n.rank=(s.pass?.yds||0)+(s.rush?.yds||0)+(s.rec?.yds||0)+5*(s.def?.tkl||0)+20*(s.def?.sacks||0); return n; });
+  // depth: keep Claude's order and starters, but add anyone ESPN has at that spot that Claude's chart is missing
+  // (players just activated, signed or promoted between updates)
+  const qd=Object.fromEntries((q.depth||[]).map(d=>[d.pos,d]));
+  if(v.depth?.length) out.depth=v.depth.map(d=>{ const e=qd[d.pos]; if(!e||!(e.players||[]).length) return d;
+    const names=[...(d.players||[])], nums=[...(d.numbers||names.map(()=>null))], have=new Set(names.map(nmz));
+    (e.players||[]).forEach((n,i)=>{ if(have.has(nmz(n))) return; names.push(n); nums.push(e.numbers?.[i]??null); have.add(nmz(n)); });
+    return names.length===(d.players||[]).length?d:{...d, players:names, numbers:nums}; });
   // news: add ESPN headlines Claude hasn't covered
   const news=[...(v.news||[])], heads=new Set(news.map(n=>nmz(n.headline)));
   (q.news||[]).forEach(n=>{ if(!heads.has(nmz(n.headline))) news.push(n); });
