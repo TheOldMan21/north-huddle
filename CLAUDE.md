@@ -15,6 +15,7 @@ Unofficial Minnesota football fan hub (owner: TheOldMan21). Hosted on Cloudflare
 - `src/feedback.js` — "Send feedback" (footer + account sheet) into the `feedback` table; owner Inbox tab on the admin page with a count on the header shield.
 - `supabase/round4.sql` — feedback table, members-only leagues, request cooldown, 500-char chat cap. `_headers` — security headers.
 - `src/predict.js` + `functions/api/predict.js` — pre-game win chances (ESPN Matchup Predictor) on the next-game card, scoreboard, game sheet and pick'em.
+- `src/watch.js` — Watch & listen sheet (official TV/streaming apps per network + radio), Watch button on game cards, live highlight clips on the game-day card.
 - `src/admin.js` — owner-only admin page (Members / Chat / Leagues), opened from the account sheet or /#admin.
 - `supabase/setup.sql` — database schema, access rules, RPCs (`doc_update` deep merge, `doc_acquire` lease). Re-runnable in the Supabase SQL Editor.
 - `scripts/nh.py` — CLI for scheduled updates to read/write docs as the bot (`NH_BOT_PW` env var).

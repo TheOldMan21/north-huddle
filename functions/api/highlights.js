@@ -33,7 +33,7 @@ export async function onRequest(ctx) {
     }));
     out.games = res.filter((g) => g.videos.length).sort((x, y) => y.standout - x.standout || String(y.date).localeCompare(String(x.date)));
   } catch (e) { out.error = "upstream"; }
-  const resp = new Response(JSON.stringify(out), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=600" } });
+  const resp = new Response(JSON.stringify(out), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": out.games.some((g) => g.state === "in") ? "public, max-age=120" : "public, max-age=600" } });
   if (!out.error) ctx.waitUntil(cache.put(key, resp.clone()));
   return resp;
 }
