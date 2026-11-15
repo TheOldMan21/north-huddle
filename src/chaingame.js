@@ -75,13 +75,18 @@ function cgSnap(){
   const names=Object.keys(CG_ROUTES), name=names[(Math.random()*names.length)|0];
   const side=Math.random()<0.5?-1:1, startX=side*(5+Math.random()*4);
   const pts=CG_ROUTES[name].map(([x,y])=>[startX+x*-side, y]);
-  pts.forEach(p=>{ p[0]=Math.max(-16,Math.min(16,p[0])); });
+  // keep the whole route on screen: squeeze it sideways if any point (or where he keeps running after) would leave the view
+  const last=pts[pts.length-1], prev=pts[pts.length-2], dl=Math.hypot(last[0]-prev[0],last[1]-prev[1])||1, ext=[last[0]+(last[0]-prev[0])/dl*6, last[1]+(last[1]-prev[1])/dl*6];
+  let k=1; [...pts,ext].forEach(([x,y])=>{ if(Math.abs(x)>0.01) k=Math.min(k,cgXmax(y)/Math.abs(x)); });
+  pts.forEach(p=>{ p[0]*=k; });
   const lvl=CG.comps;
   CG.wr={pts, seg:0, x:pts[0][0], y:0, speed:7.2+Math.random()*0.8, route:name, track:false};
   CG.cb={x:startX+side*-1.2, y:5+Math.random()*2, speed:6.3+Math.min(1.6,lvl*0.08), react:Math.max(0.12,0.45-lvl*0.02), lag:[], track:false};
   CG.sf={x:-side*4, y:17+Math.random()*4, speed:5.4+Math.min(1.2,lvl*0.06), track:false};
   CG.phase="route"; CG.t=0; CG.ball=null; CG.drag=null; CG.post=null; CG.pocket=4.4-Math.min(1.4,lvl*0.05);
 }
+// widest |X| (yards) that still fits on screen at a given distance downfield
+function cgXmax(Y){ const c=CG.cam; if(!c) return 16; const s=c.fx/cgZe(Y-c.y); return Math.max(3,(CG.w/2-30)/s); }
 function cgMove(ent,tx,ty,spd,dt){ const dx=tx-ent.x, dy=ty-ent.y, d=Math.hypot(dx,dy); if(d<1e-3) return true; const s=Math.min(d,spd*dt); ent.x+=dx/d*s; ent.y+=dy/d*s; return s>=d-1e-3; }
 /* One step of the play. The live game and the aim preview both run this, so the ring's
    OPEN / CONTESTED / COVERED call matches what actually happens when the ball lands.
@@ -93,6 +98,7 @@ function cgStep(S,dt){
   if(w.track) cgMove(w,land[0],land[1],w.speed*1.12,dt);
   else { const tgt=w.pts[w.seg+1]; if(tgt){ if(cgMove(w,tgt[0],tgt[1],w.speed,dt)) w.seg++; } else {
       const a=w.pts[w.pts.length-2], z=w.pts[w.pts.length-1], dx=z[0]-a[0], dy=z[1]-a[1], d=Math.hypot(dx,dy)||1; w.x+=dx/d*w.speed*dt*0.85; w.y+=dy/d*w.speed*dt*0.85; w.x=Math.max(-25,Math.min(25,w.x)); } }
+  { const xm=cgXmax(w.y); w.x=Math.max(-xm,Math.min(xm,w.x)); }
   if(b&&!c.track&&rem<0.7&&Math.hypot(c.x-land[0],c.y-land[1])<=3) c.track=true;
   if(c.track) cgMove(c,land[0],land[1],c.speed,dt);
   else { c.lag.push([S.t,w.x,w.y]); while(c.lag.length&&c.lag[0][0]<S.t-c.react) c.lag.shift(); const aim=c.lag[0]||[0,w.x,w.y]; cgMove(c,aim[1]+(c.x<w.x?-0.6:0.6),aim[2]+0.4,c.speed,dt); }
