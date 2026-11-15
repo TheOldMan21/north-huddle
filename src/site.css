@@ -642,3 +642,9 @@ nav.tabs button[aria-current=page] svg{color:#0B1220}
 .gd-acts .wpv-btn{margin-left:0;white-space:nowrap}
 @media(max-width:520px){.gd-acts{order:8;flex-basis:100%;margin-left:0}.gd-acts>*{flex:1;justify-content:center}}
 .gd-top .gd-pres{order:9;flex-basis:100%}
+/* Chain Gang game (shares the Field Goal Challenge layout) */
+#cgGame{position:fixed;inset:0;z-index:20;background:#0d1b2a;display:flex;flex-direction:column;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
+#cgGame[hidden]{display:none}
+.cg-top{background:#0B1220;border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#2EE6C5,#7C5CFF) 1}
+#cgGame .fg-stat b{color:#FFD54A}
+.cg-card .fg-ico{font-size:28px}

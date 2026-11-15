@@ -2733,7 +2733,7 @@ async function fgOver(){
   if(ACC.db&&ACC.id){
     try{
       const ref=ACC.db.doc("scores/"+ACC.id), cur=await ref.get(), old=cur.exists?Number(cur.data().best||0):0;
-      if(FG.score>old) await ref.set({best:FG.score, made:FG.made, t:nowIso()});
+      if(FG.score>old) await ref.set({...(cur.exists?cur.data():{}), best:FG.score, made:FG.made, t:nowIso()});
       const q=await ACC.db.collection("scores").orderBy("best","desc").limit(10).get();
       board=`<div class="fg-board"><div class="label">Hub leaderboard</div>${q.docs.map((d,i)=>`<div class="fg-row${d.id===ACC.id?" me":""}"><span class="num">${i+1}</span>${av(d.id,"sm")}<span class="fg-nm" data-uname="${esc(d.id)}">${esc(personName(d.id))}</span><b class="num">${esc(d.data().best)}</b></div>`).join("")}</div>`;
     }catch(e){ console.warn("scores",e); }
