@@ -549,6 +549,6 @@ const _renderHomeCG=renderHome;
 renderHome=function(){ _renderHomeCG(); const el=$("v-home"); if(!S.meta||!el||el.querySelector(".cg-card")) return;
   const fg=el.querySelector(".fg-card"); const b=cgBest();
   const html=`<button class="card fg-card cg-card" data-chaingame="1"><span class="fg-ico">⛓️</span><span class="grow"><span class="lg-ft">Kirko Chainz</span><span class="t2">Hit your receiver, stack the chains, rack up Huddle Bucks.${b.bucks?` Best $${Number(b.bucks).toLocaleString()}`:""}${cgW().bank?` · Bank ${cgMoney(cgW().bank)}`:""}</span></span><span class="tbtn">Play</span></button>`;
-  if(fg) fg.insertAdjacentHTML("afterend",html); };
+  if(fg){ fg.insertAdjacentHTML("afterend",html); const cg=el.querySelector(".cg-card"); if(cg) cg.style.order=fg.style.order||""; } };
 document.addEventListener("click",e=>{ if(e.target.closest("[data-chaingame]")&&!e.target.closest("[data-cgshop]")) openChainGame(); });
 document.addEventListener("keydown",e=>{ if(CG.on&&e.key==="Escape") closeChainGame(); if(CG.on&&CG.phase==="over"&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); cgStart(); } });
