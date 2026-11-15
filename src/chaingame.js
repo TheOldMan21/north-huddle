@@ -131,6 +131,7 @@ function cgLoop(now){
     if(CG.phase==="route"&&CG.t>CG.pocket){ CG.drag=null; cgResult("sack"); }
     else if(CG.phase==="air"&&CG.ball.t>=CG.ball.T) cgLand();
   } else if(CG.phase==="result") cgPost(dt);
+  cgChainsStep(dt);
   cgDraw(); CG.raf=requestAnimationFrame(cgLoop);
 }
 function cgLand(){
@@ -156,6 +157,7 @@ function cgResult(kind,yds,label,who){
     const bucks=Math.round((yds*5+Math.max(0,yds-15)*10+Math.max(0,yds-30)*15)*mult); CG.bucks+=bucks; CG.longest=Math.max(CG.longest,yds); cgW().bank+=bucks; cgWSave(false);
     const fire=CG.streak>=3?` · 🔥 ×${mult}`:CG.streak===2?" · heating up…":"";
     html=`<b>${label||"COMPLETE!"}</b><span>${yds} yards · +$${bucks}${fire}</span><span>New chain: ${CG_CHAINS[(CG.chains-1)%CG_CHAINS.length].name} ⛓️</span>`; cgSound(true); cgCall(label,yds);
+    if(CG.streak>=3) setTimeout(()=>{ if(CG.on) cgThrowChains(at.x,at.y); },350);
     CG.flash={t:performance.now()}; CG.post={t:0,carrier:who,dir:1,ball:{...at}};
   } else {
     const hadFire=(CG.streak||0)>=3; CG.streak=0; CG.strikes++; cgSound(false); cgCallMiss(kind,hadFire);
@@ -222,7 +224,8 @@ function cgCall(label,yds){
   let line;
   if(st===3) line="His chainz are on fire!!!";
   else if(st===5) line=CG_PICK(["Somebody call the fire department! Kirko Chainz is blazing!","He is BLAZING! Those chains are white hot!"]);
-  else if(st>5) line=CG_PICK(["Still on fire! Kirko cannot miss!","Another one! The chains are melting!","Unstoppable! Kirko Chainz is cooking!","You cannot cool him down!"]);
+  else if(st===4) line=CG_PICK(["The fans are throwing chains on the field!","It's raining chains in here!"]);
+  else if(st>5) line=CG_PICK(["Still on fire! Kirko cannot miss!","Another one! The chains are melting!","Unstoppable! Kirko Chainz is cooking!","The whole stadium is on fire!","Chains are flying out of the stands!"]);
   else if(st===2) line=CG_PICK(["Kirko is heating up!","Back to back! He's warming up!"]);
   else if(/DIVING/.test(label||"")) line=CG_PICK(["Oh what a diving grab!","He lays out and HAULS it in!"]);
   else if(/CONTESTED/.test(label||"")) line=CG_PICK(["He wins the jump ball!","Right in traffic! What a catch!"]);
@@ -321,6 +324,47 @@ document.addEventListener("click",e=>{
     w.bank-=k.price; w.owned.push(k.id); w.skin=k.id; cgWSave(true); cgShopRender(); toast(`${k.name} unlocked! 🏈`); if(k.id==="firechain") cgSay("Oh my! He bought the Chainz on Fire ball!",true); return; }
   const q=e.target.closest("[data-cgequip]"); if(q){ const w=cgW(); w.skin=q.dataset.cgequip; cgWSave(true); cgShopRender(); }
 });
+/* ---------- fire mode: the stadium burns, and fans throw chains onto the field ---------- */
+function cgStadiumFire(x,W,H,NEAR,FAR){
+  const heat=cgHeat(), t=performance.now()/1000, cam=CG.cam, big=heat>=1?1.35:1;
+  // orange glow over the sky and stands
+  let g=x.createLinearGradient(0,0,0,cam.hy*1.15); g.addColorStop(0,"rgba(255,70,0,0)"); g.addColorStop(0.55,`rgba(255,90,10,${0.18*big})`); g.addColorStop(1,`rgba(255,140,30,${0.35*big})`); x.fillStyle=g; x.fillRect(0,0,W,cam.hy*1.15);
+  x.save(); x.globalCompositeOperation="lighter";
+  const tongue=(px,py,h,w,i)=>{ const fl=0.55+0.45*Math.sin(t*9+i*1.9)*Math.sin(t*5.3+i*0.7), hh=h*fl*big, sway=Math.sin(t*4+i)*w*0.35;
+    const gg=x.createLinearGradient(0,py,0,py-hh); gg.addColorStop(0,"rgba(255,230,120,.75)"); gg.addColorStop(0.5,"rgba(255,120,20,.5)"); gg.addColorStop(1,"rgba(200,20,0,0)"); x.fillStyle=gg;
+    x.beginPath(); x.moveTo(px-w,py); x.bezierCurveTo(px-w,py-hh*0.5,px+sway-w*0.2,py-hh*0.8,px+sway,py-hh); x.bezierCurveTo(px+sway+w*0.2,py-hh*0.8,px+w,py-hh*0.5,px+w,py); x.closePath(); x.fill(); };
+  // orange heat washing over the stand surfaces
+  x.globalCompositeOperation="source-over";
+  for(const sd of [-1,1]){ const q=[[sd*31,NEAR+4,0],[sd*31,FAR,0],[sd*95,FAR,44],[sd*95,NEAR+4,44]].map(p=>cgP(p[0],p[1],p[2])); const gr=x.createLinearGradient(0,cam.hy,0,0); gr.addColorStop(0,`rgba(255,110,20,${0.22*big})`); gr.addColorStop(1,`rgba(255,60,0,${0.32*big})`); x.fillStyle=gr; x.beginPath(); q.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.closePath(); x.fill(); }
+  { const q=[[-90,92,0],[90,92,0],[90,FAR,40],[-90,FAR,40]].map(p=>cgP(p[0],p[1],p[2])); x.fillStyle=`rgba(255,90,10,${0.25*big})`; x.beginPath(); q.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.closePath(); x.fill(); }
+  x.globalCompositeOperation="lighter";
+  // rows of flames across the far stands
+  for(const [Y,Z,k] of [[94,1,0],[120,19,1],[FAR,40,2]]) for(let i=0;i<=30;i++){ const X=-90+i*6, [px,py,ps]=cgP(X+(k%2)*3,Y,Z); if(px<-20||px>W+20) continue; tongue(px,py+2,Math.max(8,ps*(6+k*2)),Math.max(4,ps*2.6),i+k*31); }
+  // rows of flames climbing each side stand, receding into the distance
+  for(const sd of [-1,1]) for(const [X,Z] of [[33,1],[52,14],[72,28],[94,43]]) for(let i=0;i<20;i++){ const Y=cam.y+12+i*i*0.34+(Z%2), [px,py,ps]=cgP(sd*X,Y,Z); if(px<-30||px>W+30||py<-20||py>cam.hy+60) continue; tongue(px,py+2,Math.max(9,ps*7),Math.max(4,ps*2.8),i+X*sd); }
+  // embers drifting up
+  for(let i=0;i<(heat>=1?60:36);i++){ const u=(i*0.6180339)%1, sp=0.12+((i*0.37)%1)*0.25, ph=(t*sp+u)%1, ex=(u*W+Math.sin(t*1.3+i)*20+W)%W, ey=cam.hy*1.05-ph*cam.hy*1.1;
+    x.fillStyle=`rgba(255,${150+((i*37)%80)},40,${(1-ph)*0.8})`; x.beginPath(); x.arc(ex,ey,1.2+(i%3)*0.7,0,7); x.fill(); }
+  x.restore();
+}
+// chains flung from the stands after a fire-mode catch; they land on the field and fade before the next snap
+function cgThrowChains(cx,cy){
+  const n=cgHeat()>=1?26:14, now=performance.now();
+  CG.thrownChains=(CG.thrownChains||[]).filter(c=>!c.landed||now-c.landed<1500);
+  for(let i=0;i<n;i++){ const sd=Math.random()<0.5?-1:1, sx=sd*(31+Math.random()*10), sy=cy-8+Math.random()*30, tx=cx+(Math.random()-0.5)*22, ty=cy+(Math.random()-0.5)*14, T=0.9+Math.random()*0.6;
+    CG.thrownChains.push({x:sx,y:sy,z:6+Math.random()*6,vx:(tx-sx)/T,vy:(ty-sy)/T,vz:0,T,delay:now+i*(1100/n),st:(Math.random()*CG_CHAINS.length)|0,spin:Math.random()*6,spinv:(Math.random()-0.5)*14,landed:0}); }
+  CG.thrownChains.forEach(c=>{ if(!c.landed&&c.vz===0) c.vz=(-c.z+0.5*22*c.T*c.T)/c.T; });
+}
+function cgChainsStep(dt){ const now=performance.now(); (CG.thrownChains||[]).forEach(c=>{ if(c.landed||now<c.delay) return; c.x+=c.vx*dt; c.y+=c.vy*dt; c.vz-=22*dt; c.z+=c.vz*dt; c.spin+=c.spinv*dt; if(c.z<=0.05){ c.z=0.05; c.landed=now; } }); }
+function cgChainsDraw(x){ const now=performance.now(); CG.thrownChains=(CG.thrownChains||[]).filter(c=>!c.landed||now-c.landed<2600);
+  CG.thrownChains.forEach(c=>{ if(now<c.delay) return; const [gx,gy,gs]=cgP(c.x,c.y), [px,py,ps]=cgP(c.x,c.y,c.z), r=Math.max(6,0.95*ps), st=CG_CHAINS[c.st], a=c.landed?Math.max(0,1-(now-c.landed)/2600):1;
+    x.globalAlpha=a*0.35; x.fillStyle="#000"; x.beginPath(); x.ellipse(gx,gy,r,r*0.3,0,0,7); x.fill(); x.globalAlpha=a;
+    const sq=c.landed?0.32:0.35+0.65*Math.abs(Math.sin(c.spin)), rot=c.landed?0:c.spin*0.3, links=12;
+    if(!c.landed){ x.shadowColor="rgba(255,200,60,.9)"; x.shadowBlur=8; }
+    for(let k=0;k<links;k++){ const an=k/links*Math.PI*2, lx=px+Math.cos(an+rot)*r, ly=py+Math.sin(an+rot)*r*sq;
+      x.save(); x.translate(lx,ly); x.rotate(an+rot+(k%2?Math.PI/2:0)); x.strokeStyle=k%2?st.c1:st.c2; x.lineWidth=Math.max(1.4,r*0.18); x.beginPath(); x.ellipse(0,0,r*0.24,r*0.14,0,0,7); x.stroke(); x.restore(); }
+    x.shadowBlur=0; if(!c.landed){ x.fillStyle="rgba(255,240,180,.8)"; x.beginPath(); x.arc(px+Math.cos(now/90+c.st)*r,py-r*sq,Math.max(1,r*0.12),0,7); x.fill(); }
+    x.globalAlpha=1; }); }
 /* ---------- drawing ---------- */
 function cgBall(x,bx,by,z,m,hx,hy,spin){
   const [sx,sy,ss]=cgP(bx,by); x.fillStyle="rgba(0,0,0,.3)"; x.beginPath(); x.ellipse(sx,sy,0.3*ss+1,0.12*ss+1,0,0,7); x.fill();
@@ -366,6 +410,7 @@ function cgDraw(){
     cgPoly(x,[[sd*26.7,NEAR],[sd*26.7,FAR],[sd*31,FAR],[sd*31,NEAR]],"#22552f"); }
   // stadium lights
   for(const lx of [0.08,0.92]){ const gx=W*lx, gy=cam.hy*0.38; g=x.createRadialGradient(gx,gy,0,gx,gy,W*0.18); g.addColorStop(0,"rgba(255,255,240,.55)"); g.addColorStop(1,"rgba(255,255,240,0)"); x.fillStyle=g; x.fillRect(gx-W*0.2,gy-W*0.2,W*0.4,W*0.4); x.fillStyle="#fffbe6"; x.fillRect(gx-12,gy-4,24,8); }
+  if(cgHeat()>=0.7) cgStadiumFire(x,W,H,NEAR,FAR);
   // faint route
   // routes: each receiver's own color, dark outline for contrast on the grass, arrow + name at the end
   if(CG.wrs&&(CG.phase==="route"||CG.phase==="air")){ const fade=CG.phase==="air"?0.35:1;
@@ -387,6 +432,7 @@ function cgDraw(){
     [...CG.cbs,CG.sf].forEach(d=>men.push({X:d.x,Y:d.y,c:DEF,face:"front",num:d.num,ph:live||car===d?run*11:0,up:car===d}));
     CG.wrs.forEach(w=>men.push({X:w.x,Y:w.y,c:OFF,face:"back",num:w.num,rc:CG_WRCOL[w.i],ph:live||car===w?run*12:0,wr:1,up:(CG.phase==="air"&&w.track&&CG.ball.T-CG.ball.t<0.45)||car===w})); }
   men.sort((a,b)=>b.Y-a.Y).forEach(m=>cgMan(x,m));
+  cgChainsDraw(x);
   // aim preview while swiping: the ring says what will happen if you let go now
   if(CG.drag&&CG.phase==="route"){ const a=cgAim(CG.drag);
     if(a){ const now=performance.now(); if(!CG.pred||now-CG.pred.at>60||Math.hypot(CG.pred.tx-a.tx,CG.pred.ty-a.ty)>0.6) CG.pred={at:now,tx:a.tx,ty:a.ty,j:cgPredict(a)};
