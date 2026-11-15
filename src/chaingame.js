@@ -26,7 +26,7 @@ function openChainGame(){
       <div class="fg-help" id="cgHelp">${CG_HELP}</div>`;
     document.body.appendChild(ov);
     $("cgClose").addEventListener("click",closeChainGame);
-    $("cgSnd").addEventListener("click",()=>{ CG.mute=!CG.mute; try{ localStorage.setItem("nh_cgmute",CG.mute?"1":""); }catch(e){} cgSndBtn(); if(CG.mute) try{ speechSynthesis.cancel(); }catch(e){} else cgSay("Kirko Chainz is in the building!"); });
+    $("cgSnd").addEventListener("click",()=>{ CG.mute=!CG.mute; try{ localStorage.setItem("nh_cgmute",CG.mute?"1":""); }catch(e){} cgSndBtn(); if(CG.mute){ try{ speechSynthesis.cancel(); }catch(e){} cgMusStop(); } else { cgMusStart(); cgSay("Kirko Chainz is in the building!"); } });
     const cv=$("cgCanvas"), pt=e=>{ const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top,performance.now()]; };
     cv.addEventListener("pointerdown",e=>{ e.preventDefault(); if(CG.phase!=="route") return; try{ cv.setPointerCapture(e.pointerId); }catch(err){} const q=pt(e); CG.drag={x0:q[0],y0:q[1],x:q[0],y:q[1],hist:[q]}; });
     cv.addEventListener("pointermove",e=>{ if(!CG.drag) return; e.preventDefault(); const q=pt(e); Object.assign(CG.drag,{x:q[0],y:q[1]}); CG.drag.hist.push(q); if(CG.drag.hist.length>8) CG.drag.hist.shift(); });
@@ -35,10 +35,10 @@ function openChainGame(){
     ov.addEventListener("click",e=>{ if(e.target.closest("[data-cgagain]")) cgStart(); });
   }
   try{ CG.mute=localStorage.getItem("nh_cgmute")==="1"; }catch(e){} cgSndBtn(); cgVoiceWarm();
-  ov.hidden=false; document.body.style.overflow="hidden"; CG.on=true; CG.paused=false; if($("cgShop")) $("cgShop").hidden=true; cgResize(); cgStart(); cgWPull();
+  ov.hidden=false; document.body.style.overflow="hidden"; CG.on=true; CG.paused=false; if($("cgShop")) $("cgShop").hidden=true; cgResize(); cgStart(); cgWPull(); cgMusStart();
   window.addEventListener("resize",cgResize);
 }
-function closeChainGame(){ cgShopClose(); try{ speechSynthesis.cancel(); }catch(e){} CG.on=false; CG.drag=null; cancelAnimationFrame(CG.raf); const ov=$("cgGame"); if(ov) ov.hidden=true; document.body.style.overflow=""; window.removeEventListener("resize",cgResize); }
+function closeChainGame(){ cgShopClose(); cgMusStop(); try{ speechSynthesis.cancel(); }catch(e){} CG.on=false; CG.drag=null; cancelAnimationFrame(CG.raf); const ov=$("cgGame"); if(ov) ov.hidden=true; document.body.style.overflow=""; window.removeEventListener("resize",cgResize); }
 function cgResize(){ const c=$("cgCanvas"); if(!c) return; const st=c.parentElement.getBoundingClientRect(), dpr=Math.min(2,window.devicePixelRatio||1); c.width=st.width*dpr; c.height=st.height*dpr; c.style.width=st.width+"px"; c.style.height=st.height+"px"; CG.w=st.width; CG.h=st.height; CG.dpr=dpr; cgCam(); }
 function cgStart(){ Object.assign(CG,{chains:0, bucks:0, strikes:0, comps:0, longest:0, phase:"set", t:0, ball:null, wrs:null, cbs:null, sf:null, flash:null, drag:null, thrown:0, streak:0, post:null, fx:[]}); $("cgMsg").innerHTML=""; $("cgHelp").textContent=CG_HELP; cgHud(); cgSnap(); cancelAnimationFrame(CG.raf); CG.last=performance.now(); CG.raf=requestAnimationFrame(cgLoop); }
 function cgHud(){ $("cgChains").textContent=CG.chains; $("cgBucks").textContent="$"+CG.bucks.toLocaleString(); $("cgStrikes").textContent="✕".repeat(CG.strikes)+"·".repeat(Math.max(0,3-CG.strikes)); }
@@ -168,6 +168,41 @@ function cgResult(kind,yds,label,who){
   cgHud(); $("cgMsg").innerHTML=`<div class="fg-pop">${html}</div>`;
   setTimeout(()=>{ if(!CG.on) return; $("cgMsg").innerHTML=""; if(CG.strikes>=3) cgOver(); else cgSnap(); },1500);
 }
+/* ---------- background music: an original stadium beat built live with Web Audio ----------
+   Am–F–C–G, drums + bass + offbeat synth stabs over a low crowd murmur. Fire mode adds 16th hats
+   and opens the filter; it ducks while the announcer talks. Muted with the same 🔊 button. */
+const CG_MUS={bpm:104, prog:[[57,60,64],[53,57,60],[48,52,55],[55,59,62]], roots:[45,41,36,43]};
+function cgMusStart(){ if(CG.mute||CG.mus) return; try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; const ctx=CG.ctx||(CG.ctx=new AC()); if(ctx.state==="suspended") ctx.resume();
+  const out=ctx.createGain(); out.gain.value=0.0001; out.connect(ctx.destination); out.gain.exponentialRampToValueAtTime(0.5,ctx.currentTime+1.5);
+  const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-18; comp.ratio.value=4; comp.connect(out);
+  const duck=ctx.createGain(); duck.gain.value=1; duck.connect(comp);
+  const nb=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate), nd=nb.getChannelData(0); for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
+  // crowd murmur bed
+  const cn=ctx.createBufferSource(), cl=ctx.createBiquadFilter(), cg=ctx.createGain(), lfo=ctx.createOscillator(), lg=ctx.createGain(); cn.buffer=nb; cn.loop=true; cl.type="bandpass"; cl.frequency.value=700; cl.Q.value=0.5; cg.gain.value=0.05; lfo.frequency.value=0.13; lg.gain.value=0.025; lfo.connect(lg); lg.connect(cg.gain); cn.connect(cl); cl.connect(cg); cg.connect(comp); cn.start(); lfo.start();
+  CG.mus={ctx,out,duck,nb,step:0,next:ctx.currentTime+0.1,stop:[cn,lfo]};
+  CG.mus.timer=setInterval(cgMusTick,25); }catch(e){} }
+function cgMusStop(){ const m=CG.mus; if(!m) return; CG.mus=null; clearInterval(m.timer); try{ const t=m.ctx.currentTime; m.out.gain.cancelScheduledValues(t); m.out.gain.setValueAtTime(m.out.gain.value,t); m.out.gain.exponentialRampToValueAtTime(0.0001,t+0.4); setTimeout(()=>{ m.stop.forEach(n=>{ try{ n.stop(); }catch(e){} }); m.out.disconnect(); },500); }catch(e){} }
+function cgMusDuck(on){ const m=CG.mus; if(!m) return; try{ const t=m.ctx.currentTime; m.duck.gain.cancelScheduledValues(t); m.duck.gain.setTargetAtTime(on?0.35:1,t,0.12); }catch(e){} }
+function cgMusTick(){ const m=CG.mus; if(!m) return; const ctx=m.ctx, sp=60/CG_MUS.bpm/4;
+  while(m.next<ctx.currentTime+0.12){ cgMusStep(m,m.step,m.next); m.step=(m.step+1)%64; m.next+=sp; } }
+function cgMusNote(m,t,f,dur,type,vol,cut){ const ctx=m.ctx, o=ctx.createOscillator(), g=ctx.createGain(), fl=ctx.createBiquadFilter(); o.type=type; o.frequency.value=f; fl.type="lowpass"; fl.frequency.value=cut||2000;
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(fl); fl.connect(g); g.connect(m.duck); o.start(t); o.stop(t+dur+0.02); }
+function cgMusNoise(m,t,dur,vol,type,freq){ const ctx=m.ctx, n=ctx.createBufferSource(), fl=ctx.createBiquadFilter(), g=ctx.createGain(); n.buffer=m.nb; fl.type=type; fl.frequency.value=freq;
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); n.connect(fl); fl.connect(g); g.connect(m.duck); n.start(t,Math.random()*0.5); n.stop(t+dur+0.02); }
+function cgMusStep(m,st,t){ const ctx=m.ctx, b=st%16, bar=(st/16)|0, heat=cgHeat(), hz=n=>440*Math.pow(2,(n-69)/12);
+  // kick
+  if(b===0||b===8||b===10&&bar%2){ const o=ctx.createOscillator(), g=ctx.createGain(); o.frequency.setValueAtTime(140,t); o.frequency.exponentialRampToValueAtTime(42,t+0.12); g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.28); o.connect(g); g.connect(m.duck); o.start(t); o.stop(t+0.3); }
+  // clap/snare on 2 and 4
+  if(b===4||b===12){ cgMusNoise(m,t,0.16,0.45,"bandpass",1800); cgMusNoise(m,t+0.012,0.12,0.3,"bandpass",1200); }
+  // hats: 8ths, 16ths when on fire
+  if(b%2===0||heat>=0.7) cgMusNoise(m,t,b%2?0.03:0.05,(b%4===2?0.16:0.09)*(b%2?0.7:1),"highpass",8000);
+  // bass: root on 8ths with an octave pop
+  const root=CG_MUS.roots[bar%4]; if(b%2===0) cgMusNote(m,t,hz(root+(b===6||b===14?12:0)),0.2,"sawtooth",0.16,380+heat*300);
+  // offbeat chord stabs
+  if(b===2||b===6||b===10||b===14||(heat>=1&&b===15)){ CG_MUS.prog[bar%4].forEach(n=>cgMusNote(m,t,hz(n+12),0.16,"square",0.035,1200+heat*2400)); }
+  // little lead hook every other bar, brighter when hot
+  if(bar%2===1&&(b===0||b===3||b===6)){ const ch=CG_MUS.prog[bar%4]; cgMusNote(m,t,hz(ch[[2,1,0][b/3|0]]+24),0.22,"triangle",0.06+heat*0.03,4000); }
+}
 /* ---------- announcer: the device's own voice, pitched up and fast, over a crowd roar ---------- */
 const CG_PICK=a=>a[(Math.random()*a.length)|0];
 function cgSndBtn(){ const b=$("cgSnd"); if(b){ b.textContent=CG.mute?"🔇":"🔊"; b.setAttribute("aria-pressed",String(!CG.mute)); } }
@@ -176,7 +211,7 @@ function cgVoice(){ if(CG.voice) return CG.voice; try{ const vs=speechSynthesis.
   const rank=v=>(/male|guy|david|alex|daniel|aaron|fred|google us english|en-us-x-iom|en-us-x-tpd|en-us-x-iol/i.test(v.name)?4:0)+(/natural|enhanced|premium|neural|online/i.test(v.name)?3:0)+(/^en[-_]US/i.test(v.lang)?2:0)+(/female|samantha|victoria|zira/i.test(v.name)?-2:0);
   CG.voice=vs.sort((a,b)=>rank(b)-rank(a))[0]; }catch(e){} return CG.voice; }
 function cgSay(text,hype){ if(CG.mute) return; try{ if(!("speechSynthesis" in window)) return; speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text), v=cgVoice(); if(v) u.voice=v; u.lang=v?v.lang:"en-US"; u.rate=hype?1.22:1.12; u.pitch=hype?1.25:1.08; u.volume=1; speechSynthesis.speak(u); }catch(e){}
+  const u=new SpeechSynthesisUtterance(text), v=cgVoice(); if(v) u.voice=v; u.lang=v?v.lang:"en-US"; u.rate=hype?1.22:1.12; u.pitch=hype?1.25:1.08; u.volume=1; u.onstart=()=>cgMusDuck(true); u.onend=u.onerror=()=>cgMusDuck(false); speechSynthesis.speak(u); setTimeout(()=>cgMusDuck(false),4000); }catch(e){}
   cgRoar(hype?1:0.6); }
 function cgRoar(amt){ if(CG.mute) return; try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; const ctx=CG.ctx||(CG.ctx=new AC()); if(ctx.state==="suspended") ctx.resume();
   const len=ctx.sampleRate*2.2, buf=ctx.createBuffer(1,len,ctx.sampleRate), d=buf.getChannelData(0); let last=0; for(let i=0;i<len;i++){ last=last*0.97+(Math.random()*2-1)*0.03; d[i]=last*6+(Math.random()*2-1)*0.08; }
