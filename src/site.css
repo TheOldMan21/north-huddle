@@ -648,3 +648,6 @@ nav.tabs button[aria-current=page] svg{color:#0B1220}
 .cg-top{background:#0B1220;border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#2EE6C5,#7C5CFF) 1}
 #cgGame .fg-stat b{color:#FFD54A}
 .cg-card .fg-ico{font-size:28px}
+
+#cgGame .cg-snd{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:999px;width:38px;height:38px;font-size:17px;cursor:pointer;margin-right:8px;flex:none}
+#cgGame .cg-snd[aria-pressed=false]{opacity:.6}
