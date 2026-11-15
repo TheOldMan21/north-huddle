@@ -21,8 +21,8 @@ function openChainGame(){
   let ov=$("cgGame");
   if(!ov){
     ov=document.createElement("div"); ov.id="cgGame"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Kirko Chainz");
-    ov.innerHTML=`<div class="fg-top cg-top"><div class="fg-stat"><span class="label">Chains</span><b id="cgChains" class="num">0</b></div><div class="fg-stat"><span class="label">Huddle Bucks</span><b id="cgBucks" class="num">$0</b></div><div class="fg-stat"><span class="label">Strikes</span><b id="cgStrikes" class="num"></b></div><button class="cg-snd" id="cgSnd" aria-label="Announcer sound" aria-pressed="true">🔊</button><button class="x" id="cgClose" aria-label="Close game">×</button></div>
-      <div class="fg-stage"><canvas id="cgCanvas"></canvas><div class="fg-msg" id="cgMsg"></div></div>
+    ov.innerHTML=`<div class="fg-top cg-top"><div class="fg-stat"><span class="label">Chains</span><b id="cgChains" class="num">0</b></div><div class="fg-stat"><span class="label">Huddle Bucks</span><b id="cgBucks" class="num">$0</b></div><div class="fg-stat"><span class="label">Strikes</span><b id="cgStrikes" class="num"></b></div><button class="cg-snd" data-cgshop="1" aria-label="Ball Shop">🛒</button><button class="cg-snd" id="cgSnd" aria-label="Announcer sound" aria-pressed="true">🔊</button><button class="x" id="cgClose" aria-label="Close game">×</button></div>
+      <div class="fg-stage"><canvas id="cgCanvas"></canvas><div class="fg-msg" id="cgMsg"></div><div class="cg-shop" id="cgShop" hidden></div></div>
       <div class="fg-help" id="cgHelp">${CG_HELP}</div>`;
     document.body.appendChild(ov);
     $("cgClose").addEventListener("click",closeChainGame);
@@ -35,18 +35,18 @@ function openChainGame(){
     ov.addEventListener("click",e=>{ if(e.target.closest("[data-cgagain]")) cgStart(); });
   }
   try{ CG.mute=localStorage.getItem("nh_cgmute")==="1"; }catch(e){} cgSndBtn(); cgVoiceWarm();
-  ov.hidden=false; document.body.style.overflow="hidden"; CG.on=true; cgResize(); cgStart();
+  ov.hidden=false; document.body.style.overflow="hidden"; CG.on=true; CG.paused=false; if($("cgShop")) $("cgShop").hidden=true; cgResize(); cgStart(); cgWPull();
   window.addEventListener("resize",cgResize);
 }
-function closeChainGame(){ try{ speechSynthesis.cancel(); }catch(e){} CG.on=false; CG.drag=null; cancelAnimationFrame(CG.raf); const ov=$("cgGame"); if(ov) ov.hidden=true; document.body.style.overflow=""; window.removeEventListener("resize",cgResize); }
+function closeChainGame(){ cgShopClose(); try{ speechSynthesis.cancel(); }catch(e){} CG.on=false; CG.drag=null; cancelAnimationFrame(CG.raf); const ov=$("cgGame"); if(ov) ov.hidden=true; document.body.style.overflow=""; window.removeEventListener("resize",cgResize); }
 function cgResize(){ const c=$("cgCanvas"); if(!c) return; const st=c.parentElement.getBoundingClientRect(), dpr=Math.min(2,window.devicePixelRatio||1); c.width=st.width*dpr; c.height=st.height*dpr; c.style.width=st.width+"px"; c.style.height=st.height+"px"; CG.w=st.width; CG.h=st.height; CG.dpr=dpr; cgCam(); }
-function cgStart(){ Object.assign(CG,{chains:0, bucks:0, strikes:0, comps:0, longest:0, phase:"set", t:0, ball:null, wr:null, cb:null, sf:null, flash:null, drag:null, thrown:0, streak:0, post:null, fx:[]}); $("cgMsg").innerHTML=""; $("cgHelp").textContent=CG_HELP; cgHud(); cgSnap(); cancelAnimationFrame(CG.raf); CG.last=performance.now(); CG.raf=requestAnimationFrame(cgLoop); }
+function cgStart(){ Object.assign(CG,{chains:0, bucks:0, strikes:0, comps:0, longest:0, phase:"set", t:0, ball:null, wrs:null, cbs:null, sf:null, flash:null, drag:null, thrown:0, streak:0, post:null, fx:[]}); $("cgMsg").innerHTML=""; $("cgHelp").textContent=CG_HELP; cgHud(); cgSnap(); cancelAnimationFrame(CG.raf); CG.last=performance.now(); CG.raf=requestAnimationFrame(cgLoop); }
 function cgHud(){ $("cgChains").textContent=CG.chains; $("cgBucks").textContent="$"+CG.bucks.toLocaleString(); $("cgStrikes").textContent="✕".repeat(CG.strikes)+"·".repeat(Math.max(0,3-CG.strikes)); }
 
 /* ---------- camera: just above and behind the QB, looking downfield ----------
    World units are yards: X across (−26.7..26.7), Y downfield (line of scrimmage = 0, QB at −6), Z up.
    A softened perspective (depth^0.55) keeps deep routes readable on a tall phone screen. */
-const CG_QBY=-6, CG_GAM=0.55;
+const CG_QBY=-6, CG_GAM=0.55, CG_WRCOL=["#5EF2D6","#FFD54A","#FF8FD8"];
 function cgZe(d){ return 10*Math.pow(Math.max(d,0.25)/10,CG_GAM); }
 function cgCam(){ const W=CG.w, H=CG.h, cam={x:0, y:-12.5};
   cam.fx=Math.min(W*0.52, H*0.62); cam.cx=W/2; cam.hy=H*(W>H?0.17:0.19);
@@ -71,18 +71,18 @@ function cgRelease(){
   CG.ball={x0:0.5,y0:CG_QBY,tx:a.tx,ty:a.ty,t:0,T:cgFlight(dist,zip<1),dist,zip:zip<1};
   CG.phase="air"; CG.thrown=performance.now();
 }
+// three receivers: one wide on each side plus a slot, each with his own route and cornerback; one deep safety
 function cgSnap(){
-  const names=Object.keys(CG_ROUTES), name=names[(Math.random()*names.length)|0];
-  const side=Math.random()<0.5?-1:1, startX=side*(5+Math.random()*4);
-  const pts=CG_ROUTES[name].map(([x,y])=>[startX+x*-side, y]);
-  // keep the whole route on screen: squeeze it sideways if any point (or where he keeps running after) would leave the view
-  const last=pts[pts.length-1], prev=pts[pts.length-2], dl=Math.hypot(last[0]-prev[0],last[1]-prev[1])||1, ext=[last[0]+(last[0]-prev[0])/dl*6, last[1]+(last[1]-prev[1])/dl*6];
-  let k=1; [...pts,ext].forEach(([x,y])=>{ if(Math.abs(x)>0.01) k=Math.min(k,cgXmax(y)/Math.abs(x)); });
-  pts.forEach(p=>{ p[0]*=k; });
+  const names=Object.keys(CG_ROUTES).sort(()=>Math.random()-0.5).slice(0,3);
+  const side=Math.random()<0.5?-1:1, starts=[-side*(7+Math.random()*2), side*(7+Math.random()*2), side*(3.4+Math.random()*1.2)];
   const lvl=CG.comps;
-  CG.wr={pts, seg:0, x:pts[0][0], y:0, speed:7.2+Math.random()*0.8, route:name, track:false};
-  CG.cb={x:startX+side*-1.2, y:5+Math.random()*2, speed:6.3+Math.min(1.6,lvl*0.08), react:Math.max(0.12,0.45-lvl*0.02), lag:[], track:false};
-  CG.sf={x:-side*4, y:17+Math.random()*4, speed:5.4+Math.min(1.2,lvl*0.06), track:false};
+  CG.wrs=starts.map((sx,i)=>{ const sg=Math.sign(sx)||1, pts=CG_ROUTES[names[i]].map(([x,y])=>[sx+x*-sg, y]);
+    // keep the whole route on screen: squeeze it sideways if any point (or where he keeps running after) would leave the view
+    const last=pts[pts.length-1], prev=pts[pts.length-2], dl=Math.hypot(last[0]-prev[0],last[1]-prev[1])||1, ext=[last[0]+(last[0]-prev[0])/dl*6, last[1]+(last[1]-prev[1])/dl*6];
+    let k=1; [...pts,ext].forEach(([x,y])=>{ if(Math.abs(x)>0.01) k=Math.min(k,cgXmax(y)/Math.abs(x)); }); pts.forEach(p=>{ p[0]*=k; });
+    return {i, pts, seg:0, x:pts[0][0], y:0, speed:7.0+Math.random()*0.9, route:names[i], track:false, num:[18,11,84][i]}; });
+  CG.cbs=CG.wrs.map((w,i)=>({i, x:w.x-Math.sign(w.x||1)*1.2, y:(i===2?4:5)+Math.random()*2, speed:6.3+Math.min(1.6,lvl*0.08), react:Math.max(0.12,0.45-lvl*0.02), lag:[], track:false, num:[24,21,26][i]}));
+  CG.sf={x:side*2, y:17+Math.random()*4, speed:5.4+Math.min(1.2,lvl*0.06), track:false, num:31};
   CG.phase="route"; CG.t=0; CG.ball=null; CG.drag=null; CG.post=null; CG.pocket=4.4-Math.min(1.4,lvl*0.05);
 }
 // widest |X| (yards) that still fits on screen at a given distance downfield
@@ -90,38 +90,42 @@ function cgXmax(Y){ const c=CG.cam; if(!c) return 16; const s=c.fx/cgZe(Y-c.y); 
 function cgMove(ent,tx,ty,spd,dt){ const dx=tx-ent.x, dy=ty-ent.y, d=Math.hypot(dx,dy); if(d<1e-3) return true; const s=Math.min(d,spd*dt); ent.x+=dx/d*s; ent.y+=dy/d*s; return s>=d-1e-3; }
 /* One step of the play. The live game and the aim preview both run this, so the ring's
    OPEN / CONTESTED / COVERED call matches what actually happens when the ball lands.
-   Late in the ball's flight the receiver adjusts to it (up to ~3.5 yds), and defenders break on it. */
+   Late in the ball's flight the nearest receiver adjusts to it (up to ~3.5 yds), and defenders break on it. */
 function cgStep(S,dt){
-  S.t+=dt; const w=S.wr, c=S.cb, f=S.sf, b=S.ball;
+  S.t+=dt; const f=S.sf, b=S.ball;
   const rem=b?b.T-b.t:9, land=b?[b.tx,b.ty]:null;
-  if(b&&!w.track&&rem<0.95&&Math.hypot(w.x-land[0],w.y-land[1])<=3.5) w.track=true;
-  if(w.track) cgMove(w,land[0],land[1],w.speed*1.12,dt);
-  else { const tgt=w.pts[w.seg+1]; if(tgt){ if(cgMove(w,tgt[0],tgt[1],w.speed,dt)) w.seg++; } else {
-      const a=w.pts[w.pts.length-2], z=w.pts[w.pts.length-1], dx=z[0]-a[0], dy=z[1]-a[1], d=Math.hypot(dx,dy)||1; w.x+=dx/d*w.speed*dt*0.85; w.y+=dy/d*w.speed*dt*0.85; w.x=Math.max(-25,Math.min(25,w.x)); } }
-  { const xm=cgXmax(w.y); w.x=Math.max(-xm,Math.min(xm,w.x)); }
-  if(b&&!c.track&&rem<0.7&&Math.hypot(c.x-land[0],c.y-land[1])<=3) c.track=true;
-  if(c.track) cgMove(c,land[0],land[1],c.speed,dt);
-  else { c.lag.push([S.t,w.x,w.y]); while(c.lag.length&&c.lag[0][0]<S.t-c.react) c.lag.shift(); const aim=c.lag[0]||[0,w.x,w.y]; cgMove(c,aim[1]+(c.x<w.x?-0.6:0.6),aim[2]+0.4,c.speed,dt); }
+  if(b&&!S.wrs.some(w=>w.track)&&rem<0.95){ let best=null, bd=3.5; S.wrs.forEach(w=>{ const d=Math.hypot(w.x-land[0],w.y-land[1]); if(d<=bd){ bd=d; best=w; } }); if(best) best.track=true; }
+  S.wrs.forEach(w=>{
+    if(w.track) cgMove(w,land[0],land[1],w.speed*1.12,dt);
+    else { const tgt=w.pts[w.seg+1]; if(tgt){ if(cgMove(w,tgt[0],tgt[1],w.speed,dt)) w.seg++; } else {
+        const a=w.pts[w.pts.length-2], z=w.pts[w.pts.length-1], dx=z[0]-a[0], dy=z[1]-a[1], d=Math.hypot(dx,dy)||1; w.x+=dx/d*w.speed*dt*0.85; w.y+=dy/d*w.speed*dt*0.85; } }
+    const xm=cgXmax(w.y); w.x=Math.max(-xm,Math.min(xm,w.x)); });
+  S.cbs.forEach(c=>{ const w=S.wrs[c.i];
+    if(b&&!c.track&&rem<0.7&&Math.hypot(c.x-land[0],c.y-land[1])<=3) c.track=true;
+    if(c.track) cgMove(c,land[0],land[1],c.speed,dt);
+    else { c.lag.push([S.t,w.x,w.y]); while(c.lag.length&&c.lag[0][0]<S.t-c.react) c.lag.shift(); const aim=c.lag[0]||[0,w.x,w.y]; cgMove(c,aim[1]+(c.x<w.x?-0.6:0.6),aim[2]+0.4,c.speed,dt); } });
   if(b&&!f.track&&rem<1.2&&Math.hypot(f.x-land[0],f.y-land[1])<=6) f.track=true;
   if(f.track) cgMove(f,land[0],land[1],f.speed*1.05,dt);
-  else { const t2=w.y>f.y-6?[w.x,w.y+3]:[f.x*0.97,f.y]; cgMove(f,t2[0],t2[1],f.speed*0.6,dt); }
+  else { const deep=S.wrs.reduce((m,w)=>w.y>m.y?w:m,S.wrs[0]); const t2=deep.y>f.y-6?[deep.x*0.8,deep.y+3]:[f.x*0.97,f.y]; cgMove(f,t2[0],t2[1],f.speed*0.6,dt); }
   if(b) b.t+=dt;
 }
 // what happens when the ball comes down
 function cgJudge(S){
-  const b=S.ball, dw=Math.hypot(S.wr.x-b.tx,S.wr.y-b.ty), dc=Math.hypot(S.cb.x-b.tx,S.cb.y-b.ty), ds=Math.hypot(S.sf.x-b.tx,S.sf.y-b.ty), dd=Math.min(dc,ds);
-  const wrIn=dw<=2.0, defIn=dd<=1.4, who=dc<=ds?"cb":"sf";
-  if(wrIn&&!defIn) return {kind:dw>1.1?"dive":"open",dw,dd,who};
-  if(wrIn&&defIn) return {kind:"contested",dw,dd,who,p:Math.max(0.2,Math.min(0.8,0.55+(dd-dw)*0.35))};
-  if(defIn) return {kind:"covered",dw,dd,who};
-  return {kind:"miss",dw,dd,who};
+  const b=S.ball, dist=m=>Math.hypot(m.x-b.tx,m.y-b.ty);
+  const wr=S.wrs.reduce((m,w)=>dist(w)<dist(m)?w:m,S.wrs[0]), defs=[...S.cbs,S.sf], who=defs.reduce((m,d)=>dist(d)<dist(m)?d:m,defs[0]);
+  const dw=dist(wr), dd=dist(who), wrIn=dw<=2.0, defIn=dd<=1.4;
+  if(wrIn&&!defIn) return {kind:dw>1.1?"dive":"open",dw,dd,wr,who};
+  if(wrIn&&defIn) return {kind:"contested",dw,dd,wr,who,p:Math.max(0.2,Math.min(0.8,0.55+(dd-dw)*0.35))};
+  if(defIn) return {kind:"covered",dw,dd,wr,who};
+  return {kind:"miss",dw,dd,wr,who};
 }
-function cgClone(){ return {t:CG.t, wr:{...CG.wr}, cb:{...CG.cb,lag:CG.cb.lag.slice()}, sf:{...CG.sf}, ball:null}; }
-function cgPredict(a){ const S=cgClone(), dist=Math.hypot(a.tx-0.5,a.ty-CG_QBY); S.ball={tx:a.tx,ty:a.ty,t:0,T:cgFlight(dist,false)}; let n=0; while(S.ball.t<S.ball.T&&n++<400) cgStep(S,1/60); return cgJudge(S); }
+function cgClone(){ return {t:CG.t, wrs:CG.wrs.map(w=>({...w})), cbs:CG.cbs.map(c=>({...c,lag:c.lag.slice()})), sf:{...CG.sf}, ball:null}; }
+function cgPredict(a){ const S=cgClone(), dist=Math.hypot(a.tx-0.5,a.ty-CG_QBY); S.ball={tx:a.tx,ty:a.ty,t:0,T:cgFlight(dist)}; let n=0; while(S.ball.t<S.ball.T&&n++<400) cgStep(S,1/60); return cgJudge(S); }
 function cgFlight(dist){ return 0.3+dist/23; }
 function cgLoop(now){
   if(!CG.on) return;
   const dt=Math.min(0.05,(now-CG.last)/1000); CG.last=now;
+  if(CG.paused){ CG.raf=requestAnimationFrame(cgLoop); return; }
   if(CG.phase==="route"||CG.phase==="air"){
     cgStep(CG,dt);
     if(CG.phase==="route"&&CG.t>CG.pocket){ CG.drag=null; cgResult("sack"); }
@@ -131,15 +135,15 @@ function cgLoop(now){
 }
 function cgLand(){
   const j=cgJudge(CG), b=CG.ball, yds=Math.max(1,Math.round(b.ty));
-  if(j.kind==="open"||j.kind==="dive") return cgResult("catch",yds,j.kind==="dive"?"DIVING CATCH!":"COMPLETE!");
-  if(j.kind==="contested") return Math.random()<j.p?cgResult("catch",yds,"CONTESTED CATCH!"):cgResult(Math.random()<0.3?"pick":"broken",0,"",j.who);
+  if(j.kind==="open"||j.kind==="dive") return cgResult("catch",yds,j.kind==="dive"?"DIVING CATCH!":"COMPLETE!",j.wr);
+  if(j.kind==="contested") return Math.random()<j.p?cgResult("catch",yds,"CONTESTED CATCH!",j.wr):cgResult(Math.random()<0.3?"pick":"broken",0,"",j.who);
   if(j.kind==="covered") return cgResult(j.dd<0.8&&Math.random()<0.55?"pick":"broken",0,"",j.who);
   cgResult("incomplete");
 }
 // after the ball arrives: the catch and run, the deflection, the pick, or the ball bouncing away
 function cgPost(dt){
   const P=CG.post; if(!P) return; P.t+=dt; const b=P.ball;
-  if(P.carrier){ const m=CG[P.carrier]; m.y+=P.dir*m.speed*0.8*dt; b.x=m.x+0.3; b.y=m.y; b.z=1.2; return; }
+  if(P.carrier){ const m=P.carrier; m.y+=P.dir*m.speed*0.8*dt; b.x=m.x+0.3; b.y=m.y; b.z=1.2; return; }
   b.vz-=22*dt; b.x+=b.vx*dt; b.y+=b.vy*dt; b.z+=b.vz*dt;
   if(b.z<0.15){ b.z=0.15; b.vz=Math.abs(b.vz)*0.45; b.vx*=0.6; b.vy*=0.6; b.bounce=(b.bounce||0)+1; }
 }
@@ -149,10 +153,10 @@ function cgResult(kind,yds,label,who){
   const at=b?{x:b.tx,y:b.ty,z:1.2}:null, dir=b?[b.tx-b.x0,b.ty-b.y0]:[0,1], dl=Math.hypot(dir[0],dir[1])||1;
   if(kind==="catch"){
     CG.comps++; CG.chains++; CG.streak=(CG.streak||0)+1; const mult=cgMult();
-    const bucks=Math.round((yds*5+Math.max(0,yds-15)*10+Math.max(0,yds-30)*15)*mult); CG.bucks+=bucks; CG.longest=Math.max(CG.longest,yds);
+    const bucks=Math.round((yds*5+Math.max(0,yds-15)*10+Math.max(0,yds-30)*15)*mult); CG.bucks+=bucks; CG.longest=Math.max(CG.longest,yds); cgW().bank+=bucks; cgWSave(false);
     const fire=CG.streak>=3?` · 🔥 ×${mult}`:CG.streak===2?" · heating up…":"";
     html=`<b>${label||"COMPLETE!"}</b><span>${yds} yards · +$${bucks}${fire}</span><span>New chain: ${CG_CHAINS[(CG.chains-1)%CG_CHAINS.length].name} ⛓️</span>`; cgSound(true); cgCall(label,yds);
-    CG.flash={t:performance.now()}; CG.post={t:0,carrier:"wr",dir:1,ball:{...at}};
+    CG.flash={t:performance.now()}; CG.post={t:0,carrier:who,dir:1,ball:{...at}};
   } else {
     const hadFire=(CG.streak||0)>=3; CG.streak=0; CG.strikes++; cgSound(false); cgCallMiss(kind,hadFire);
     html=`<b class="miss">${kind==="pick"?"PICKED OFF!":kind==="broken"?"BROKEN UP!":kind==="sack"?"SACKED!":"INCOMPLETE"}</b><span>${kind==="sack"?"Get it out faster!":"Strike "+CG.strikes+" of 3"}${hadFire?" · fire's out 🧯":""}</span>`;
@@ -203,20 +207,94 @@ async function cgOver(){
   if(ACC.db&&ACC.id){
     try{
       const ref=ACC.db.doc("scores/"+ACC.id), cur=await ref.get(), d=cur.exists?cur.data():{}, old=d.chain||{};
-      if(CG.bucks>(old.bucks||0)) await ref.set({...d, chain:{bucks:CG.bucks, chains:CG.chains, longest:CG.longest, t:nowIso()}});
+      const w=cgW(); await ref.set({...d, ...(CG.bucks>(old.bucks||0)?{chain:{bucks:CG.bucks, chains:CG.chains, longest:CG.longest, t:nowIso()}}:{}), wallet:{bank:w.bank, owned:w.owned, skin:w.skin, t:nowIso()}});
       const q=await ACC.db.collection("scores").limit(500).get();
       const rows=q.docs.map(x=>({id:x.id,c:x.data().chain})).filter(x=>x.c&&x.c.bucks>0).sort((a,b)=>b.c.bucks-a.c.bucks).slice(0,10);
       board=`<div class="fg-board"><div class="label">Kirko Chainz leaderboard</div>${rows.map((r,i)=>`<div class="fg-row${r.id===ACC.id?" me":""}"><span class="num">${i+1}</span>${av(r.id,"sm")}<span class="fg-nm" data-uname="${esc(r.id)}">${esc(personName(r.id))}</span><span class="t2">${r.c.chains}⛓️</span><b class="num">$${Number(r.c.bucks).toLocaleString()}</b></div>`).join("")||'<div class="fg-note">Be the first on the board!</div>'}</div>`;
     }catch(e){ console.warn("cg scores",e); }
   } else board=`<div class="fg-note">Sign in to get on the leaderboard.</div>`;
-  $("cgMsg").innerHTML=`<div class="fg-over"><div class="lg-ft">Kirko Chainz · Drive over</div><div class="fg-big num">$${CG.bucks.toLocaleString()}</div><div class="t2">${CG.chains} chain${CG.chains===1?"":"s"} · longest ${CG.longest} yds${CG.bucks>(prev.bucks||0)&&CG.bucks>0?" · <b>New best!</b>":""}</div>${board}<button class="btn-gold" data-cgagain="1">Run it back</button></div>`;
+  $("cgMsg").innerHTML=`<div class="fg-over"><div class="lg-ft">Kirko Chainz · Drive over</div><div class="fg-big num">$${CG.bucks.toLocaleString()}</div><div class="t2">${CG.chains} chain${CG.chains===1?"":"s"} · longest ${CG.longest} yds${CG.bucks>(prev.bucks||0)&&CG.bucks>0?" · <b>New best!</b>":""}</div><div class="cg-over-bank">Bank <b class="num">${cgMoney(cgW().bank)}</b>${CG_SKINS.some(k=>!cgW().owned.includes(k.id)&&cgW().bank>=k.price)?` · <span class="cg-new">new ball unlocked!</span>`:""}</div>${board}<div class="cg-over-btns"><button class="btn-gold" data-cgagain="1">Run it back</button><button class="tbtn" data-cgshop="1">🛒 Ball Shop</button></div></div>`;
   $("cgHelp").textContent="";
 }
+/* ---------- bank + Ball Shop ----------
+   Every completion's Huddle Bucks also go into a bank that carries over between drives.
+   The bank buys football skins. Kept on the device; members also sync it to scores/<uid>.wallet. */
+const CG_SKINS=[
+  {id:"classic",name:"Classic Leather",price:0,base:["#9a5428","#5e2c10"],lace:"#fff"},
+  {id:"purple",name:"Purple Reign",price:750,base:["#7a48c8","#3b1a70"],lace:"#FFC62F",stripe:"#FFC62F"},
+  {id:"gold",name:"Gold Rush",price:1500,base:["#ffe27a","#c08a00"],lace:"#4F2683",stripe:"#4F2683"},
+  {id:"arctic",name:"Arctic White",price:2500,base:["#ffffff","#c3d2e2"],lace:"#4F2683",stripe:"#4F2683"},
+  {id:"neon",name:"Neon Volt",price:4000,base:["#d8ff5a","#5ea800"],lace:"#111",stripe:"#111"},
+  {id:"aurora",name:"Northern Lights",price:7500,grad:["#2EE6C5","#7C5CFF"],lace:"#fff",glow:"rgba(94,242,214,.9)",trail:"#5EF2D6"},
+  {id:"galaxy",name:"Galaxy",price:15000,base:["#3a1e6e","#0b0820"],lace:"#fff",stars:1,glow:"rgba(155,123,255,.9)",trail:"#9b7bff"},
+  {id:"diamond",name:"Diamond Iced",price:30000,base:["#f2fdff","#86d3ee"],lace:"#fff",facets:1,glow:"rgba(191,243,255,1)",trail:"#dff8ff"},
+  {id:"firechain",name:"Chainz on Fire",price:50000,base:["#9a5428","#4a200a"],lace:"#fff",chain:1,fire:1,glow:"rgba(255,120,20,1)",trail:"fire"}
+];
+function cgW(){ if(CG.wallet) return CG.wallet; let w={}; try{ w=JSON.parse(localStorage.getItem("nh_cgwallet")||"{}"); }catch(e){}
+  CG.wallet={bank:Number(w.bank)||0, owned:Array.isArray(w.owned)?w.owned:["classic"], skin:w.skin||"classic"}; if(!CG.wallet.owned.includes("classic")) CG.wallet.owned.unshift("classic"); return CG.wallet; }
+function cgWSave(remote){ const w=cgW(); try{ localStorage.setItem("nh_cgwallet",JSON.stringify(w)); }catch(e){} if(remote) cgWPush(); }
+async function cgWPush(extra){ if(!(ACC.db&&ACC.id)) return; try{ const ref=ACC.db.doc("scores/"+ACC.id), cur=await ref.get(), d=cur.exists?cur.data():{}; const w=cgW();
+  await ref.set({...d, ...(extra||{}), wallet:{bank:w.bank, owned:w.owned, skin:w.skin, t:nowIso()}}); }catch(e){ console.warn("cg wallet",e); } }
+async function cgWPull(){ if(!(ACC.db&&ACC.id)||CG.wPulled===ACC.id) return; CG.wPulled=ACC.id; try{ const cur=await ACC.db.doc("scores/"+ACC.id).get(), r=cur.exists&&cur.data().wallet; if(!r) return;
+  const w=cgW(); w.bank=Math.max(w.bank,Number(r.bank)||0); w.owned=[...new Set([...w.owned,...(r.owned||[])])]; if(r.skin&&w.owned.includes(r.skin)&&w.skin==="classic") w.skin=r.skin; cgWSave(false); cgShopRender(); }catch(e){} }
+function cgSkin(){ const w=cgW(); return CG_SKINS.find(k=>k.id===w.skin)||CG_SKINS[0]; }
+// draw a football centered at 0,0 pointing along +x
+function cgFootball(x,rx,ry,sk,t){
+  t=t||0; x.save();
+  // flames burning up behind the ball
+  if(sk.fire){ x.globalCompositeOperation="lighter";
+    for(let i=0;i<9;i++){ const u=i/8, px=-rx*0.85+u*rx*1.7, fl=0.6+0.4*Math.sin(t*11+i*2.3)*Math.sin(t*7+i), h=ry*(1.1+1.1*(1-Math.abs(u-0.5)*1.4))*fl, w=rx*0.2, top=-h-ry*0.2, sway=Math.sin(t*6+i)*rx*0.06;
+      const g=x.createLinearGradient(0,ry*0.2,0,top); g.addColorStop(0,"rgba(255,235,140,.85)"); g.addColorStop(0.45,"rgba(255,140,30,.6)"); g.addColorStop(1,"rgba(200,30,0,0)"); x.fillStyle=g;
+      x.beginPath(); x.moveTo(px-w,ry*0.2); x.bezierCurveTo(px-w*1.1,-ry*0.4,px+sway-w*0.3,top*0.7,px+sway,top); x.bezierCurveTo(px+sway+w*0.3,top*0.7,px+w*1.1,-ry*0.4,px+w,ry*0.2); x.closePath(); x.fill(); }
+    x.globalCompositeOperation="source-over"; }
+  if(sk.glow){ x.shadowColor=sk.glow; x.shadowBlur=rx*0.9; }
+  let g; if(sk.grad){ g=x.createLinearGradient(-rx,0,rx,0); g.addColorStop(0,sk.grad[0]); g.addColorStop(1,sk.grad[1]); } else { g=x.createLinearGradient(0,-ry,0,ry); g.addColorStop(0,sk.base[0]); g.addColorStop(1,sk.base[1]); }
+  x.fillStyle=g; x.beginPath(); x.ellipse(0,0,rx,ry,0,0,7); x.fill(); x.shadowBlur=0;
+  x.save(); x.beginPath(); x.ellipse(0,0,rx,ry,0,0,7); x.clip();
+  if(sk.stripe){ x.fillStyle=sk.stripe; x.fillRect(-rx*0.66,-ry,rx*0.07,ry*2); x.fillRect(rx*0.59,-ry,rx*0.07,ry*2); }
+  if(sk.stars){ x.fillStyle="#fff"; for(let i=0;i<14;i++){ const px=Math.sin(i*12.9898)*rx*0.85, py=Math.cos(i*78.233)*ry*0.8, tw=0.4+0.6*Math.abs(Math.sin(t*3+i)); x.globalAlpha=tw; x.beginPath(); x.arc(px,py,Math.max(0.6,rx*0.03),0,7); x.fill(); } x.globalAlpha=1;
+    const neb=x.createRadialGradient(rx*0.2,ry*0.2,1,rx*0.2,ry*0.2,rx*0.7); neb.addColorStop(0,"rgba(255,90,200,.35)"); neb.addColorStop(1,"rgba(255,90,200,0)"); x.fillStyle=neb; x.fillRect(-rx,-ry,rx*2,ry*2); }
+  if(sk.facets){ x.strokeStyle="rgba(80,170,210,.55)"; x.lineWidth=Math.max(0.6,rx*0.03); for(let i=-4;i<=4;i++){ x.beginPath(); x.moveTo(i*rx*0.25-rx*0.3,-ry); x.lineTo(i*rx*0.25+rx*0.3,ry); x.stroke(); x.beginPath(); x.moveTo(i*rx*0.25+rx*0.3,-ry); x.lineTo(i*rx*0.25-rx*0.3,ry); x.stroke(); } }
+  // shading + seam
+  const sh=x.createLinearGradient(0,-ry,0,ry); sh.addColorStop(0,"rgba(255,255,255,.28)"); sh.addColorStop(0.45,"rgba(255,255,255,0)"); sh.addColorStop(1,"rgba(0,0,0,.25)"); x.fillStyle=sh; x.fillRect(-rx,-ry,rx*2,ry*2);
+  x.strokeStyle="rgba(0,0,0,.22)"; x.lineWidth=Math.max(0.6,rx*0.04); x.beginPath(); x.ellipse(0,ry*0.1,rx*0.98,ry*0.55,0,Math.PI*1.05,Math.PI*1.95); x.stroke();
+  x.restore();
+  // laces
+  x.strokeStyle=sk.lace; x.lineCap="round"; x.lineWidth=Math.max(1,rx*0.08); x.beginPath(); x.moveTo(-rx*0.36,-ry*0.32); x.lineTo(rx*0.36,-ry*0.32); x.stroke();
+  x.lineWidth=Math.max(0.8,rx*0.055); for(let k=-3;k<=3;k++){ x.beginPath(); x.moveTo(k*rx*0.1,-ry*0.5); x.lineTo(k*rx*0.1,-ry*0.14); x.stroke(); } x.lineCap="butt";
+  if(sk.facets){ x.strokeStyle="#fff"; x.lineWidth=Math.max(0.8,rx*0.04); for(let i=0;i<3;i++){ const a=(t*2+i*2.1)%6.28, px=Math.cos(a)*rx*0.6, py=Math.sin(a*1.3)*ry*0.5, r=rx*0.12*Math.abs(Math.sin(t*4+i)); x.beginPath(); x.moveTo(px-r,py); x.lineTo(px+r,py); x.moveTo(px,py-r); x.lineTo(px,py+r); x.stroke(); } }
+  // gold chain wrapped around the ball
+  if(sk.chain){ x.shadowColor="rgba(255,140,30,.9)"; x.shadowBlur=rx*0.25; const n=16; for(let k=0;k<=n;k++){ const u=k/n, px=-rx*0.95+u*rx*1.9, py=Math.sin(u*Math.PI*2.2+0.4)*ry*0.78*Math.sqrt(Math.max(0,1-(px/rx)**2));
+      x.save(); x.translate(px,py); x.rotate(Math.cos(u*Math.PI*2.2+0.4)*0.9+(k%2?Math.PI/2:0)); x.strokeStyle=k%2?"#FFE27A":"#D99A00"; x.lineWidth=Math.max(1,rx*0.07); x.beginPath(); x.ellipse(0,0,rx*0.1,rx*0.06,0,0,7); x.stroke(); x.restore(); } x.shadowBlur=0; }
+  x.restore();
+}
+function cgMoney(n){ return "$"+Math.round(n).toLocaleString(); }
+function cgShopOpen(){ const sh=$("cgShop"); if(!sh) return; CG.paused=true; sh.hidden=false; cgShopRender(); cgWPull(); cancelAnimationFrame(CG.shopRaf); const tick=()=>{ if(sh.hidden) return; cgShopPaint(); CG.shopRaf=requestAnimationFrame(tick); }; tick(); }
+function cgShopClose(){ const sh=$("cgShop"); if(sh) sh.hidden=true; CG.paused=false; CG.last=performance.now(); cancelAnimationFrame(CG.shopRaf); }
+function cgShopRender(){ const sh=$("cgShop"); if(!sh||sh.hidden) return; const w=cgW();
+  sh.innerHTML=`<div class="cg-shop-head"><div><div class="label">Ball Shop</div><div class="cg-bank">Bank <b class="num">${cgMoney(w.bank)}</b></div></div><button class="x" data-cgshopx aria-label="Close shop">×</button></div>
+    <div class="cg-shop-grid">${CG_SKINS.map(k=>{ const own=w.owned.includes(k.id), on=w.skin===k.id, can=w.bank>=k.price;
+      return `<div class="cg-skin${on?" on":""}${k.id==="firechain"?" legend":""}"><canvas data-skinpv="${k.id}" width="240" height="150"></canvas><div class="cg-skin-nm">${esc(k.name)}</div>
+        ${on?`<button class="cg-skin-b eq" disabled>Equipped</button>`:own?`<button class="cg-skin-b" data-cgequip="${k.id}">Use it</button>`:`<button class="cg-skin-b buy" data-cgbuy="${k.id}" ${can?"":"disabled"}>${cgMoney(k.price)}</button>`}</div>`; }).join("")}</div>
+    <p class="cg-shop-note">Every completion adds its Huddle Bucks to your bank, and the bank keeps growing between drives.${ACC.id?"":" Sign in to keep your bank and balls on any device."}</p>`;
+  cgShopPaint(); }
+function cgShopPaint(){ const t=performance.now()/1000; document.querySelectorAll("[data-skinpv]").forEach(cv=>{ const k=CG_SKINS.find(s=>s.id===cv.dataset.skinpv), x=cv.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,240,150); x.translate(120,82); x.rotate(-0.35); cgFootball(x,72,44,k,t); }); }
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-cgshop]")){ e.preventDefault(); if(!$("cgGame")||$("cgGame").hidden){ openChainGame(); } cgShopOpen(); return; }
+  if(e.target.closest("[data-cgshopx]")){ cgShopClose(); return; }
+  const b=e.target.closest("[data-cgbuy]"); if(b){ const k=CG_SKINS.find(s=>s.id===b.dataset.cgbuy), w=cgW(); if(!k||w.owned.includes(k.id)) return; if(w.bank<k.price) return toast("Not enough Huddle Bucks yet.");
+    w.bank-=k.price; w.owned.push(k.id); w.skin=k.id; cgWSave(true); cgShopRender(); toast(`${k.name} unlocked! 🏈`); if(k.id==="firechain") cgSay("Oh my! He bought the Chainz on Fire ball!",true); return; }
+  const q=e.target.closest("[data-cgequip]"); if(q){ const w=cgW(); w.skin=q.dataset.cgequip; cgWSave(true); cgShopRender(); }
+});
 /* ---------- drawing ---------- */
 function cgBall(x,bx,by,z,m,hx,hy,spin){
   const [sx,sy,ss]=cgP(bx,by); x.fillStyle="rgba(0,0,0,.3)"; x.beginPath(); x.ellipse(sx,sy,0.3*ss+1,0.12*ss+1,0,0,7); x.fill();
   let [px,py,ps]=cgP(bx,by,z); if(m<1){ px=hx+(px-hx)*m; py=hy+(py-hy)*m; } const r=Math.max(4,Math.min(16,0.32*ps*(1+(1-m)*1.5)));
-  x.save(); x.translate(px,py); x.rotate(-0.5+spin*0.3); x.fillStyle="#7a3e1d"; x.beginPath(); x.ellipse(0,0,r,r*0.62,0,0,7); x.fill(); x.strokeStyle="#fff"; x.lineWidth=Math.max(1,r*0.12); x.beginPath(); x.moveTo(-r*0.35,0); x.lineTo(r*0.35,0); x.stroke(); x.restore(); }
+  const sk=cgSkin(), now=performance.now(); CG.trail=(CG.trail||[]).filter(p=>now-p.t<(sk.trail==="fire"?420:300)); if(sk.trail&&m>0.15) CG.trail.push({x:px,y:py,r,t:now});
+  if(sk.trail){ x.save(); x.globalCompositeOperation="lighter"; CG.trail.forEach(p=>{ const f=1-(now-p.t)/(sk.trail==="fire"?420:300);
+    if(sk.trail==="fire"){ x.fillStyle=f>0.6?`rgba(255,220,100,${f*0.5})`:`rgba(255,100,20,${f*0.45})`; x.beginPath(); x.arc(p.x+(Math.random()-0.5)*3,p.y+(Math.random()-0.5)*3,p.r*(0.4+f*0.6),0,7); x.fill(); }
+    else { x.globalAlpha=f*0.5; x.fillStyle=sk.trail; x.beginPath(); x.arc(p.x,p.y,p.r*0.5*f,0,7); x.fill(); x.globalAlpha=1; } }); x.restore(); }
+  x.save(); x.translate(px,py); x.rotate(-0.5+spin*0.3); cgFootball(x,r,r*0.62,sk,now/1000); x.restore(); }
 function cgPoly(x,pts,fill){ x.fillStyle=fill; x.beginPath(); pts.forEach((p,i)=>{ const q=cgP(p[0],p[1],p[2]); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]); }); x.closePath(); x.fill(); }
 function cgLine(x,a,b,col,lw){ const p=cgP(a[0],a[1],a[2]), q=cgP(b[0],b[1],b[2]); x.strokeStyle=col; x.lineWidth=lw; x.beginPath(); x.moveTo(p[0],p[1]); x.lineTo(q[0],q[1]); x.stroke(); }
 function cgDraw(){
@@ -254,18 +332,25 @@ function cgDraw(){
   // stadium lights
   for(const lx of [0.08,0.92]){ const gx=W*lx, gy=cam.hy*0.38; g=x.createRadialGradient(gx,gy,0,gx,gy,W*0.18); g.addColorStop(0,"rgba(255,255,240,.55)"); g.addColorStop(1,"rgba(255,255,240,0)"); x.fillStyle=g; x.fillRect(gx-W*0.2,gy-W*0.2,W*0.4,W*0.4); x.fillStyle="#fffbe6"; x.fillRect(gx-12,gy-4,24,8); }
   // faint route
-  if(CG.wr&&CG.phase==="route"){ x.setLineDash([5,7]); x.strokeStyle="rgba(255,255,255,.3)"; x.lineWidth=2; x.beginPath(); CG.wr.pts.forEach((p,i)=>{ const q=cgP(p[0],p[1]); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]); }); x.stroke(); x.setLineDash([]); }
+  // routes: each receiver's own color, dark outline for contrast on the grass, arrow + name at the end
+  if(CG.wrs&&(CG.phase==="route"||CG.phase==="air")){ const fade=CG.phase==="air"?0.35:1;
+    CG.wrs.forEach(w=>{ const col=CG_WRCOL[w.i], q=w.pts.map(p=>cgP(p[0],p[1])); x.globalAlpha=fade; x.lineJoin="round"; x.lineCap="round";
+      x.strokeStyle="rgba(5,20,10,.55)"; x.lineWidth=7; x.beginPath(); q.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.stroke();
+      x.strokeStyle=col; x.lineWidth=3.5; x.beginPath(); q.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.stroke();
+      const a=q[q.length-2], z=q[q.length-1], ang=Math.atan2(z[1]-a[1],z[0]-a[0]);
+      x.fillStyle=col; x.strokeStyle="rgba(5,20,10,.6)"; x.lineWidth=2; x.beginPath(); x.moveTo(z[0]+Math.cos(ang)*9,z[1]+Math.sin(ang)*9); x.lineTo(z[0]+Math.cos(ang+2.5)*9,z[1]+Math.sin(ang+2.5)*9); x.lineTo(z[0]+Math.cos(ang-2.5)*9,z[1]+Math.sin(ang-2.5)*9); x.closePath(); x.stroke(); x.fill();
+      if(CG.phase==="route"){ x.font='800 12px "Barlow Condensed",system-ui'; x.textAlign="center"; const t=w.route.toUpperCase(), tw=x.measureText(t).width+10, lx=Math.max(tw/2+2,Math.min(CG.w-tw/2-2,z[0])), ly=z[1]-12;
+        x.fillStyle="rgba(11,18,32,.8)"; x.fillRect(lx-tw/2,ly-11,tw,15); x.fillStyle=col; x.fillText(t,lx,ly); }
+      x.globalAlpha=1; x.lineCap="butt"; }); }
   // players, far to near. The pass rush pushes the pocket back as the clock runs.
   const prog=CG.phase==="route"?Math.min(1,CG.t/CG.pocket):CG.phase==="air"?Math.min(1,(CG.t)/CG.pocket):CG.res==="sack"?1:0.4;
   const run=performance.now()/1000, men=[];
   const OFF={j:"#4F2683",t:"#FFC62F",h:"#4F2683",p:"#E9E4D4"}, DEF={j:"#B3202A",t:"#fff",h:"#C9CCD3",p:"#fff"};
   for(let i=-2;i<=2;i++) men.push({X:i*1.5,Y:-1-prog*3.2,c:OFF,face:"back",num:[77,63,56,64,71][i+2],ph:0});
   for(let i=0;i<4;i++) men.push({X:(i-1.5)*2.1,Y:0.9-prog*3.4+(i%3?0.3:0),c:DEF,face:"front",num:[97,93,99,90][i],ph:prog>0.05?run*9+i:0});
-  if(CG.wr){ const live=CG.phase==="route"||CG.phase==="air";
-    men.push({X:CG.cb.x,Y:CG.cb.y,c:DEF,face:"front",num:24,ph:live?run*11:0});
-    men.push({X:CG.sf.x,Y:CG.sf.y,c:DEF,face:"front",num:31,ph:live?run*10:0});
-    const car=CG.phase==="result"&&CG.post&&CG.post.carrier; men.forEach(m=>{ if(car&&((car==="cb"&&m.num===24)||(car==="sf"&&m.num===31))){ m.up=1; m.ph=run*11; } });
-    men.push({X:CG.wr.x,Y:CG.wr.y,c:OFF,face:"back",num:18,ph:live||car==="wr"?run*12:0,wr:1,up:(CG.phase==="air"&&CG.wr.track&&CG.ball.T-CG.ball.t<0.45)||car==="wr"}); }
+  if(CG.wrs){ const live=CG.phase==="route"||CG.phase==="air", car=CG.phase==="result"&&CG.post&&CG.post.carrier;
+    [...CG.cbs,CG.sf].forEach(d=>men.push({X:d.x,Y:d.y,c:DEF,face:"front",num:d.num,ph:live||car===d?run*11:0,up:car===d}));
+    CG.wrs.forEach(w=>men.push({X:w.x,Y:w.y,c:OFF,face:"back",num:w.num,rc:CG_WRCOL[w.i],ph:live||car===w?run*12:0,wr:1,up:(CG.phase==="air"&&w.track&&CG.ball.T-CG.ball.t<0.45)||car===w})); }
   men.sort((a,b)=>b.Y-a.Y).forEach(m=>cgMan(x,m));
   // aim preview while swiping: the ring says what will happen if you let go now
   if(CG.drag&&CG.phase==="route"){ const a=cgAim(CG.drag);
@@ -284,7 +369,7 @@ function cgDraw(){
   if(CG.phase==="result"&&CG.post){ const b=CG.post.ball; cgBall(x,b.x,b.y,b.z,1,0,0,CG.post.t*3); }
   // pocket clock
   if(CG.phase==="route"){ const left=Math.max(0,CG.pocket-CG.t), f=left/CG.pocket; x.fillStyle="rgba(0,0,0,.45)"; x.fillRect(W-112,12,100,10); x.fillStyle=f>0.4?"#5EF2D6":f>0.2?"#FFC62F":"#ff5a4f"; x.fillRect(W-112,12,100*f,10); x.fillStyle="#fff"; x.font='700 11px "Barlow Condensed",system-ui'; x.textAlign="right"; x.fillText("POCKET",W-12,36); }
-  if(CG.wr){ x.fillStyle="rgba(255,255,255,.8)"; x.font='700 13px "Barlow Condensed",system-ui'; x.textAlign="left"; x.fillText(CG.wr.route.toUpperCase()+" ROUTE",12,22);
+  if(CG.wrs){ x.fillStyle="rgba(255,255,255,.8)"; x.font='700 13px "Barlow Condensed",system-ui'; x.textAlign="left"; x.fillText("3 RECEIVERS",12,22);
     const st=CG.streak||0; if(st>=2){ const t=st>=5?"🔥🔥 BLAZING  ×2":st>=3?"🔥 ON FIRE  ×1.5":"♨ HEATING UP"; x.font='800 16px "Barlow Condensed",system-ui'; const tw=x.measureText(t).width+16; const gr=x.createLinearGradient(10,30,10+tw,30); gr.addColorStop(0,st>=3?"#ff3d00":"#ff9a3c"); gr.addColorStop(1,st>=5?"#ffd000":"#ff6a00"); x.fillStyle=gr; x.beginPath(); x.roundRect?x.roundRect(10,32,tw,24,12):x.rect(10,32,tw,24); x.fill(); x.fillStyle="#fff"; x.fillText(t,18,49); } }
   cgQB(x,W,H);
 }
@@ -292,7 +377,7 @@ function cgDraw(){
 function cgMan(x,m){
   const [px,py,s0]=cgP(m.X,m.Y), dep=m.Y-CG.cam.y, s=s0*(1+Math.max(0,dep-14)/28), c=m.c, Y=z=>py-z*s;
   if(px<-40||px>CG.w+40) return;
-  if(m.wr){ x.strokeStyle="#5EF2D6"; x.lineWidth=2.5; x.beginPath(); x.ellipse(px,py,0.75*s+3,0.28*s+2,0,0,7); x.stroke(); }
+  if(m.wr){ x.strokeStyle=m.rc||"#5EF2D6"; x.lineWidth=3; x.beginPath(); x.ellipse(px,py,0.75*s+3,0.28*s+2,0,0,7); x.stroke(); }
   x.fillStyle="rgba(0,0,0,.32)"; x.beginPath(); x.ellipse(px,py,0.5*s,0.17*s,0,0,7); x.fill();
   const sw=Math.sin(m.ph||0)*0.22*s, lw=Math.max(1.5,0.2*s);
   x.lineCap="round"; x.strokeStyle=c.p; x.lineWidth=lw; x.beginPath(); x.moveTo(px-0.12*s,Y(0.95)); x.lineTo(px-0.16*s+sw,Y(0.05)); x.moveTo(px+0.12*s,Y(0.95)); x.lineTo(px+0.16*s-sw,Y(0.05)); x.stroke();
@@ -310,7 +395,7 @@ function cgMan(x,m){
   const hy=Y(1.85), hr=0.21*s; x.fillStyle=c.h; x.beginPath(); x.arc(px,hy,hr,0,7); x.fill();
   if(m.face==="front"){ x.fillStyle="#d9b38c"; x.beginPath(); x.arc(px,hy+hr*0.2,hr*0.62,0,7); x.fill(); x.strokeStyle="#777"; x.lineWidth=Math.max(1,hr*0.16); x.beginPath(); x.moveTo(px-hr*0.7,hy+hr*0.25); x.lineTo(px+hr*0.7,hy+hr*0.25); x.moveTo(px-hr*0.6,hy+hr*0.6); x.lineTo(px+hr*0.6,hy+hr*0.6); x.stroke(); }
   else { x.fillStyle=c.t; x.fillRect(px-hr*0.12,hy-hr,hr*0.24,hr*1.7); }
-  if(m.wr&&s<26){ x.fillStyle="#5EF2D6"; x.font='800 12px "Barlow Condensed",system-ui'; x.textAlign="center"; x.fillText("WR",px,Y(2.2)-4); }
+  if(m.wr&&s<26){ x.fillStyle=m.rc||"#5EF2D6"; x.font='800 12px "Barlow Condensed",system-ui'; x.textAlign="center"; x.fillText("WR",px,Y(2.2)-4); }
 }
 function cgQBs(){ return Math.min(1.0,Math.max(0.6,Math.min(CG.w,CG.h*0.7)/450)); }
 // every completion adds the next chain in this rotation, so each one looks different
@@ -406,7 +491,7 @@ function cgQB(x,W,H){
     cgLimb(x,S[0],S[1],E[0],E[1],40,28,SK,SKL,SKD,1.2);
     x.fillStyle=PU; x.beginPath(); x.ellipse(118,-112,24,20,0.5,0,7); x.fill(); x.fillStyle="rgba(255,255,255,.12)"; x.beginPath(); x.ellipse(114,-118,14,9,0.5,0,7); x.fill();
     x.save(); x.translate(Wr[0],Wr[1]); x.rotate(Math.atan2(Wr[1]-E[1],Wr[0]-E[0])+Math.PI/2); x.fillStyle="#f2f2f2"; x.fillRect(-10,-2,20,9); x.restore();
-    if(CG.phase==="route"){ x.save(); x.translate(B[0],B[1]); x.rotate(-1.15); x.fillStyle="#7a3e1d"; x.beginPath(); x.ellipse(0,0,22,13.5,0,0,7); x.fill(); x.strokeStyle="rgba(0,0,0,.25)"; x.lineWidth=1.5; x.beginPath(); x.ellipse(0,0,22,13.5,0,0.2,2.6); x.stroke(); x.strokeStyle="#fff"; x.lineWidth=2.2; x.beginPath(); x.moveTo(-9,-4); x.lineTo(9,-4); x.stroke(); x.lineWidth=1.4; for(let k=-6;k<=6;k+=3){ x.beginPath(); x.moveTo(k,-6.5); x.lineTo(k,-1.5); x.stroke(); } x.restore(); }
+    if(CG.phase==="route"){ x.save(); x.translate(B[0],B[1]); x.rotate(-1.15); cgFootball(x,22,13.5,cgSkin(),now/1000); x.restore(); }
     const wx=Wr[0], wy=Wr[1]; x.fillStyle=SK; x.beginPath(); x.ellipse(wx-3,wy-8,9,11,-0.2,0,7); x.fill();
     if(CG.phase!=="route"){ x.fillStyle=SK; x.beginPath(); x.ellipse(wx-4,wy-16,10,9,-0.2,0,7); x.fill(); x.strokeStyle=SKD; x.lineWidth=1; for(let f=0;f<3;f++){ x.beginPath(); x.moveTo(wx-11+f*5,wy-22); x.lineTo(wx-10+f*5,wy-13); x.stroke(); } }
     else { x.lineCap="round"; x.strokeStyle=SK; x.lineWidth=5.5; for(let f=0;f<4;f++){ x.beginPath(); x.moveTo(wx-7+f*3.4,wy-14); x.quadraticCurveTo(wx-13+f*3,wy-24-f, wx-19+f*4.5,wy-28-f*2); x.stroke(); }
@@ -428,7 +513,7 @@ function cgQB(x,W,H){
 const _renderHomeCG=renderHome;
 renderHome=function(){ _renderHomeCG(); const el=$("v-home"); if(!S.meta||!el||el.querySelector(".cg-card")) return;
   const fg=el.querySelector(".fg-card"); const b=cgBest();
-  const html=`<button class="card fg-card cg-card" data-chaingame="1"><span class="fg-ico">⛓️</span><span class="grow"><span class="lg-ft">Kirko Chainz</span><span class="t2">Hit your receiver, stack the chains, rack up Huddle Bucks.${b.bucks?` Best $${Number(b.bucks).toLocaleString()}`:""}</span></span><span class="tbtn">Play</span></button>`;
+  const html=`<button class="card fg-card cg-card" data-chaingame="1"><span class="fg-ico">⛓️</span><span class="grow"><span class="lg-ft">Kirko Chainz</span><span class="t2">Hit your receiver, stack the chains, rack up Huddle Bucks.${b.bucks?` Best $${Number(b.bucks).toLocaleString()}`:""}${cgW().bank?` · Bank ${cgMoney(cgW().bank)}`:""}</span></span><span class="tbtn">Play</span></button>`;
   if(fg) fg.insertAdjacentHTML("afterend",html); };
-document.addEventListener("click",e=>{ if(e.target.closest("[data-chaingame]")) openChainGame(); });
+document.addEventListener("click",e=>{ if(e.target.closest("[data-chaingame]")&&!e.target.closest("[data-cgshop]")) openChainGame(); });
 document.addEventListener("keydown",e=>{ if(CG.on&&e.key==="Escape") closeChainGame(); if(CG.on&&CG.phase==="over"&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); cgStart(); } });
