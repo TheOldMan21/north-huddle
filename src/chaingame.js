@@ -357,10 +357,10 @@ function cgThrowChains(cx,cy){
 }
 function cgChainsStep(dt){ const now=performance.now(); (CG.thrownChains||[]).forEach(c=>{ if(c.landed||now<c.delay) return; c.x+=c.vx*dt; c.y+=c.vy*dt; c.vz-=22*dt; c.z+=c.vz*dt; c.spin+=c.spinv*dt; if(c.z<=0.05){ c.z=0.05; c.landed=now; } }); }
 function cgChainsDraw(x){ const now=performance.now(); CG.thrownChains=(CG.thrownChains||[]).filter(c=>!c.landed||now-c.landed<2600);
-  CG.thrownChains.forEach(c=>{ if(now<c.delay) return; const [gx,gy,gs]=cgP(c.x,c.y), [px,py,ps]=cgP(c.x,c.y,c.z), r=Math.max(6,0.95*ps), st=CG_CHAINS[c.st], a=c.landed?Math.max(0,1-(now-c.landed)/2600):1;
+  CG.thrownChains.forEach(c=>{ if(now<c.delay) return; const [gx,gy,gs]=cgP(c.x,c.y), [px,py,ps]=cgP(c.x,c.y,c.z), r=Math.max(3.5,0.5*ps), st=CG_CHAINS[c.st], a=c.landed?Math.max(0,1-(now-c.landed)/2600):1;
     x.globalAlpha=a*0.35; x.fillStyle="#000"; x.beginPath(); x.ellipse(gx,gy,r,r*0.3,0,0,7); x.fill(); x.globalAlpha=a;
     const sq=c.landed?0.32:0.35+0.65*Math.abs(Math.sin(c.spin)), rot=c.landed?0:c.spin*0.3, links=12;
-    if(!c.landed){ x.shadowColor="rgba(255,200,60,.9)"; x.shadowBlur=8; }
+    if(!c.landed){ x.shadowColor="rgba(255,200,60,.9)"; x.shadowBlur=5; }
     for(let k=0;k<links;k++){ const an=k/links*Math.PI*2, lx=px+Math.cos(an+rot)*r, ly=py+Math.sin(an+rot)*r*sq;
       x.save(); x.translate(lx,ly); x.rotate(an+rot+(k%2?Math.PI/2:0)); x.strokeStyle=k%2?st.c1:st.c2; x.lineWidth=Math.max(1.4,r*0.18); x.beginPath(); x.ellipse(0,0,r*0.24,r*0.14,0,0,7); x.stroke(); x.restore(); }
     x.shadowBlur=0; if(!c.landed){ x.fillStyle="rgba(255,240,180,.8)"; x.beginPath(); x.arc(px+Math.cos(now/90+c.st)*r,py-r*sq,Math.max(1,r*0.12),0,7); x.fill(); }
