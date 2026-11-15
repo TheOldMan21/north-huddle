@@ -18,7 +18,7 @@ function cgBest(){ try{ return JSON.parse(localStorage.getItem("nh_cgbest")||"{}
 function openChainGame(){
   let ov=$("cgGame");
   if(!ov){
-    ov=document.createElement("div"); ov.id="cgGame"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Chain Gang");
+    ov=document.createElement("div"); ov.id="cgGame"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Kirko Chainz");
     ov.innerHTML=`<div class="fg-top cg-top"><div class="fg-stat"><span class="label">Chains</span><b id="cgChains" class="num">0</b></div><div class="fg-stat"><span class="label">Huddle Bucks</span><b id="cgBucks" class="num">$0</b></div><div class="fg-stat"><span class="label">Strikes</span><b id="cgStrikes" class="num"></b></div><button class="x" id="cgClose" aria-label="Close game">×</button></div>
       <div class="fg-stage"><canvas id="cgCanvas"></canvas><div class="fg-msg" id="cgMsg"></div></div>
       <div class="fg-help" id="cgHelp">Tap where you want to throw. Lead your receiver!</div>`;
@@ -104,10 +104,10 @@ async function cgOver(){
       if(CG.bucks>(old.bucks||0)) await ref.set({...d, chain:{bucks:CG.bucks, chains:CG.chains, longest:CG.longest, t:nowIso()}});
       const q=await ACC.db.collection("scores").limit(500).get();
       const rows=q.docs.map(x=>({id:x.id,c:x.data().chain})).filter(x=>x.c&&x.c.bucks>0).sort((a,b)=>b.c.bucks-a.c.bucks).slice(0,10);
-      board=`<div class="fg-board"><div class="label">Chain Gang leaderboard</div>${rows.map((r,i)=>`<div class="fg-row${r.id===ACC.id?" me":""}"><span class="num">${i+1}</span>${av(r.id,"sm")}<span class="fg-nm" data-uname="${esc(r.id)}">${esc(personName(r.id))}</span><span class="t2">${r.c.chains}⛓️</span><b class="num">$${Number(r.c.bucks).toLocaleString()}</b></div>`).join("")||'<div class="fg-note">Be the first on the board!</div>'}</div>`;
+      board=`<div class="fg-board"><div class="label">Kirko Chainz leaderboard</div>${rows.map((r,i)=>`<div class="fg-row${r.id===ACC.id?" me":""}"><span class="num">${i+1}</span>${av(r.id,"sm")}<span class="fg-nm" data-uname="${esc(r.id)}">${esc(personName(r.id))}</span><span class="t2">${r.c.chains}⛓️</span><b class="num">$${Number(r.c.bucks).toLocaleString()}</b></div>`).join("")||'<div class="fg-note">Be the first on the board!</div>'}</div>`;
     }catch(e){ console.warn("cg scores",e); }
   } else board=`<div class="fg-note">Sign in to get on the leaderboard.</div>`;
-  $("cgMsg").innerHTML=`<div class="fg-over"><div class="lg-ft">Drive over</div><div class="fg-big num">$${CG.bucks.toLocaleString()}</div><div class="t2">${CG.chains} chain${CG.chains===1?"":"s"} · longest ${CG.longest} yds${CG.bucks>(prev.bucks||0)&&CG.bucks>0?" · <b>New best!</b>":""}</div>${board}<button class="btn-gold" data-cgagain="1">Run it back</button></div>`;
+  $("cgMsg").innerHTML=`<div class="fg-over"><div class="lg-ft">Kirko Chainz · Drive over</div><div class="fg-big num">$${CG.bucks.toLocaleString()}</div><div class="t2">${CG.chains} chain${CG.chains===1?"":"s"} · longest ${CG.longest} yds${CG.bucks>(prev.bucks||0)&&CG.bucks>0?" · <b>New best!</b>":""}</div>${board}<button class="btn-gold" data-cgagain="1">Run it back</button></div>`;
   $("cgHelp").textContent="";
 }
 /* ---------- drawing ---------- */
@@ -167,7 +167,7 @@ function cgQB(x,W,H){
 const _renderHomeCG=renderHome;
 renderHome=function(){ _renderHomeCG(); const el=$("v-home"); if(!S.meta||!el||el.querySelector(".cg-card")) return;
   const fg=el.querySelector(".fg-card"); const b=cgBest();
-  const html=`<button class="card fg-card cg-card" data-chaingame="1"><span class="fg-ico">⛓️</span><span class="grow"><span class="lg-ft">Chain Gang</span><span class="t2">Lead your receiver, stack the chains, rack up Huddle Bucks.${b.bucks?` Best $${Number(b.bucks).toLocaleString()}`:""}</span></span><span class="tbtn">Play</span></button>`;
+  const html=`<button class="card fg-card cg-card" data-chaingame="1"><span class="fg-ico">⛓️</span><span class="grow"><span class="lg-ft">Kirko Chainz</span><span class="t2">Hit your receiver, stack the chains, rack up Huddle Bucks.${b.bucks?` Best $${Number(b.bucks).toLocaleString()}`:""}</span></span><span class="tbtn">Play</span></button>`;
   if(fg) fg.insertAdjacentHTML("afterend",html); };
 document.addEventListener("click",e=>{ if(e.target.closest("[data-chaingame]")) openChainGame(); });
 document.addEventListener("keydown",e=>{ if(CG.on&&e.key==="Escape") closeChainGame(); if(CG.on&&CG.phase==="over"&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); cgStart(); } });

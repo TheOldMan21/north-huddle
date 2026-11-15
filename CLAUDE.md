@@ -16,7 +16,7 @@ Unofficial Minnesota football fan hub (owner: TheOldMan21). Hosted on Cloudflare
 - `supabase/round4.sql` — feedback table, members-only leagues, request cooldown, 500-char chat cap. `_headers` — security headers.
 - `src/predict.js` + `functions/api/predict.js` — pre-game win chances (ESPN Matchup Predictor) on the next-game card, scoreboard, game sheet and pick'em.
 - `src/watch.js` — Watch & listen sheet (official TV/streaming apps per network + radio), Watch button on game cards, live highlight clips on the game-day card.
-- `src/chaingame.js` — "Chain Gang" QB throwing mini-game (home card after the field goal game): tap the open receiver, chains stack per completion, Huddle Bucks by distance, best in localStorage + `scores/<uid>.chain` leaderboard.
+- `src/chaingame.js` — "Kirko Chainz" QB throwing mini-game (home card after the field goal game): tap the open receiver, chains stack per completion, Huddle Bucks by distance, best in localStorage + `scores/<uid>.chain` leaderboard.
 - `src/admin.js` — owner-only admin page (Members / Chat / Leagues), opened from the account sheet or /#admin.
 - `supabase/setup.sql` — database schema, access rules, RPCs (`doc_update` deep merge, `doc_acquire` lease). Re-runnable in the Supabase SQL Editor.
 - `scripts/nh.py` — CLI for scheduled updates to read/write docs as the bot (`NH_BOT_PW` env var).
