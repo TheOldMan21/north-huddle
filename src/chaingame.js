@@ -245,13 +245,13 @@ async function cgOver(){
   if(ACC.db&&ACC.id){
     try{
       const ref=ACC.db.doc("scores/"+ACC.id), cur=await ref.get(), d=cur.exists?cur.data():{}, old=d.chain||{};
-      const w=cgW(); await ref.set({...d, ...(CG.bucks>(old.bucks||0)?{chain:{bucks:CG.bucks, chains:CG.chains, longest:CG.longest, t:nowIso()}}:{}), wallet:{bank:w.bank, owned:w.owned, skin:w.skin, t:nowIso()}});
+      const w=cgW(); await ref.set({...d, ...(CG.bucks>(old.bucks||0)?{chain:{bucks:CG.bucks, chains:CG.chains, longest:CG.longest, t:nowIso()}}:{}), wallet:cgWData()});
       const q=await ACC.db.collection("scores").limit(500).get();
       const rows=q.docs.map(x=>({id:x.id,c:x.data().chain})).filter(x=>x.c&&x.c.bucks>0).sort((a,b)=>b.c.bucks-a.c.bucks).slice(0,10);
       board=`<div class="fg-board"><div class="label">Kirko Chainz leaderboard</div>${rows.map((r,i)=>`<div class="fg-row${r.id===ACC.id?" me":""}"><span class="num">${i+1}</span>${av(r.id,"sm")}<span class="fg-nm" data-uname="${esc(r.id)}">${esc(personName(r.id))}</span><span class="t2">${r.c.chains}⛓️</span><b class="num">$${Number(r.c.bucks).toLocaleString()}</b></div>`).join("")||'<div class="fg-note">Be the first on the board!</div>'}</div>`;
     }catch(e){ console.warn("cg scores",e); }
   } else board=`<div class="fg-note">Sign in to get on the leaderboard.</div>`;
-  $("cgMsg").innerHTML=`<div class="fg-over"><div class="lg-ft">Kirko Chainz · Drive over</div><div class="fg-big num">$${CG.bucks.toLocaleString()}</div><div class="t2">${CG.chains} chain${CG.chains===1?"":"s"} · longest ${CG.longest} yds${CG.bucks>(prev.bucks||0)&&CG.bucks>0?" · <b>New best!</b>":""}</div><div class="cg-over-bank">Bank <b class="num">${cgMoney(cgW().bank)}</b>${CG_SKINS.some(k=>!cgW().owned.includes(k.id)&&cgW().bank>=k.price)?` · <span class="cg-new">new ball unlocked!</span>`:""}</div>${board}<div class="cg-over-btns"><button class="btn-gold" data-cgagain="1">Run it back</button><button class="tbtn" data-cgshop="1">🛒 Ball Shop</button></div></div>`;
+  $("cgMsg").innerHTML=`<div class="fg-over"><div class="lg-ft">Kirko Chainz · Drive over</div><div class="fg-big num">$${CG.bucks.toLocaleString()}</div><div class="t2">${CG.chains} chain${CG.chains===1?"":"s"} · longest ${CG.longest} yds${CG.bucks>(prev.bucks||0)&&CG.bucks>0?" · <b>New best!</b>":""}</div><div class="cg-over-bank">Bank <b class="num">${cgMoney(cgW().bank)}</b>${[...CG_SKINS.filter(k=>!cgW().owned.includes(k.id)),...CG_TRAILS.filter(k=>!cgW().ownedT.includes(k.id))].some(k=>cgW().bank>=k.price)?` · <span class="cg-new">you can afford something new!</span>`:""}</div>${board}<div class="cg-over-btns"><button class="btn-gold" data-cgagain="1">Run it back</button><button class="tbtn" data-cgshop="1">🛒 Shop</button></div></div>`;
   $("cgHelp").textContent="";
 }
 /* ---------- bank + Ball Shop ----------
@@ -263,18 +263,53 @@ const CG_SKINS=[
   {id:"gold",name:"Gold Rush",price:1500,base:["#ffe27a","#c08a00"],lace:"#4F2683",stripe:"#4F2683"},
   {id:"arctic",name:"Arctic White",price:2500,base:["#ffffff","#c3d2e2"],lace:"#4F2683",stripe:"#4F2683"},
   {id:"neon",name:"Neon Volt",price:4000,base:["#d8ff5a","#5ea800"],lace:"#111",stripe:"#111"},
-  {id:"aurora",name:"Northern Lights",price:7500,grad:["#2EE6C5","#7C5CFF"],lace:"#fff",glow:"rgba(94,242,214,.9)",trail:"#5EF2D6"},
-  {id:"galaxy",name:"Galaxy",price:15000,base:["#3a1e6e","#0b0820"],lace:"#fff",stars:1,glow:"rgba(155,123,255,.9)",trail:"#9b7bff"},
-  {id:"diamond",name:"Diamond Iced",price:30000,base:["#f2fdff","#86d3ee"],lace:"#fff",facets:1,glow:"rgba(191,243,255,1)",trail:"#dff8ff"},
-  {id:"firechain",name:"Chainz on Fire",price:50000,base:["#9a5428","#4a200a"],lace:"#fff",chain:1,fire:1,glow:"rgba(255,120,20,1)",trail:"fire"}
+  {id:"aurora",name:"Northern Lights",price:7500,grad:["#2EE6C5","#7C5CFF"],lace:"#fff",glow:"rgba(94,242,214,.9)"},
+  {id:"galaxy",name:"Galaxy",price:15000,base:["#3a1e6e","#0b0820"],lace:"#fff",stars:1,glow:"rgba(155,123,255,.9)"},
+  {id:"diamond",name:"Diamond Iced",price:30000,base:["#f2fdff","#86d3ee"],lace:"#fff",facets:1,glow:"rgba(191,243,255,1)"},
+  {id:"firechain",name:"Chainz on Fire",price:50000,base:["#9a5428","#4a200a"],lace:"#fff",chain:1,fire:1,glow:"rgba(255,120,20,1)"}
 ];
+// trails behind the ball in flight, bought separately from footballs
+const CG_TRAILS=[
+  {id:"none",name:"No Trail",price:0},
+  {id:"smoke",name:"Smoke",price:500,life:650},
+  {id:"gold",name:"Gold Streak",price:1000,col:"#FFD54A"},
+  {id:"purple",name:"Purple Haze",price:2000,col:"#9b6bff"},
+  {id:"sparkle",name:"Sparkles",price:3500,life:500},
+  {id:"rainbow",name:"Rainbow",price:6000},
+  {id:"aurora",name:"Northern Lights",price:10000,life:480},
+  {id:"lightning",name:"Lightning",price:20000,life:260},
+  {id:"fire",name:"Fire Trail",price:30000,life:450},
+  {id:"chainz",name:"Chain Reaction",price:45000,life:520}
+];
+function cgTrail(){ const w=cgW(); return CG_TRAILS.find(k=>k.id===w.trail)||CG_TRAILS[0]; }
+// draw a trail from recent ball positions [{x,y,r,t}] (oldest first)
+function cgTrailDraw(x,pts,tr,now,L){
+  if(tr.id==="none"||pts.length<2) return; const life=(tr.life||380)*(L||1), age=p=>Math.min(1,(now-p.t)/life);
+  x.save(); x.lineCap="round"; x.lineJoin="round";
+  const ribbon=(colFn,wMul,comp)=>{ x.globalCompositeOperation=comp||"source-over"; for(let i=1;i<pts.length;i++){ const a=pts[i-1], b=pts[i], f=1-age(b); if(f<=0) continue; x.strokeStyle=colFn(f,i/pts.length); x.lineWidth=Math.max(1,b.r*wMul*f); x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); } };
+  if(tr.id==="smoke"){ pts.forEach((p,i)=>{ const a=age(p), f=1-a; if(f<=0) return; x.fillStyle=`rgba(200,205,215,${f*0.35})`; x.beginPath(); x.arc(p.x+Math.sin(i*1.7)*a*6,p.y-a*8,p.r*(0.5+a*1.4),0,7); x.fill(); }); }
+  else if(tr.id==="gold"||tr.id==="purple"){ x.shadowColor=tr.col; x.shadowBlur=8; ribbon(f=>tr.col+Math.round(f*200).toString(16).padStart(2,"0"),1.1,"lighter"); }
+  else if(tr.id==="rainbow"){ ribbon((f,u)=>`hsla(${(u*300+now/6)%360},95%,60%,${f*0.85})`,1.3); }
+  else if(tr.id==="aurora"){ x.shadowColor="#5EF2D6"; x.shadowBlur=12; ribbon((f,u)=>{ const c=[[46,230,197],[124,92,255]], k=1-u; return `rgba(${c[0].map((v,j)=>Math.round(v+(c[1][j]-v)*k)).join(",")},${f*0.8})`; },1.6,"lighter"); }
+  else if(tr.id==="sparkle"){ x.globalCompositeOperation="lighter"; pts.forEach((p,i)=>{ const f=1-age(p); if(f<=0) return; const r=p.r*0.5*f*(0.6+0.4*Math.sin(now/60+i*2)), ox=Math.sin(i*12.9)*p.r*0.8, oy=Math.cos(i*7.3)*p.r*0.8;
+      x.strokeStyle=`rgba(255,250,220,${f})`; x.lineWidth=Math.max(1,r*0.25); x.beginPath(); x.moveTo(p.x+ox-r,p.y+oy); x.lineTo(p.x+ox+r,p.y+oy); x.moveTo(p.x+ox,p.y+oy-r); x.lineTo(p.x+ox,p.y+oy+r); x.stroke(); }); }
+  else if(tr.id==="lightning"){ x.globalCompositeOperation="lighter"; x.shadowColor="#8fe8ff"; x.shadowBlur=14; for(const [w,c] of [[3,"rgba(140,220,255,.55)"],[1.4,"rgba(255,255,255,.95)"]]){ x.strokeStyle=c; x.lineWidth=w; x.beginPath(); pts.forEach((p,i)=>{ const j=(i%2?1:-1)*p.r*0.7*(1-age(p)); i?x.lineTo(p.x+j,p.y-j):x.moveTo(p.x,p.y); }); x.stroke(); } }
+  else if(tr.id==="fire"){ x.globalCompositeOperation="lighter"; pts.forEach(p=>{ const f=1-age(p); if(f<=0) return; x.fillStyle=f>0.6?`rgba(255,220,100,${f*0.55})`:`rgba(255,100,20,${f*0.5})`; x.beginPath(); x.arc(p.x+(Math.random()-0.5)*3,p.y+(Math.random()-0.5)*3-(1-f)*4,p.r*(0.45+f*0.65),0,7); x.fill(); }); }
+  else if(tr.id==="chainz"){ x.globalCompositeOperation="lighter"; pts.forEach((p,i)=>{ const f=1-age(p); if(f<=0||i%2) return; x.fillStyle=`rgba(255,110,20,${f*0.35})`; x.beginPath(); x.arc(p.x,p.y-(1-f)*5,p.r*(0.4+f*0.5),0,7); x.fill(); });
+    x.globalCompositeOperation="source-over"; x.shadowColor="rgba(255,190,40,.9)"; x.shadowBlur=6; pts.forEach((p,i)=>{ const f=1-age(p); if(f<=0) return; const nx=pts[Math.min(i+1,pts.length-1)], an=Math.atan2(nx.y-p.y,nx.x-p.x)+(i%2?Math.PI/2:0);
+      x.save(); x.translate(p.x,p.y); x.rotate(an); x.globalAlpha=f; x.strokeStyle=i%2?"#FFE27A":"#D99A00"; x.lineWidth=Math.max(1.2,p.r*0.22); x.beginPath(); x.ellipse(0,0,p.r*0.45,p.r*0.28,0,0,7); x.stroke(); x.restore(); }); }
+  x.restore();
+}
 function cgW(){ if(CG.wallet) return CG.wallet; let w={}; try{ w=JSON.parse(localStorage.getItem("nh_cgwallet")||"{}"); }catch(e){}
-  CG.wallet={bank:Number(w.bank)||0, owned:Array.isArray(w.owned)?w.owned:["classic"], skin:w.skin||"classic"}; if(!CG.wallet.owned.includes("classic")) CG.wallet.owned.unshift("classic"); return CG.wallet; }
+  CG.wallet={bank:Number(w.bank)||0, owned:Array.isArray(w.owned)?w.owned:["classic"], skin:w.skin||"classic", ownedT:Array.isArray(w.ownedT)?w.ownedT:["none"], trail:w.trail||"none"};
+  if(!CG.wallet.owned.includes("classic")) CG.wallet.owned.unshift("classic"); if(!CG.wallet.ownedT.includes("none")) CG.wallet.ownedT.unshift("none"); return CG.wallet; }
+function cgWData(){ const w=cgW(); return {bank:w.bank, owned:w.owned, skin:w.skin, ownedT:w.ownedT, trail:w.trail, t:nowIso()}; }
 function cgWSave(remote){ const w=cgW(); try{ localStorage.setItem("nh_cgwallet",JSON.stringify(w)); }catch(e){} if(remote) cgWPush(); }
 async function cgWPush(extra){ if(!(ACC.db&&ACC.id)) return; try{ const ref=ACC.db.doc("scores/"+ACC.id), cur=await ref.get(), d=cur.exists?cur.data():{}; const w=cgW();
-  await ref.set({...d, ...(extra||{}), wallet:{bank:w.bank, owned:w.owned, skin:w.skin, t:nowIso()}}); }catch(e){ console.warn("cg wallet",e); } }
+  await ref.set({...d, ...(extra||{}), wallet:cgWData()}); }catch(e){ console.warn("cg wallet",e); } }
 async function cgWPull(){ if(!(ACC.db&&ACC.id)||CG.wPulled===ACC.id) return; CG.wPulled=ACC.id; try{ const cur=await ACC.db.doc("scores/"+ACC.id).get(), r=cur.exists&&cur.data().wallet; if(!r) return;
-  const w=cgW(); w.bank=Math.max(w.bank,Number(r.bank)||0); w.owned=[...new Set([...w.owned,...(r.owned||[])])]; if(r.skin&&w.owned.includes(r.skin)&&w.skin==="classic") w.skin=r.skin; cgWSave(false); cgShopRender(); }catch(e){} }
+  const w=cgW(); w.bank=Math.max(w.bank,Number(r.bank)||0); w.owned=[...new Set([...w.owned,...(r.owned||[])])]; if(r.skin&&w.owned.includes(r.skin)&&w.skin==="classic") w.skin=r.skin;
+  w.ownedT=[...new Set([...w.ownedT,...(r.ownedT||[])])]; if(r.trail&&w.ownedT.includes(r.trail)&&w.trail==="none") w.trail=r.trail; cgWSave(false); cgShopRender(); }catch(e){} }
 function cgSkin(){ const w=cgW(); return CG_SKINS.find(k=>k.id===w.skin)||CG_SKINS[0]; }
 // draw a football centered at 0,0 pointing along +x
 function cgFootball(x,rx,ry,sk,t){
@@ -310,19 +345,32 @@ function cgMoney(n){ return "$"+Math.round(n).toLocaleString(); }
 function cgShopOpen(){ const sh=$("cgShop"); if(!sh) return; CG.paused=true; sh.hidden=false; cgShopRender(); cgWPull(); cancelAnimationFrame(CG.shopRaf); const tick=()=>{ if(sh.hidden) return; cgShopPaint(); CG.shopRaf=requestAnimationFrame(tick); }; tick(); }
 function cgShopClose(){ const sh=$("cgShop"); if(sh) sh.hidden=true; CG.paused=false; CG.last=performance.now(); cancelAnimationFrame(CG.shopRaf); }
 function cgShopRender(){ const sh=$("cgShop"); if(!sh||sh.hidden) return; const w=cgW();
-  sh.innerHTML=`<div class="cg-shop-head"><div><div class="label">Ball Shop</div><div class="cg-bank">Bank <b class="num">${cgMoney(w.bank)}</b></div></div><button class="x" data-cgshopx aria-label="Close shop">×</button></div>
-    <div class="cg-shop-grid">${CG_SKINS.map(k=>{ const own=w.owned.includes(k.id), on=w.skin===k.id, can=w.bank>=k.price;
+  sh.innerHTML=`<div class="cg-shop-head"><div><div class="label">Shop</div><div class="cg-bank">Bank <b class="num">${cgMoney(w.bank)}</b></div></div><button class="x" data-cgshopx aria-label="Close shop">×</button></div>
+    <div class="cg-tabs" role="tablist"><button role="tab" data-cgtab="balls" aria-selected="${CG.shopTab!=="trails"}">🏈 Footballs</button><button role="tab" data-cgtab="trails" aria-selected="${CG.shopTab==="trails"}">✨ Trails</button></div>
+    ${CG.shopTab==="trails"?`<div class="cg-shop-grid">${CG_TRAILS.map(k=>{ const own=w.ownedT.includes(k.id), on=w.trail===k.id, can=w.bank>=k.price;
+      return `<div class="cg-skin${on?" on":""}${k.id==="chainz"?" legend":""}"><canvas data-trailpv="${k.id}" width="240" height="150"></canvas><div class="cg-skin-nm">${esc(k.name)}</div>
+        ${on?`<button class="cg-skin-b eq" disabled>Equipped</button>`:own?`<button class="cg-skin-b" data-cgequipt="${k.id}">Use it</button>`:`<button class="cg-skin-b buy" data-cgbuyt="${k.id}" ${can?"":"disabled"}>${cgMoney(k.price)}</button>`}</div>`; }).join("")}</div>`:
+    `<div class="cg-shop-grid">${CG_SKINS.map(k=>{ const own=w.owned.includes(k.id), on=w.skin===k.id, can=w.bank>=k.price;
       return `<div class="cg-skin${on?" on":""}${k.id==="firechain"?" legend":""}"><canvas data-skinpv="${k.id}" width="240" height="150"></canvas><div class="cg-skin-nm">${esc(k.name)}</div>
-        ${on?`<button class="cg-skin-b eq" disabled>Equipped</button>`:own?`<button class="cg-skin-b" data-cgequip="${k.id}">Use it</button>`:`<button class="cg-skin-b buy" data-cgbuy="${k.id}" ${can?"":"disabled"}>${cgMoney(k.price)}</button>`}</div>`; }).join("")}</div>
+        ${on?`<button class="cg-skin-b eq" disabled>Equipped</button>`:own?`<button class="cg-skin-b" data-cgequip="${k.id}">Use it</button>`:`<button class="cg-skin-b buy" data-cgbuy="${k.id}" ${can?"":"disabled"}>${cgMoney(k.price)}</button>`}</div>`; }).join("")}</div>`}
     <p class="cg-shop-note">Every completion adds its Huddle Bucks to your bank, and the bank keeps growing between drives.${ACC.id?"":" Sign in to keep your bank and balls on any device."}</p>`;
   cgShopPaint(); }
-function cgShopPaint(){ const t=performance.now()/1000; document.querySelectorAll("[data-skinpv]").forEach(cv=>{ const k=CG_SKINS.find(s=>s.id===cv.dataset.skinpv), x=cv.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,240,150); x.translate(120,82); x.rotate(-0.35); cgFootball(x,72,44,k,t); }); }
+function cgShopPaint(){ const t=performance.now()/1000, now=performance.now();
+  document.querySelectorAll("[data-skinpv]").forEach(cv=>{ const k=CG_SKINS.find(s=>s.id===cv.dataset.skinpv), x=cv.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,240,150); x.translate(120,82); x.rotate(-0.35); cgFootball(x,72,44,k,t); });
+  const pos=tt=>{ const u=((tt/1000)%1.6)/1.6; return {x:20+u*200, y:120-Math.sin(u*Math.PI)*85, u}; };
+  document.querySelectorAll("[data-trailpv]").forEach(cv=>{ const tr=CG_TRAILS.find(s=>s.id===cv.dataset.trailpv), x=cv.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,240,150);
+    const L=2.6, life=(tr.life||380)*L, cur=pos(now), pts=[]; for(let dt=life;dt>=0;dt-=16){ const p=pos(now-dt); if(p.u<=cur.u) pts.push({x:p.x,y:p.y,r:16,t:now-dt}); }
+    cgTrailDraw(x,pts,tr,now,L); x.save(); x.translate(cur.x,cur.y); x.rotate(-0.6+cur.u*1.2); cgFootball(x,22,13.5,cgSkin(),t); x.restore(); }); }
 document.addEventListener("click",e=>{
   if(e.target.closest("[data-cgshop]")){ e.preventDefault(); if(!$("cgGame")||$("cgGame").hidden){ openChainGame(); } cgShopOpen(); return; }
   if(e.target.closest("[data-cgshopx]")){ cgShopClose(); return; }
   const b=e.target.closest("[data-cgbuy]"); if(b){ const k=CG_SKINS.find(s=>s.id===b.dataset.cgbuy), w=cgW(); if(!k||w.owned.includes(k.id)) return; if(w.bank<k.price) return toast("Not enough Huddle Bucks yet.");
     w.bank-=k.price; w.owned.push(k.id); w.skin=k.id; cgWSave(true); cgShopRender(); toast(`${k.name} unlocked! 🏈`); if(k.id==="firechain") cgSay("Oh my! He bought the Chainz on Fire ball!",true); return; }
-  const q=e.target.closest("[data-cgequip]"); if(q){ const w=cgW(); w.skin=q.dataset.cgequip; cgWSave(true); cgShopRender(); }
+  const q=e.target.closest("[data-cgequip]"); if(q){ const w=cgW(); w.skin=q.dataset.cgequip; cgWSave(true); cgShopRender(); return; }
+  const tb=e.target.closest("[data-cgtab]"); if(tb){ CG.shopTab=tb.dataset.cgtab; cgShopRender(); return; }
+  const bt=e.target.closest("[data-cgbuyt]"); if(bt){ const k=CG_TRAILS.find(s=>s.id===bt.dataset.cgbuyt), w=cgW(); if(!k||w.ownedT.includes(k.id)) return; if(w.bank<k.price) return toast("Not enough Huddle Bucks yet.");
+    w.bank-=k.price; w.ownedT.push(k.id); w.trail=k.id; cgWSave(true); cgShopRender(); toast(`${k.name} trail unlocked! ✨`); return; }
+  const qt=e.target.closest("[data-cgequipt]"); if(qt){ const w=cgW(); w.trail=qt.dataset.cgequipt; cgWSave(true); cgShopRender(); }
 });
 /* ---------- fire mode: the stadium burns, and fans throw chains onto the field ---------- */
 function cgStadiumFire(x,W,H,NEAR,FAR){
@@ -369,10 +417,8 @@ function cgChainsDraw(x){ const now=performance.now(); CG.thrownChains=(CG.throw
 function cgBall(x,bx,by,z,m,hx,hy,spin){
   const [sx,sy,ss]=cgP(bx,by); x.fillStyle="rgba(0,0,0,.3)"; x.beginPath(); x.ellipse(sx,sy,0.3*ss+1,0.12*ss+1,0,0,7); x.fill();
   let [px,py,ps]=cgP(bx,by,z); if(m<1){ px=hx+(px-hx)*m; py=hy+(py-hy)*m; } const r=Math.max(4,Math.min(16,0.32*ps*(1+(1-m)*1.5)));
-  const sk=cgSkin(), now=performance.now(); CG.trail=(CG.trail||[]).filter(p=>now-p.t<(sk.trail==="fire"?420:300)); if(sk.trail&&m>0.15) CG.trail.push({x:px,y:py,r,t:now});
-  if(sk.trail){ x.save(); x.globalCompositeOperation="lighter"; CG.trail.forEach(p=>{ const f=1-(now-p.t)/(sk.trail==="fire"?420:300);
-    if(sk.trail==="fire"){ x.fillStyle=f>0.6?`rgba(255,220,100,${f*0.5})`:`rgba(255,100,20,${f*0.45})`; x.beginPath(); x.arc(p.x+(Math.random()-0.5)*3,p.y+(Math.random()-0.5)*3,p.r*(0.4+f*0.6),0,7); x.fill(); }
-    else { x.globalAlpha=f*0.5; x.fillStyle=sk.trail; x.beginPath(); x.arc(p.x,p.y,p.r*0.5*f,0,7); x.fill(); x.globalAlpha=1; } }); x.restore(); }
+  const sk=cgSkin(), tr=cgTrail(), now=performance.now(), L=1.8, life=(tr.life||380)*L, rr=Math.max(7,r); CG.trail=(CG.trail||[]).filter(p=>now-p.t<life); if(tr.id!=="none"&&m>0.12) CG.trail.push({x:px,y:py,r:rr,t:now});
+  cgTrailDraw(x,[...CG.trail,{x:px,y:py,r:rr,t:now}],tr,now,L);
   x.save(); x.translate(px,py); x.rotate(-0.5+spin*0.3); cgFootball(x,r,r*0.62,sk,now/1000); x.restore(); }
 function cgPoly(x,pts,fill){ x.fillStyle=fill; x.beginPath(); pts.forEach((p,i)=>{ const q=cgP(p[0],p[1],p[2]); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]); }); x.closePath(); x.fill(); }
 function cgLine(x,a,b,col,lw){ const p=cgP(a[0],a[1],a[2]), q=cgP(b[0],b[1],b[2]); x.strokeStyle=col; x.lineWidth=lw; x.beginPath(); x.moveTo(p[0],p[1]); x.lineTo(q[0],q[1]); x.stroke(); }

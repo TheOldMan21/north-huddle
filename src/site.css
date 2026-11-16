@@ -671,3 +671,6 @@ nav.tabs button[aria-current=page] svg{color:#0B1220}
 .cg-shop-note{color:#9fb0c8;font-size:13px;margin-top:14px;text-align:center}
 .cg-over-bank{margin:6px 0 2px;font-size:15px}.cg-over-bank b{color:#4F2683}.cg-new{color:#0f8a6e;font-weight:700}
 .cg-over-btns{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:10px}.cg-over-btns .btn-gold{flex:1;min-width:150px}
+.cg-tabs{display:flex;gap:6px;margin:0 0 12px;background:rgba(255,255,255,.06);padding:4px;border-radius:999px}
+.cg-tabs button{flex:1;border:0;border-radius:999px;padding:9px 10px;background:transparent;color:#cfd8e6;font:800 16px "Barlow Condensed",system-ui;cursor:pointer}
+.cg-tabs button[aria-selected=true]{background:linear-gradient(90deg,#2EE6C5,#7C5CFF);color:#0B1220}
