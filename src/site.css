@@ -674,3 +674,14 @@ nav.tabs button[aria-current=page] svg{color:#0B1220}
 .cg-tabs{display:flex;gap:6px;margin:0 0 12px;background:rgba(255,255,255,.06);padding:4px;border-radius:999px}
 .cg-tabs button{flex:1;border:0;border-radius:999px;padding:9px 10px;background:transparent;color:#cfd8e6;font:800 16px "Barlow Condensed",system-ui;cursor:pointer}
 .cg-tabs button[aria-selected=true]{background:linear-gradient(90deg,#2EE6C5,#7C5CFF);color:#0B1220}
+#cgGame .fg-stage{position:relative}
+.cg-hike{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:3;border:0;border-radius:999px;padding:12px 20px;font:800 22px "Barlow Condensed",system-ui;letter-spacing:1px;color:#0B1220;background:linear-gradient(90deg,#2EE6C5,#7C5CFF);box-shadow:0 6px 22px rgba(46,230,197,.35),0 0 0 3px rgba(255,255,255,.15);cursor:pointer;animation:cgPulse 1.2s ease-in-out infinite}
+.cg-hike[hidden]{display:none}.cg-hike span{display:inline-block;min-width:1.1em;margin-left:6px;background:rgba(11,18,32,.85);color:#5EF2D6;border-radius:999px;padding:0 7px;font-size:17px}
+@keyframes cgPulse{50%{transform:translateX(-50%) scale(1.06)}}
+.fg-pop .cg-first{color:#FFD54A;font:800 18px "Barlow Condensed",system-ui;letter-spacing:1px}
+.fg-pop.td b{font-size:48px;background:linear-gradient(90deg,#FFD54A,#ff8a2a,#FFD54A);-webkit-background-clip:text;background-clip:text;color:transparent}
+#cgDown{white-space:nowrap;font-size:clamp(17px,5vw,26px)}
+#cgGame .fg-msg{place-items:start center;padding-top:8%}
+#cgGame .fg-msg:has(.fg-over){place-items:center;padding-top:0}
+#cgGame .fg-pop{background:rgba(7,11,22,.72);padding:8px 18px;gap:0}
+#cgGame .fg-pop b{font-size:32px}#cgGame .fg-pop.td b{font-size:44px}#cgGame .fg-pop span{font-size:13px}
