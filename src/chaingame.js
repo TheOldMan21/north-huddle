@@ -46,7 +46,7 @@ function openChainGame(){
       if(e.target.closest("[data-cgmenu]")) cgMenuOpen(); if(e.target.closest("[data-cgbadges]")){ CG.menuView="badges"; cgMenuRender(); } if(e.target.closest("[data-cgmback]")){ CG.menuView="main"; cgMenuRender(); }
       if(e.target.closest("[data-cgsharebtn]")) cgShare(); });
   }
-  try{ CG.mute=localStorage.getItem("nh_cgmute")==="1"; }catch(e){} cgSndBtn(); cgVoiceWarm();
+  try{ CG.mute=localStorage.getItem("nh_cgmute")==="1"; }catch(e){} cgSndBtn(); cgVoiceWarm(); setTimeout(cgVoiceLoad,1200);
   ov.hidden=false; document.body.style.overflow="hidden"; CG.on=true; CG.paused=false; if($("cgShop")) $("cgShop").hidden=true; cgResize(); cgMenuOpen(); cgWPull(); cgMusStart();
   window.addEventListener("resize",cgResize);
 }
@@ -204,7 +204,7 @@ function cgResult(kind,yds,label,who){
     if(td) cgAch("td"); if(CG.tds>=3) cgAch("hat"); if(CG.tds>=5) cgAch("five"); if(yds>=40) cgAch("deep40"); if(yds>=50) cgAch("deep50"); if(/DIVING/.test(label||"")) cgAch("dive");
     if(CG.chains>=10) cgAch("ch10"); if(CG.chains>=20) cgAch("ch20"); if(CG.streak>=3) cgAch("fire"); if(CG.streak>=5) cgAch("blaze"); if(CG.streak>=10) cgAch("ten"); if(cgW().earned>=10000) cgAch("rich"); if(cgW().earned>=100000) cgAch("mil");
     const fire=CG.streak>=3?` · 🔥 ×${cgMult()}`:CG.streak===2?" · heating up…":"";
-    html=`<b>${td?"TOUCHDOWN!":label||"COMPLETE!"}</b><span>${yds} yards · +$${bucks.toLocaleString()}${fire}${cgGameDay()?" · game day ×2":""}</span>${next==="first"?'<span class="cg-first">FIRST DOWN ⛓</span>':""}<span>New chain: ${CG_CHAINS[(CG.chains-1)%CG_CHAINS.length].name} ⛓️</span>`;
+    html=`<b>${td?"TOUCHDOWN!":label||"COMPLETE!"}</b><span>${yds} yards · +$${bucks.toLocaleString()}${fire}${cgGameDay()?" · 📺 game day ×2":""}</span>${next==="first"?'<span class="cg-first">FIRST DOWN ⛓</span>':""}<span>New chain: ${CG_CHAINS[(CG.chains-1)%CG_CHAINS.length].name} ⛓️</span>`;
     cgSound(true); cgCall(td?"TOUCHDOWN":next==="first"?"FIRST":label,yds); cgVibe(td?[40,60,40,60,120]:[25,40,25]);
     if(CG.streak>=3) setTimeout(()=>{ if(CG.on) cgThrowChains(at.x,at.y); },350);
     CG.flash={t:performance.now()}; CG.post={t:0,carrier:who,dir:1,ball:{...at},td,big:td||yds>=25||CG.streak>=3}; CG.big=CG.post.big;
@@ -226,6 +226,17 @@ function cgResult(kind,yds,label,who){
   setTimeout(()=>{ if(!CG.on) return; $("cgMsg").innerHTML=""; CG.dr=next==="td"||next==="turnover"?{ballOn:25,down:1,toGo:10}:CG.drNext; CG.drNext=null; if(CG.turnovers>=3) cgOver(); else cgSnap(); },td?2900:CG.big&&kind==="catch"?2300:1700);
 }
 function cgGameDay(){ return !CG.daily&&!!CG.gdLive; }
+/* ---------- game-day mode: while the real game is live, double bucks; a real touchdown sets every player's stadium on fire ---------- */
+function cgGameDayCheck(){
+  try{ const g=(typeof LIVE!=="undefined"&&LIVE.data&&LIVE.data.games||[]).find(x=>(x.home===CUR||x.away===CUR)&&x.state==="in");
+    const was=CG.gdLive; CG.gdLive=!!g; if(was!==CG.gdLive&&CG.on&&CG.phase==="menu") cgMenuRender();
+    if(!g){ CG.gdScore=null; return; }
+    const ours=g.home===CUR?g.hs:g.as, key=g.id||(g.home+g.away);
+    if(CG.gdKey===key&&CG.gdScore!=null&&ours-CG.gdScore>=6&&CG.on){
+      CG.gdFire=performance.now()+45000; cgSay("Touchdown in the real game! The whole stadium is on fire!",true); toast("🔥 Real touchdown! The stadium's on fire for everyone playing.");
+      if(CG.wrs){ const w=CG.wrs[0]; cgThrowChains(w.x,Math.max(6,w.y)); } cgVibe([40,60,40,60,120]); }
+    CG.gdKey=key; CG.gdScore=ours; }catch(e){} }
+setInterval(cgGameDayCheck,5000);
 /* ---------- background music: an original stadium beat built live with Web Audio ----------
    Am–F–C–G, drums + bass + offbeat synth stabs over a low crowd murmur. Fire mode adds 16th hats
    and opens the filter; it ducks while the announcer talks. Muted with the same 🔊 button. */
@@ -268,7 +279,16 @@ function cgVoiceWarm(){ try{ speechSynthesis.getVoices(); speechSynthesis.onvoic
 function cgVoice(){ if(CG.voice) return CG.voice; try{ const vs=speechSynthesis.getVoices().filter(v=>/^en[-_]US/i.test(v.lang)||/^en/i.test(v.lang)); if(!vs.length) return null;
   const rank=v=>(/male|guy|david|alex|daniel|aaron|fred|google us english|en-us-x-iom|en-us-x-tpd|en-us-x-iol/i.test(v.name)?4:0)+(/natural|enhanced|premium|neural|online/i.test(v.name)?3:0)+(/^en[-_]US/i.test(v.lang)?2:0)+(/female|samantha|victoria|zira/i.test(v.name)?-2:0);
   CG.voice=vs.sort((a,b)=>rank(b)-rank(a))[0]; }catch(e){} return CG.voice; }
-function cgSay(text,hype){ if(CG.mute) return; try{ if(!("speechSynthesis" in window)) return; speechSynthesis.cancel();
+// AI-voiced clips from /api/announce (prefetched once, then cached by the browser); the phone's voice is the fallback
+async function cgVoiceLoad(){ if(CG.vcLoading||CG.vcOff) return; CG.vcLoading=true; CG.vc=CG.vc||{};
+  try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) throw 0; const ctx=CG.ctx||(CG.ctx=new AC());
+    const list=await (await fetch("/api/announce?list=1")).json(); let fails=0, i=0;
+    const one=async()=>{ while(i<list.length&&!CG.vcOff){ const t=list[i++]; if(CG.vc[t]) continue; try{ const r=await fetch("/api/announce?t="+encodeURIComponent(t)); if(!r.ok) throw 0; CG.vc[t]=await ctx.decodeAudioData(await r.arrayBuffer()); fails=0; }catch(e){ if(++fails>=4) CG.vcOff=true; } } };
+    await Promise.all([one(),one(),one()]); }catch(e){ CG.vcOff=true; } }
+function cgSay(text,hype){ if(CG.mute) return;
+  const buf=CG.vc&&CG.vc[text]; if(buf&&CG.ctx){ try{ speechSynthesis.cancel(); }catch(e){} try{ if(CG.vcSrc) CG.vcSrc.stop(); }catch(e){}
+    const src=CG.ctx.createBufferSource(), g=CG.ctx.createGain(); src.buffer=buf; g.gain.value=1.15; src.playbackRate.value=hype?1.06:1; src.connect(g); g.connect(CG.ctx.destination); cgMusDuck(true); src.onended=()=>cgMusDuck(false); src.start(); CG.vcSrc=src; cgRoar(hype?1:0.6); return; }
+  try{ if(!("speechSynthesis" in window)) return; speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text), v=cgVoice(); if(v) u.voice=v; u.lang=v?v.lang:"en-US"; u.rate=hype?1.22:1.12; u.pitch=hype?1.25:1.08; u.volume=1; u.onstart=()=>cgMusDuck(true); u.onend=u.onerror=()=>cgMusDuck(false); speechSynthesis.speak(u); setTimeout(()=>cgMusDuck(false),4000); }catch(e){}
   cgRoar(hype?1:0.6); }
 function cgRoar(amt){ if(CG.mute) return; try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; const ctx=CG.ctx||(CG.ctx=new AC()); if(ctx.state==="suspended") ctx.resume();
@@ -749,7 +769,7 @@ const CG_CHAINS=[
   {name:"Gold Rope",type:"rope",c1:"#FFE48A",c2:"#B8860B",w:1.2}
 ];
 function cgMix(a,b,t){ const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)), A=p(a), B=p(b); return "rgb("+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(",")+")"; }
-function cgHeat(){ const st=CG.streak||0; return st>=5?1:st>=3?0.7:st===2?0.3:0; }
+function cgHeat(){ const st=CG.streak||0; return Math.max(st>=5?1:st>=3?0.7:st===2?0.3:0, CG.gdFire>performance.now()?0.7:0); }
 function cgChain(x,st,yy,half,sag,heat,seed){
   const c1=heat?cgMix(st.c1,heat>=1?"#FFE08A":"#FF8A2A",heat*0.75):st.c1, c2=heat?cgMix(st.c2,"#E0400A",heat*0.7):st.c2, w=st.w*1.3;
   const P=t=>[-half+2*half*t, yy+Math.sin(Math.PI*t)*sag], ang=t=>{ const a=P(Math.max(0,t-0.01)), b=P(Math.min(1,t+0.01)); return Math.atan2(b[1]-a[1],b[0]-a[0]); };
