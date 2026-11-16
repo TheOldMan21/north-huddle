@@ -61,7 +61,7 @@ rep('<script id="hub-snapshot"', '<script src="/js/supabase.js"></script>\n<scri
 css = (R / "src/site.css").read_text()
 import subprocess, sys
 subprocess.run([sys.executable, str(R / "scripts/cg_lines.py")], check=False)
-site = "\n".join((R / f).read_text() for f in ["src/site.js", "src/teams.js", "src/live.js", "src/league.js", "src/sleeper.js", "src/social.js", "src/community.js", "src/thumbs.js", "src/talk.js", "src/app.js", "src/search.js", "src/activity.js", "src/ios.js", "src/round3.js", "src/highlights.js", "src/fieldgoal.js", "src/polish.js", "src/stadium.js", "src/admin.js", "src/feedback.js", "src/predict.js", "src/watch.js", "src/chaingame.js"])
+site = "\n".join((R / f).read_text() for f in ["src/site.js", "src/teams.js", "src/live.js", "src/league.js", "src/sleeper.js", "src/social.js", "src/community.js", "src/thumbs.js", "src/talk.js", "src/app.js", "src/search.js", "src/activity.js", "src/ios.js", "src/round3.js", "src/highlights.js", "src/fieldgoal.js", "src/polish.js", "src/stadium.js", "src/admin.js", "src/feedback.js", "src/predict.js", "src/watch.js", "src/chaingame.js", "src/flags.js"])
 h = h + "\n<style>\n" + css + "\n</style>\n<script>\n" + site + "\n</script>\n"
 
 if not h.lstrip().lower().startswith("<!doctype"):
