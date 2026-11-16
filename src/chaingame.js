@@ -144,14 +144,14 @@ function cgLand(){
 // after the ball arrives: the catch and run, the deflection, the pick, or the ball bouncing away
 function cgPost(dt){
   const P=CG.post; if(!P) return; P.t+=dt; const b=P.ball;
-  if(P.carrier){ const m=P.carrier; m.y+=P.dir*m.speed*0.8*dt; b.x=m.x+0.3; b.y=m.y; b.z=1.2; return; }
+  if(P.carrier){ const m=P.carrier, hold=P.t<0.4; m.y+=P.dir*m.speed*(hold?0.35:0.8)*dt; b.x=m.x+(hold?0:0.3); b.y=m.y; b.z=hold?2.2:1.3; return; }
   b.vz-=22*dt; b.x+=b.vx*dt; b.y+=b.vy*dt; b.z+=b.vz*dt;
   if(b.z<0.15){ b.z=0.15; b.vz=Math.abs(b.vz)*0.45; b.vx*=0.6; b.vy*=0.6; b.bounce=(b.bounce||0)+1; }
 }
 function cgMult(){ return CG.streak>=5?2:CG.streak>=3?1.5:1; }
 function cgResult(kind,yds,label,who){
   CG.phase="result"; CG.res=kind; let html; const b=CG.ball;
-  const at=b?{x:b.tx,y:b.ty,z:1.2}:null, dir=b?[b.tx-b.x0,b.ty-b.y0]:[0,1], dl=Math.hypot(dir[0],dir[1])||1;
+  const at=b?{x:b.tx,y:b.ty,z:2.2}:null, dir=b?[b.tx-b.x0,b.ty-b.y0]:[0,1], dl=Math.hypot(dir[0],dir[1])||1;
   if(kind==="catch"){
     CG.comps++; CG.chains++; CG.streak=(CG.streak||0)+1; const mult=cgMult();
     const bucks=Math.round((yds*5+Math.max(0,yds-15)*10+Math.max(0,yds-30)*15)*mult); CG.bucks+=bucks; CG.longest=Math.max(CG.longest,yds); cgW().bank+=bucks; cgWSave(false);
@@ -164,7 +164,7 @@ function cgResult(kind,yds,label,who){
     html=`<b class="miss">${kind==="pick"?"PICKED OFF!":kind==="broken"?"BROKEN UP!":kind==="sack"?"SACKED!":"INCOMPLETE"}</b><span>${kind==="sack"?"Get it out faster!":"Strike "+CG.strikes+" of 3"}${hadFire?" · fire's out 🧯":""}</span>`;
     if(kind==="pick") CG.post={t:0,carrier:who,dir:-1,ball:{...at}};
     else if(kind==="broken") CG.post={t:0,ball:{...at,vx:(Math.random()-0.5)*8,vy:-2-Math.random()*2,vz:6}};
-    else if(kind==="incomplete") CG.post={t:0,ball:{...at,z:1.0,vx:dir[0]/dl*9,vy:dir[1]/dl*9,vz:-2}};
+    else if(kind==="incomplete") CG.post={t:0,ball:{...at,z:2.0,vx:dir[0]/dl*9,vy:dir[1]/dl*9,vz:-2}};
     else CG.post=null;
   }
   cgHud(); $("cgMsg").innerHTML=`<div class="fg-pop">${html}</div>`;
@@ -312,7 +312,7 @@ async function cgWPull(){ if(!(ACC.db&&ACC.id)||CG.wPulled===ACC.id) return; CG.
   w.ownedT=[...new Set([...w.ownedT,...(r.ownedT||[])])]; if(r.trail&&w.ownedT.includes(r.trail)&&w.trail==="none") w.trail=r.trail; cgWSave(false); cgShopRender(); }catch(e){} }
 function cgSkin(){ const w=cgW(); return CG_SKINS.find(k=>k.id===w.skin)||CG_SKINS[0]; }
 // draw a football centered at 0,0 pointing along +x
-function cgFootball(x,rx,ry,sk,t){
+function cgFootball(x,rx,ry,sk,t,roll){
   t=t||0; x.save();
   // flames burning up behind the ball
   if(sk.fire){ x.globalCompositeOperation="lighter";
@@ -332,9 +332,11 @@ function cgFootball(x,rx,ry,sk,t){
   const sh=x.createLinearGradient(0,-ry,0,ry); sh.addColorStop(0,"rgba(255,255,255,.28)"); sh.addColorStop(0.45,"rgba(255,255,255,0)"); sh.addColorStop(1,"rgba(0,0,0,.25)"); x.fillStyle=sh; x.fillRect(-rx,-ry,rx*2,ry*2);
   x.strokeStyle="rgba(0,0,0,.22)"; x.lineWidth=Math.max(0.6,rx*0.04); x.beginPath(); x.ellipse(0,ry*0.1,rx*0.98,ry*0.55,0,Math.PI*1.05,Math.PI*1.95); x.stroke();
   x.restore();
-  // laces
-  x.strokeStyle=sk.lace; x.lineCap="round"; x.lineWidth=Math.max(1,rx*0.08); x.beginPath(); x.moveTo(-rx*0.36,-ry*0.32); x.lineTo(rx*0.36,-ry*0.32); x.stroke();
-  x.lineWidth=Math.max(0.8,rx*0.055); for(let k=-3;k<=3;k++){ x.beginPath(); x.moveTo(k*rx*0.1,-ry*0.5); x.lineTo(k*rx*0.1,-ry*0.14); x.stroke(); } x.lineCap="butt";
+  // laces: on a spiral they roll around the long axis (visible on the near side only)
+  { const th=roll==null?0.35:roll, ly=-ry*0.62*Math.cos(th), face=roll==null?1:Math.sin(th), vis=roll==null?1:Math.max(0,Math.min(1,(face+0.25)/0.5)), sl=ry*0.18*(roll==null?1:Math.max(0.3,Math.abs(face)));
+    if(vis>0){ x.globalAlpha=vis; x.strokeStyle=sk.lace; x.lineCap="round"; x.lineWidth=Math.max(1,rx*0.08); x.beginPath(); x.moveTo(-rx*0.36,ly); x.lineTo(rx*0.36,ly); x.stroke();
+      x.lineWidth=Math.max(0.8,rx*0.055); for(let k=-3;k<=3;k++){ x.beginPath(); x.moveTo(k*rx*0.1,ly-sl); x.lineTo(k*rx*0.1,ly+sl); x.stroke(); } x.lineCap="butt"; x.globalAlpha=1; }
+    if(roll!=null){ x.save(); x.beginPath(); x.ellipse(0,0,rx,ry,0,0,7); x.clip(); x.fillStyle="rgba(255,255,255,.12)"; x.fillRect(-rx,-ry*0.9*Math.cos(th+1.2)-ry*0.12,rx*2,ry*0.24); x.restore(); } }
   if(sk.facets){ x.strokeStyle="#fff"; x.lineWidth=Math.max(0.8,rx*0.04); for(let i=0;i<3;i++){ const a=(t*2+i*2.1)%6.28, px=Math.cos(a)*rx*0.6, py=Math.sin(a*1.3)*ry*0.5, r=rx*0.12*Math.abs(Math.sin(t*4+i)); x.beginPath(); x.moveTo(px-r,py); x.lineTo(px+r,py); x.moveTo(px,py-r); x.lineTo(px,py+r); x.stroke(); } }
   // gold chain wrapped around the ball
   if(sk.chain){ x.shadowColor="rgba(255,140,30,.9)"; x.shadowBlur=rx*0.25; const n=16; for(let k=0;k<=n;k++){ const u=k/n, px=-rx*0.95+u*rx*1.9, py=Math.sin(u*Math.PI*2.2+0.4)*ry*0.78*Math.sqrt(Math.max(0,1-(px/rx)**2));
@@ -414,12 +416,19 @@ function cgChainsDraw(x){ const now=performance.now(); CG.thrownChains=(CG.throw
     x.shadowBlur=0; if(!c.landed){ x.fillStyle="rgba(255,240,180,.8)"; x.beginPath(); x.arc(px+Math.cos(now/90+c.st)*r,py-r*sq,Math.max(1,r*0.12),0,7); x.fill(); }
     x.globalAlpha=1; }); }
 /* ---------- drawing ---------- */
-function cgBall(x,bx,by,z,m,hx,hy,spin){
+function cgBoost(Y){ return 1+Math.max(0,Y-CG.cam.y-14)/28; }
+function cgPB(X,Y,Z){ const [gx,gy,s0]=cgP(X,Y), b=cgBoost(Y); return [gx,gy-(Z||0)*s0*b,s0*b]; }
+function cgBallZ(k,dist){ return 2.2+Math.sin(Math.PI*k)*Math.min(11,dist/3.6); }   // leaves his hand and arrives at the receiver's hands
+function cgBall(x,bx,by,z,m,hx,hy,spin,nxt){
   const [sx,sy,ss]=cgP(bx,by); x.fillStyle="rgba(0,0,0,.3)"; x.beginPath(); x.ellipse(sx,sy,0.3*ss+1,0.12*ss+1,0,0,7); x.fill();
-  let [px,py,ps]=cgP(bx,by,z); if(m<1){ px=hx+(px-hx)*m; py=hy+(py-hy)*m; } const r=Math.max(4,Math.min(16,0.32*ps*(1+(1-m)*1.5)));
+  let [px,py,ps]=cgPB(bx,by,z); if(m<1){ px=hx+(px-hx)*m; py=hy+(py-hy)*m; } const r=Math.max(4,Math.min(16,0.32*ps*(1+(1-m)*1.5)));
+  // spiral: nose points along the flight path; seen end-on the ball looks rounder
+  let ang=-0.5+spin*0.3, rx=r, roll=null;
+  if(nxt){ let [qx,qy]=cgPB(nxt[0],nxt[1],nxt[2]); if(m<1){ const m2=Math.min(1,m+0.05); qx=hx+(qx-hx)*m2; qy=hy+(qy-hy)*m2; } const sl=Math.hypot(qx-px,qy-py), wl=Math.hypot(nxt[0]-bx,nxt[1]-by,nxt[2]-z)*ps;
+    ang=Math.atan2(qy-py,qx-px)+Math.sin(performance.now()/70)*0.04; rx=r*(0.68+0.32*Math.min(1,sl/Math.max(1e-3,wl)*1.6)); roll=performance.now()/1000*26; }
   const sk=cgSkin(), tr=cgTrail(), now=performance.now(), L=1.8, life=(tr.life||380)*L, rr=Math.max(7,r); CG.trail=(CG.trail||[]).filter(p=>now-p.t<life); if(tr.id!=="none"&&m>0.12) CG.trail.push({x:px,y:py,r:rr,t:now});
   cgTrailDraw(x,[...CG.trail,{x:px,y:py,r:rr,t:now}],tr,now,L);
-  x.save(); x.translate(px,py); x.rotate(-0.5+spin*0.3); cgFootball(x,r,r*0.62,sk,now/1000); x.restore(); }
+  x.save(); x.translate(px,py); x.rotate(ang); cgFootball(x,rx,r*0.62,sk,now/1000,roll); x.restore(); }
 function cgPoly(x,pts,fill){ x.fillStyle=fill; x.beginPath(); pts.forEach((p,i)=>{ const q=cgP(p[0],p[1],p[2]); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]); }); x.closePath(); x.fill(); }
 function cgLine(x,a,b,col,lw){ const p=cgP(a[0],a[1],a[2]), q=cgP(b[0],b[1],b[2]); x.strokeStyle=col; x.lineWidth=lw; x.beginPath(); x.moveTo(p[0],p[1]); x.lineTo(q[0],q[1]); x.stroke(); }
 function cgDraw(){
@@ -475,8 +484,8 @@ function cgDraw(){
   for(let i=-2;i<=2;i++) men.push({X:i*1.5,Y:-1-prog*3.2,c:OFF,face:"back",num:[77,63,56,64,71][i+2],ph:0});
   for(let i=0;i<4;i++) men.push({X:(i-1.5)*2.1,Y:0.9-prog*3.4+(i%3?0.3:0),c:DEF,face:"front",num:[97,93,99,90][i],ph:prog>0.05?run*9+i:0});
   if(CG.wrs){ const live=CG.phase==="route"||CG.phase==="air", car=CG.phase==="result"&&CG.post&&CG.post.carrier;
-    [...CG.cbs,CG.sf].forEach(d=>men.push({X:d.x,Y:d.y,c:DEF,face:"front",num:d.num,ph:live||car===d?run*11:0,up:car===d}));
-    CG.wrs.forEach(w=>men.push({X:w.x,Y:w.y,c:OFF,face:"back",num:w.num,rc:CG_WRCOL[w.i],ph:live||car===w?run*12:0,wr:1,up:(CG.phase==="air"&&w.track&&CG.ball.T-CG.ball.t<0.45)||car===w})); }
+    [...CG.cbs,CG.sf].forEach(d=>men.push({X:d.x,Y:d.y,c:DEF,face:"front",num:d.num,ph:live||car===d?run*11:0,up:car===d&&CG.post.t<0.4}));
+    CG.wrs.forEach(w=>men.push({X:w.x,Y:w.y,c:OFF,face:"back",num:w.num,rc:CG_WRCOL[w.i],ph:live||car===w?run*12:0,wr:1,up:(CG.phase==="air"&&w.track&&CG.ball.T-CG.ball.t<0.45)||(car===w&&CG.post.t<0.4)})); }
   men.sort((a,b)=>b.Y-a.Y).forEach(m=>cgMan(x,m));
   cgChainsDraw(x);
   // aim preview while swiping: the ring says what will happen if you let go now
@@ -484,15 +493,15 @@ function cgDraw(){
     if(a){ const now=performance.now(); if(!CG.pred||now-CG.pred.at>60||Math.hypot(CG.pred.tx-a.tx,CG.pred.ty-a.ty)>0.6) CG.pred={at:now,tx:a.tx,ty:a.ty,j:cgPredict(a)};
       const k0=CG.pred.j.kind, col={open:"#3BE37A",dive:"#3BE37A",contested:"#FFC62F",covered:"#FF5A4F",miss:"rgba(255,255,255,.9)"}[k0], lab={open:"OPEN",dive:"DIVE FOR IT",contested:"CONTESTED",covered:"COVERED",miss:"NO ONE THERE"}[k0];
       const [hx,hy]=cgHand(); x.setLineDash([3,6]); x.strokeStyle=col; x.globalAlpha=0.85; x.lineWidth=2.5; x.beginPath(); x.moveTo(hx,hy);
-      for(let i=1;i<=24;i++){ const k=i/24, bx=0.5+(a.tx-0.5)*k, by=CG_QBY+(a.ty-CG_QBY)*k, z=2.2+(1.3-2.2)*k+Math.sin(Math.PI*k)*Math.min(11,a.yds/3.6), q=cgP(bx,by,z), m=Math.min(1,k*4); x.lineTo(hx+(q[0]-hx)*m,hy+(q[1]-hy)*m); } x.stroke(); x.setLineDash([]); x.globalAlpha=1;
+      for(let i=1;i<=24;i++){ const k=i/24, bx=0.5+(a.tx-0.5)*k, by=CG_QBY+(a.ty-CG_QBY)*k, z=cgBallZ(k,a.yds), q=cgPB(bx,by,z), m=Math.min(1,k*4); x.lineTo(hx+(q[0]-hx)*m,hy+(q[1]-hy)*m); } x.stroke(); x.setLineDash([]); x.globalAlpha=1;
       const [tx,ty,ts]=cgP(a.tx,a.ty); x.globalAlpha=0.22; x.fillStyle=col; x.beginPath(); x.ellipse(tx,ty,1.9*ts,0.7*ts,0,0,7); x.fill(); x.globalAlpha=1;
       x.strokeStyle=col; x.lineWidth=3.5; x.beginPath(); x.ellipse(tx,ty,1.9*ts,0.7*ts,0,0,7); x.stroke();
       x.font='800 15px "Barlow Condensed",system-ui'; x.textAlign="center"; const txt=Math.round(a.ty)+" YDS · "+lab, tw=x.measureText(txt).width+14;
       x.fillStyle="rgba(11,18,32,.82)"; x.fillRect(tx-tw/2,ty-1.2*ts-24,tw,20); x.fillStyle=col; x.fillText(txt,tx,ty-1.2*ts-9); } }
   // ball in the air
-  if(CG.phase==="air"&&CG.ball){ const b=CG.ball, k=Math.min(1,b.t/b.T), bx=b.x0+(b.tx-b.x0)*k, by=b.y0+(b.ty-b.y0)*k, z=2.2+(1.3-2.2)*k+Math.sin(Math.PI*k)*Math.min(11,b.dist/3.6);
+  if(CG.phase==="air"&&CG.ball){ const b=CG.ball, k=Math.min(1,b.t/b.T), bx=b.x0+(b.tx-b.x0)*k, by=b.y0+(b.ty-b.y0)*k, z=cgBallZ(k,b.dist), k2=Math.min(1.02,k+0.02), nxt=[b.x0+(b.tx-b.x0)*k2,b.y0+(b.ty-b.y0)*k2,cgBallZ(k2,b.dist)];
     const [tx,ty,ts]=cgP(b.tx,b.ty); x.strokeStyle="rgba(255,255,255,.45)"; x.lineWidth=2; x.beginPath(); x.ellipse(tx,ty,1.6*ts,0.6*ts,0,0,7); x.stroke();
-    const [hx,hy]=cgHand(), m=Math.min(1,k*5); cgBall(x,bx,by,z,m,hx,hy,k); }
+    const [hx,hy]=cgHand(), m=Math.min(1,k*5); cgBall(x,bx,by,z,m,hx,hy,k,nxt); }
   if(CG.phase==="result"&&CG.post){ const b=CG.post.ball; cgBall(x,b.x,b.y,b.z,1,0,0,CG.post.t*3); }
   // pocket clock
   if(CG.phase==="route"){ const left=Math.max(0,CG.pocket-CG.t), f=left/CG.pocket; x.fillStyle="rgba(0,0,0,.45)"; x.fillRect(W-112,12,100,10); x.fillStyle=f>0.4?"#5EF2D6":f>0.2?"#FFC62F":"#ff5a4f"; x.fillRect(W-112,12,100*f,10); x.fillStyle="#fff"; x.font='700 11px "Barlow Condensed",system-ui'; x.textAlign="right"; x.fillText("POCKET",W-12,36); }
