@@ -13,6 +13,7 @@ Unofficial Minnesota football fan hub (owner: TheOldMan21). Hosted on Cloudflare
 - `src/round3.js` — spam filter (no links/repeats), pick'em, fan power rankings, member profiles, AI recaps (`functions/api/recap.js`), watch party.
 - `src/stadium.js` — Depth "Stadium" view: starters on img/field/stadium.jpg, bodies built in-browser from img/field/body*.png (recolor, skin match, headshot via /api/hs, injury glow). Classic SVG view kept behind a toggle.
 - `src/feedback.js` — "Send feedback" (footer + account sheet) into the `feedback` table; owner Inbox tab on the admin page with a count on the header shield.
+- `supabase/round5.sql` — `guests` table + `guest_checkin(device)` RPC: guests get a lasting number (Guest 1, 2, …) per device code; Activity tab shows it with visit counts.
 - `supabase/round4.sql` — feedback table, members-only leagues, request cooldown, 500-char chat cap. `_headers` — security headers.
 - `src/predict.js` + `functions/api/predict.js` — pre-game win chances (ESPN Matchup Predictor) on the next-game card, scoreboard, game sheet and pick'em.
 - `src/watch.js` — Watch & listen sheet (official TV/streaming apps per network + radio), Watch button on game cards, live highlight clips on the game-day card.
