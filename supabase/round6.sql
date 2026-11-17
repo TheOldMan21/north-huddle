@@ -83,3 +83,12 @@ end $$;
 -- 6) Who's an admin is visible only to admins.
 drop policy if exists admins_read on public.admins;
 create policy admins_read on public.admins for select using (uid = auth.uid() or public.is_admin());
+
+-- 7) Keep docs.updated_at honest on every change (the admin System tab uses it).
+create or replace function public.docs_touch() returns trigger language plpgsql as $$ begin new.updated_at := now(); return new; end $$;
+drop trigger if exists docs_touch on public.docs;
+create trigger docs_touch before update on public.docs for each row execute function public.docs_touch();
+
+-- remember which setup files have run (shown on the admin System tab)
+insert into public.docs (path, col, id, data) values ('sys/schema', 'sys', 'schema', jsonb_build_object('round', 6, 'at', now()))
+  on conflict (path) do update set data = jsonb_build_object('round', greatest(6, coalesce((public.docs.data->>'round')::int, 0)), 'at', now()), updated_at = now();

@@ -32,3 +32,7 @@ begin
 end $$;
 revoke all on function public.guest_checkin(text) from public;
 grant execute on function public.guest_checkin(text) to anon, authenticated;
+
+-- remember which setup files have run (shown on the admin System tab)
+insert into public.docs (path, col, id, data) values ('sys/schema', 'sys', 'schema', jsonb_build_object('round', 5, 'at', now()))
+  on conflict (path) do update set data = jsonb_build_object('round', greatest(5, coalesce((public.docs.data->>'round')::int, 0)), 'at', now()), updated_at = now();
