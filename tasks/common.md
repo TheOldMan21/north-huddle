@@ -7,6 +7,16 @@ Setup (once per run):
     git clone --depth 1 https://github.com/TheOldMan21/north-huddle /tmp/nh 2>/dev/null || git -C /tmp/nh pull -q
     date -u          # the real current time; use it for every timestamp and never write a time in the future
 
+## Free updater check (do this FIRST, before anything else)
+The site now updates itself for free from GitHub (scripts/updater.py writes sys/status after every run). Run:
+
+    python3 /tmp/nh/scripts/nh.py get sys/status
+
+If it returns a document whose "at" is within the last 90 minutes of the real time (`date -u`), the free updater is running. Then:
+- Refresh task on a Tuesday (America/Chicago) that is NOT a TEAM RUN or TRACKER-ONLY RUN: do ONLY step F (the fantasy tab docs) from tasks/refresh.md, then end with exactly "No new Vikings updates."
+- Every other task and run: stop immediately without writing anything, and end with exactly "No new Vikings updates."
+Only if sys/status is missing or older than 90 minutes, continue with the task as written.
+
 `NH_BOT_PW` is given in the task prompt; export it before using the tool:
 
     python3 /tmp/nh/scripts/nh.py get <collection>/<doc_id>
