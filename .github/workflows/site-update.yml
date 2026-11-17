@@ -1,0 +1,34 @@
+name: site-update
+# Free auto-updater for North Huddle: ESPN + vikings.com + YouTube -> Supabase (scripts/updater.py).
+# Short summaries use GitHub Models with this workflow's own token (free). Needs the repo secret NH_BOT_PW.
+on:
+  schedule:
+    - cron: "7,27,47 * * * *"          # every 20 minutes, all day
+    - cron: "*/10 17-23 * * 0"         # every 10 minutes during Sunday games (UTC)
+    - cron: "*/10 0-4 * * 1,2,5"       # Sunday/Monday/Thursday night games (UTC)
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Run only these parts (comma list: hub,news,videos,tracked,fantasy,requests). Blank = everything."
+        required: false
+        default: ""
+permissions:
+  contents: read
+  models: read
+concurrency:
+  group: site-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update the site
+        env:
+          NH_BOT_PW: ${{ secrets.NH_BOT_PW }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ONLY: ${{ github.event.inputs.only }}
+        run: |
+          if [ -z "$NH_BOT_PW" ]; then echo "::warning::Waiting for the NH_BOT_PW repository secret (Settings → Secrets and variables → Actions). Skipping this run."; exit 0; fi
+          if [ -n "$ONLY" ]; then python3 scripts/updater.py --only "$ONLY"; else python3 scripts/updater.py; fi
