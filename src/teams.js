@@ -4,7 +4,7 @@
 const QUICK={}, QLOAD={};
 async function fetchQuick(a, force){
   if(!a||!TEAMS[a]) return;
-  if(!force && QUICK[a] && Date.now()-QUICK[a]._at<10*60e3) return;
+  if(!force && QUICK[a] && Date.now()-QUICK[a]._at<3*60e3) return;
   if(QLOAD[a]) return QLOAD[a];
   QLOAD[a]=(async()=>{
     try{ const r=await fetch("/api/team?abbr="+encodeURIComponent(a)); if(r.ok){ const d=await r.json(); if(d&&d.meta){ d._at=Date.now(); QUICK[a]=d; if(a===CUR){ syncView(); renderAll(); } } } }
@@ -44,7 +44,13 @@ function minBlend(v,q){
   // injuries: Claude's (with body parts) plus anything new ESPN lists (skip long-term IR Claude didn't mention)
   const inj=[...(v.injuries||[])], have=new Set(inj.map(i=>nmz(i.player)));
   (q.injuries||[]).forEach(i=>{ if(!have.has(nmz(i.player)) && !/reserve/i.test(i.status)) inj.push(i); });
-  out.injuries=inj;
+  // ESPN's status is the newest word (Questionable → Out, back to practice…); keep Claude's body-part detail.
+  // Players ESPN shows on the active roster with no injury are healthy again, if ESPN's data is newer than Claude's.
+  const qi=Object.fromEntries((q.injuries||[]).map(i=>[nmz(i.player),i])), roster=new Set((q.roster||[]).map(nmz)), newer=!m.updatedAt||Date.parse(qm.updatedAt)>Date.parse(m.updatedAt);
+  out.injuries=inj.map(i=>{ const e=qi[nmz(i.player)]; return e&&e.status&&e.status!==i.status&&newer?{...i,status:e.status,live:true}:i; })
+    .filter(i=>!(newer&&roster.size&&roster.has(nmz(i.player))&&!qi[nmz(i.player)]));
+  // headline alert: ESPN's top team story when it's newer than ours
+  if(qm.alert&&qm.alertAt&&(!m.alertAt||Date.parse(qm.alertAt)>Date.parse(m.alertAt))){ out.meta.alert=qm.alert; out.meta.alertAt=qm.alertAt; }
   // players: season totals only go up, so keep the larger number from either source
   const qp=Object.fromEntries((q.players||[]).map(p=>[nmz(p.name),p]));
   out.players=(v.players||[]).map(p=>{ const e=qp[nmz(p.name)]; if(!e) return p; const s=JSON.parse(JSON.stringify(p.stats||{}));
@@ -82,5 +88,5 @@ setTeam=function(a){ if(!QUICK[a]) fetchQuick(a); _setTeamQ(a); };
 const _teamStatusQ=teamStatus;
 teamStatus=function(a){ if(a!=="MIN"&&QUICK[a]&&!claudeFresh(TEAMDOCS[a])) return "Live from ESPN"; return _teamStatusQ(a); };
 fetchQuick(CUR); if(CUR!=="MIN") fetchQuick("MIN");
-setInterval(()=>{ if(!document.hidden) fetchQuick(CUR); }, 10*60e3);
+setInterval(()=>{ if(!document.hidden){ fetchQuick(CUR); if(CUR!=="MIN") fetchQuick("MIN"); } }, 3*60e3);
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) fetchQuick(CUR); });

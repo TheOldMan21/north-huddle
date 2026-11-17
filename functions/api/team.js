@@ -1,6 +1,6 @@
 // Cloudflare Pages Function: GET /api/team?abbr=GB
 // Builds a team hub document (same shape the site uses for teams/<abbr>) straight from ESPN.
-// Cached at the edge for 10 minutes.
+// Cached at the edge for 3 minutes.
 const A = "https://site.api.espn.com/apis/site/v2/sports/football/nfl";
 const FIX = { WAS: "WSH", LA: "LAR" };
 const ESPN_ABBR = { WSH: "wsh", LAR: "lar" };
@@ -15,7 +15,7 @@ async function allPlayers(origin) {
   const key = new Request(origin + "/api/_players"), cache = caches.default;
   const hit = await cache.match(key); if (hit) return hit.json();
   const d = await j(PLAYERS_URL);
-  if (d) await cache.put(key, new Response(JSON.stringify(d), { headers: { "content-type": "application/json", "cache-control": "public, max-age=900" } }));
+  if (d) await cache.put(key, new Response(JSON.stringify(d), { headers: { "content-type": "application/json", "cache-control": "public, max-age=300" } }));
   return d;
 }
 
@@ -46,7 +46,7 @@ export async function onRequest(ctx) {
   // ---- roster lookup ----
   const R = {}; // espn athlete id -> {name, pos, jersey, unit, status}
   const photos = {}; // player name -> headshot url
-  const injuries = [];
+  const injuries = [], rosterNames = [];
   for (const g of roster?.athletes || []) {
     const unit = g.position === "offense" ? "offense" : g.position === "defense" ? "defense" : g.position === "specialTeam" ? "special" : "";
     for (const a of g.items || []) {
@@ -54,6 +54,7 @@ export async function onRequest(ctx) {
       if (a.headshot?.href && a.displayName) photos[a.displayName] = a.headshot.href;
       let status = inj?.status || (g.position === "injuredReserveOrOut" ? "Injured reserve" : "");
       if (/^IR$|reserve/i.test(status)) status = "Injured reserve";
+      if (a.displayName) rosterNames.push(a.displayName);
       if (!R[a.id]) R[a.id] = { name: a.displayName, pos: a.position?.abbreviation || "", jersey: a.jersey ? Number(a.jersey) : null, unit, status };
       else if (status && !R[a.id].status) R[a.id].status = status;
       if (status && !injuries.some((x) => x.player === a.displayName)) injuries.push({ id: slug(a.displayName), player: a.displayName, pos: a.position?.abbreviation || "", status, injury: "", note: "" });
@@ -138,9 +139,9 @@ export async function onRequest(ctx) {
       alert: alertItem?.headline || "", alertAt: alertItem?.published || "",
       statsAsOf: lastFinal ? "Week " + lastFinal.week : "", depthAsOf: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/Chicago" })
     },
-    games, players, depth: depthOut, injuries, news: newsOut, videos: [], photos
+    games, players, depth: depthOut, injuries, news: newsOut, videos: [], photos, roster: rosterNames
   };
-  const resp = new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" } });
-  ctx.waitUntil(cache.put(key, new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=600" } })));
+  const resp = new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=120" } });
+  ctx.waitUntil(cache.put(key, new Response(JSON.stringify(doc), { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=180" } })));
   return resp;
 }

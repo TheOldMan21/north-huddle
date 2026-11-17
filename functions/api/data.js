@@ -1,4 +1,4 @@
-// GET /api/data?f=players|sleeper — serves the files the GitHub data job publishes (15-minute edge cache).
+// GET /api/data?f=players|sleeper — serves the files the GitHub data job publishes (5-minute edge cache).
 const FILES = { players: "players.json", sleeper: "sleeper.json" };
 export async function onRequest(ctx) {
   const url = new URL(ctx.request.url), f = FILES[url.searchParams.get("f")];
@@ -8,6 +8,6 @@ export async function onRequest(ctx) {
   const r = await fetch("https://github.com/TheOldMan21/north-huddle/releases/download/espn-data/" + f);
   if (!r.ok) return new Response('{"error":"missing"}', { status: 502, headers: { "content-type": "application/json" } });
   const body = await r.text();
-  ctx.waitUntil(cache.put(key, new Response(body, { headers: { "content-type": "application/json", "cache-control": "public, max-age=900" } })));
-  return new Response(body, { headers: { "content-type": "application/json", "cache-control": "public, max-age=600" } });
+  ctx.waitUntil(cache.put(key, new Response(body, { headers: { "content-type": "application/json", "cache-control": "public, max-age=300" } })));
+  return new Response(body, { headers: { "content-type": "application/json", "cache-control": "public, max-age=300" } });
 }

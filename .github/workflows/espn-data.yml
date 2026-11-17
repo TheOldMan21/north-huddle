@@ -3,7 +3,9 @@ name: espn-player-stats
 # and publishes them as a release file the site reads (no site rebuild needed).
 on:
   schedule:
-    - cron: "17 */3 * * *"
+    - cron: "17 * * * *"            # every hour
+    - cron: "*/20 17-23 * * 0"      # every 20 min during Sunday games (UTC)
+    - cron: "*/20 0-4 * * 1,2,5"    # Sunday/Monday/Thursday night games (UTC)
   workflow_dispatch:
   push:
     branches: [main]
