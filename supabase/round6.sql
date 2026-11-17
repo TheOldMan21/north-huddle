@@ -3,7 +3,7 @@
 
 -- 1) Write rules (same as round 4) plus:
 --    • size caps on everything members can save (no multi-megabyte docs)
---    • profiles: short name/bio, photo must be an https link
+--    • profiles: short name/bio, photo must be an https link or an uploaded image
 --    • requests: only the three kinds the site sends, only as yourself
 create or replace function public.can_write(p text, d jsonb) returns boolean
 language sql stable security definer set search_path = public as $$
@@ -11,10 +11,10 @@ language sql stable security definer set search_path = public as $$
     when auth.uid() is null then false
     when public.is_admin() then true
     when exists(select 1 from public.banned where uid = auth.uid()) then false
-    when pg_column_size(d) > (case when p ~ '^leagues/[^/]+$' then 400000 when p like 'data/users/%' then 120000 when p like 'scores/%' then 60000 else 20000 end) then false
+    when pg_column_size(d) > (case when p ~ '^leagues/[^/]+$' then 400000 when p like 'data/users/%' then 120000 when p like 'profiles/%' then 150000 when p like 'scores/%' then 60000 else 20000 end) then false
     when p like 'data/users/' || auth.uid()::text || '/%' then true
     when p = 'profiles/' || auth.uid()::text then length(coalesce(d->>'name','')) <= 40 and length(coalesce(d->>'bio','')) <= 300
-         and length(coalesce(d->>'fav','')) <= 60 and (coalesce(d->>'photo','') = '' or d->>'photo' ~ '^https://[^\s"<>]{4,600}$')
+         and length(coalesce(d->>'fav','')) <= 60 and (coalesce(d->>'photo','') = '' or d->>'photo' ~ '^https://[^\s"<>]{4,600}$' or d->>'photo' ~ '^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')
     when p = 'scores/'   || auth.uid()::text then true
     when p ~ '^(chat|gamechat|comments)/[^/]+$' then coalesce(d->>'uid','') = auth.uid()::text
          and length(coalesce(d->>'text','')) <= 500
