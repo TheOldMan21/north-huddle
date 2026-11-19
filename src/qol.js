@@ -116,8 +116,21 @@ function qolNames(){
   document.querySelectorAll("#v-home .alert, #v-home .hf-sum, #v-fantasy .freason, #sheet .rcp-p, #v-home .gd-alert").forEach(qolLinkNames);
 }
 
+/* ---------- 4. "Checked X ago" instead of "Updated" (when the data last changed) ---------- */
+let QS_AT=null;
+claude.use("db").then(db=>db.doc("sys/status").onSnapshot(x=>{ QS_AT=x.data()?.at||null; qolUpd(); },()=>{})).catch(()=>{});
+function qolUpd(){
+  const u=document.querySelector("#v-home .upd-line"); if(!u) return;
+  const m=S.meta?.updatedAt, t=[QS_AT,m].filter(Boolean).sort((a,b)=>Date.parse(a)-Date.parse(b)).pop(); if(!t) return;
+  let sp=u.querySelector(".qu-t");
+  if(!sp){ [...u.childNodes].forEach(n=>{ if(n.nodeType===3) n.remove(); }); sp=document.createElement("span"); sp.className="qu-t"; const ic=u.querySelector("svg"); if(ic) ic.after(sp); else u.prepend(sp); }
+  const txt=`Checked ${ago(t)}`; if(sp.textContent!==txt) sp.textContent=txt;
+  sp.title=m?`Data last changed ${fmtDate(m,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})} CT`:"";
+}
+setInterval(()=>{ if(!document.hidden&&S.tab==="home") qolUpd(); },60000);
+
 /* ---------- hooks ---------- */
-function qolApply(){ try{ qolCal(); qolNames(); }catch(e){ console.warn("qol",e); } }
+function qolApply(){ try{ qolCal(); qolNames(); qolUpd(); }catch(e){ console.warn("qol",e); } }
 (()=>{ let q=0, busy=false; if(typeof MutationObserver==="undefined") return;
   const mo=new MutationObserver(()=>{ if(busy||q) return; q=setTimeout(()=>{ q=0; busy=true; qolApply(); setTimeout(()=>busy=false,0); },60); });
   ["v-home","v-games","v-fantasy","sheet"].forEach(id=>{ const el=$(id); if(el) mo.observe(el,{childList:true,subtree:true}); }); })();
