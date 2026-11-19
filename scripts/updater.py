@@ -13,7 +13,7 @@ Short summaries (news, injury notes) are written by a small AI model through Git
   NH_BOT_PW=... python3 scripts/updater.py --dry      # show what would change, write nothing
   ... --only games,news                               # run some parts only
 """
-import json, os, re, sys, time, html, hashlib, datetime as dt, urllib.request, urllib.parse, concurrent.futures as cf
+import json, os, re, sys, time, html, hashlib, datetime as dt, urllib.request, urllib.parse, urllib.error, concurrent.futures as cf
 import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(__file__))
 import nh  # noqa: E402
@@ -94,11 +94,15 @@ def ai(prompt, max_tokens=120):
     try:
         r = urllib.request.Request("https://models.github.ai/inference/chat/completions", data=json.dumps(body).encode(),
                                    headers={"authorization": "Bearer " + tok, "content-type": "application/json", "accept": "application/json"})
-        with urllib.request.urlopen(r, timeout=40) as f: out = json.load(f)
+        with urllib.request.urlopen(r, timeout=40) as f: raw = f.read().decode("utf-8", "replace"); code = f.status
+        try: out = json.loads(raw)
+        except Exception: log(f"  ai unavailable: HTTP {code}, not JSON: {raw[:200]!r}"); AI_USED = 99; return ""
         AI_USED += 1
         return re.sub(r"\s+", " ", out["choices"][0]["message"]["content"]).strip().strip('"')
+    except urllib.error.HTTPError as e:
+        log(f"  ai unavailable: HTTP {e.code}: {e.read().decode('utf-8', 'replace')[:300]}"); AI_USED = 99; return ""
     except Exception as e:
-        log("  ai unavailable:", e); AI_USED = 99; return ""
+        log("  ai unavailable:", repr(e)); AI_USED = 99; return ""
 
 # ======================================================================================
 def roster():
@@ -410,6 +414,11 @@ def run_news():
         summ = ai(f"Write ONE sentence (max 30 words) summarizing this Minnesota Vikings story for fans, in your own words.\nHeadline: {it['headline']}\nDetails: {it['desc']}")
         put(f"news/{sid}", {"headline": it["headline"], "summary": summ, "date": it["date"], "source": it["source"], "url": it["url"]}, None, "new story")
         have.add(nmz(it["headline"])); added += 1
+    recent = (NOW - dt.timedelta(days=4)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    for sid, v in sorted(old.items(), key=lambda kv: kv[1].get("date", ""), reverse=True)[:30]:
+        if v.get("summary") or (v.get("date") or "") < recent or AI_USED >= 40: continue
+        summ = ai(f"Write ONE sentence (max 30 words) summarizing this Minnesota Vikings story for fans, in your own words.\nHeadline: {v.get('headline','')}")
+        if summ: put(f"news/{sid}", {**v, "summary": summ}, v, "summary added")
     for sid, v in old.items():
         if (v.get("date") or "") < cutoff: drop(f"news/{sid}", "older than 21 days")
 
