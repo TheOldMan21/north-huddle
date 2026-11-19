@@ -24,7 +24,7 @@ async function sysLoad(){
     const {data:fw}=await sb.from("docs").select("data").eq("path","fantasy/week").limit(1);
     SYS.fresh={hub:newer(okAt("hub"),claude), news:newer(okAt("news"),claude), newsDate:nw?.[0]?.data?.date, videos:newer(okAt("videos"),claude), videoDate:vw?.[0]?.data?.date, fantasy:fw?.[0]?.data?.updatedAt||null};
     const cs=await Promise.all(["news","players","injuries","videos","chat","leagues","scores"].map(count)); ["news","players","injuries","videos","chat","leagues","scores"].forEach((c,i)=>SYS.counts[c]=cs[i]);
-    try{ const day=new Date(Date.now()-864e5).toISOString(); const {data:v}=await sb.from("visits").select("uid,device").gte("at",day).limit(2000); SYS.visitors=v?{people:new Set(v.map(r=>r.uid||"g"+r.device)).size, members:new Set(v.filter(r=>r.uid).map(r=>r.uid)).size}:null; }catch(e){}
+    try{ const day=new Date(Date.now()-864e5).toISOString(); let {data:v}=await sb.from("visits").select("uid,device").gte("at",day).limit(2000); if(v&&typeof actMine==="function"){ const me=await actMine(); v=v.filter(r=>!actIsMe(r,me)); } SYS.visitors=v?{people:new Set(v.map(r=>r.uid||"g"+r.device)).size, members:new Set(v.filter(r=>r.uid).map(r=>r.uid)).size}:null; }catch(e){}
     try{ const {count:c}=await sb.from("push_subs").select("uid",{count:"exact",head:true}); SYS.subs=c; }catch(e){}
     SYS.err="";
   }catch(e){ SYS.err=String(e?.message||e); }

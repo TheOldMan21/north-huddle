@@ -10,6 +10,7 @@ async function logVisit(){
   await accReady;
   // automated browsers (site tests, bots) aren't real visitors: don't count them
   if(navigator.webdriver||/HeadlessChrome|bot|crawl|spider|Lighthouse/i.test(navigator.userAgent)) return;
+  if(ACC.owner) return;   // the site owner's own visits aren't tracked
   try{ await NH.sb.from("visits").insert({uid:ACC.id||null, device:DEVICE, kind:deviceKind(), app:!!(matchMedia("(display-mode: standalone)").matches||navigator.standalone), team:CUR}); }catch(e){}
   // guests get a lasting number (Guest 1, Guest 2, …) tied to the code kept on their device
   if(!ACC.id) try{ const {data}=await NH.sb.rpc("guest_checkin",{p_device:DEVICE}); if(data) localStorage.setItem("nh_gno",String(data)); }catch(e){}
@@ -19,12 +20,20 @@ setInterval(()=>{ if(!document.hidden) logVisit(); }, 5*60e3);
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) logVisit(); });
 
 /* ---------- admin tab ---------- */
+// the owner (and any phone/computer he has ever signed in on) is left out of activity and visitor counts
+let ACT_ME=null;
+async function actMine(){
+  if(ACT_ME) return ACT_ME; const devs=new Set([DEVICE]);
+  try{ if(ACC.id){ const {data}=await NH.sb.from("visits").select("device").eq("uid",ACC.id).limit(1000); (data||[]).forEach(r=>devs.add(r.device)); } }catch(e){}
+  return ACT_ME={uid:ACC.id, devs};
+}
+const actIsMe=(r,me)=>!!me&&((r.uid&&r.uid===me.uid)||(!r.uid&&me.devs.has(r.device)));
 const ACT={rows:[], err:"", loading:false, days:7, guests:{}};
 async function loadActivity(){
   ACT.loading=true; ACT.err="";
   const since=new Date(Date.now()-ACT.days*864e5).toISOString();
   const {data,error}=await NH.sb.from("visits").select("at,uid,device,kind,app,team").gte("at",since).order("at",{ascending:false}).limit(1000);
-  if(error) ACT.err=/visits|relation|schema/i.test(error.message)?"setup":error.message; else ACT.rows=data||[];
+  if(error) ACT.err=/visits|relation|schema/i.test(error.message)?"setup":error.message; else { const me=await actMine(); ACT.rows=(data||[]).filter(r=>!actIsMe(r,me)); }
   ACT.loading=false; if(ADM.tab==="activity") renderAdmin();
   // guest numbers + how often each one has come back (needs supabase/round5.sql)
   const devs=[...new Set(ACT.rows.filter(r=>!r.uid).map(r=>r.device))];
