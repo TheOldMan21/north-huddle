@@ -890,3 +890,16 @@ button.pg-srow{cursor:pointer}button.pg-srow:hover{background:var(--surface-2)}
   .pg-lead .hf-lead .nthumb{order:0;grid-column:2;grid-row:1 / span 4;width:100%;height:200px;margin:0;border-radius:12px}
   .pg-lead .hf-lead .h{font:700 26px/1.12 var(--display)}
 }
+
+/* ===== quality of life (src/qol.js) ===== */
+.gp-last{border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.4;margin:2px 0 6px}
+.gp-last.ok{background:color-mix(in srgb,var(--win) 14%,var(--surface))}
+.gp-last.no{background:var(--surface-2)}
+.gp-last .hf-link,.gp-note .hf-link{padding:0;font-size:inherit;font-family:inherit;font-weight:700;text-decoration:underline}
+.gp-note{margin-top:4px}
+.hf-calbtn{flex-basis:100%;border:0;background:none;color:#5EF2D6;font:700 15px var(--display);padding:8px 0 0;cursor:pointer;text-align:center}
+.pg-calrow{width:100%;border:1px dashed var(--line);background:var(--surface);color:var(--purple-ink);border-radius:12px;padding:11px;font:700 15px var(--display);cursor:pointer}
+.cal-opts{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.cal-btn{display:flex;align-items:center;justify-content:center;text-decoration:none;flex:none;width:100%}
+.cal-sec{border:1.5px solid var(--line);background:var(--surface);color:var(--fg)}
+.qn{border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 45%,transparent);text-underline-offset:2px;cursor:pointer}

@@ -45,10 +45,10 @@ function hfApply(){
     if(row&&!row.querySelector(".game-card")) row.classList.add("hf-gone"); else row?.classList.remove("hf-gone");
     // 2. one join card for guests
     const guest=!(ACC.id&&ACC.db);
-    grid.querySelector("#predCard")?.classList.toggle("hf-gone",guest);
+    grid.querySelector("#predCard")?.classList.remove("hf-gone");   // guests pick on their phone (src/qol.js)
     let join=grid.querySelector(".hf-join");
     if(guest&&ACC.ready!==false){
-      if(!join){ grid.querySelector(".col-main")?.insertAdjacentHTML("afterbegin",`<section class="card hf-join"><div class="hf-jt">Join the huddle — it's free</div><p class="t2">One account unlocks game picks, score predictions, pick'em and fantasy leagues with friends.</p><div class="hf-jr"><button class="hf-btn hf-grad" data-acct="1">Create free account</button><button class="hf-link" data-acct="1">Sign in</button></div></section>`); }
+      if(!join){ grid.querySelector(".col-main")?.insertAdjacentHTML("afterbegin",`<section class="card hf-join"><div class="hf-jt">Join the huddle — it's free</div><p class="t2">One free account puts your picks on the season leaderboard and unlocks pick'em and fantasy leagues with friends.</p><div class="hf-jr"><button class="hf-btn hf-grad" data-acct="1">Create free account</button><button class="hf-link" data-acct="1">Sign in</button></div></section>`); }
     } else join?.remove();
     // 4. alert label
     const al=grid.querySelector(".alert");
@@ -75,7 +75,6 @@ document.addEventListener("click",e=>{
     $("sheetBg").hidden=false; $("closeSheet").focus(); return;
   }
   if(e.target.closest("[data-hfpick]")){
-    if(!(ACC.id&&ACC.db)) return openAcct();
     const c=$("predCard"); if(c){ c.scrollIntoView({behavior:"smooth",block:"center"}); c.classList.remove("hf-flash"); void c.offsetWidth; c.classList.add("hf-flash"); }
   }
 });
