@@ -8,6 +8,8 @@ async function logVisit(){
     sessionStorage.setItem("nh_vlog",String(Date.now()));
   }catch(e){}
   await accReady;
+  // automated browsers (site tests, bots) aren't real visitors: don't count them
+  if(navigator.webdriver||/HeadlessChrome|bot|crawl|spider|Lighthouse/i.test(navigator.userAgent)) return;
   try{ await NH.sb.from("visits").insert({uid:ACC.id||null, device:DEVICE, kind:deviceKind(), app:!!(matchMedia("(display-mode: standalone)").matches||navigator.standalone), team:CUR}); }catch(e){}
   // guests get a lasting number (Guest 1, Guest 2, …) tied to the code kept on their device
   if(!ACC.id) try{ const {data}=await NH.sb.rpc("guest_checkin",{p_device:DEVICE}); if(data) localStorage.setItem("nh_gno",String(data)); }catch(e){}
