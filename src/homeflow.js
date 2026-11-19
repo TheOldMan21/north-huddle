@@ -36,8 +36,11 @@ function hfApply(){
         rc.classList.add("hf-gone");
       }
       const id=HF.recap?.id||"";
+      const sumNow=HF.recap?.ps?.length?hfSent(HF.recap.ps[0]):"", sumEl=last.querySelector(".hf-sum"); if(sumEl&&sumEl.textContent!==sumNow) sumEl.remove();
       if(!last.querySelector(".hf-sum")&&HF.recap?.ps?.length) last.querySelector(".statline")?.insertAdjacentHTML("beforebegin",`<p class="hf-sum">${esc(hfSent(HF.recap.ps[0]))}</p>`);
-      if(!last.querySelector(".hf-acts")&&(id||HF.recap)) last.insertAdjacentHTML("beforeend",`<div class="hf-acts hf-small">${HF.recap?.ps?.length?`<button class="tbtn" data-hfrecap="1">Full recap</button>`:""}${id?`<button class="tbtn" data-sbgame="${esc(id)}">Box score</button><button class="tbtn" data-sbgame="${esc(id)}" data-flagsgo="1">Flags</button>`:""}</div>`);
+      const sig=(HF.recap?.ps?.length?"r":"")+id, acts=last.querySelector(".hf-acts");
+      if(acts&&acts.dataset.sig!==sig) acts.remove();
+      if(sig&&!last.querySelector(".hf-acts")) last.insertAdjacentHTML("beforeend",`<div class="hf-acts hf-small" data-sig="${esc(sig)}">${HF.recap?.ps?.length?`<button class="tbtn" data-hfrecap="1">Full recap</button>`:""}${id?`<button class="tbtn" data-sbgame="${esc(id)}">Box score</button><button class="tbtn" data-sbgame="${esc(id)}" data-flagsgo="1">Flags</button>`:""}</div>`);
     }
     if(row&&!row.querySelector(".game-card")) row.classList.add("hf-gone"); else row?.classList.remove("hf-gone");
     // 2. one join card for guests
@@ -68,7 +71,7 @@ function hfApply(){
 document.addEventListener("click",e=>{
   if(e.target.closest("[data-hfrecap]")&&HF.recap){
     const r=HF.recap;
-    $("sheet").innerHTML=`<div class="label">${esc(r.label)}</div><h2>${esc(r.title)}</h2>${r.ps.map(p=>`<p class="rcp-p">${esc(p)}</p>`).join("")}<p class="t2">Written by Huddle AI from the official play-by-play.</p>${r.id?`<div class="hf-acts hf-small"><button class="tbtn" data-sbgame="${esc(r.id)}">Box score</button><button class="tbtn" data-sbgame="${esc(r.id)}" data-flagsgo="1">Flags</button></div>`:""}`;
+    $("sheet").innerHTML=`<div class="sheet-head"><div><div class="label">${esc(r.label)}</div><div class="nm">${esc(r.title)}</div></div><button class="x" id="closeSheet" aria-label="Close">×</button></div>${r.ps.map(p=>`<p class="rcp-p">${esc(p)}</p>`).join("")}<p class="t2">Written by Huddle AI from the official play-by-play.</p>${r.id?`<div class="hf-acts hf-small"><button class="tbtn" data-sbgame="${esc(r.id)}">Box score</button><button class="tbtn" data-sbgame="${esc(r.id)}" data-flagsgo="1">Flags</button></div>`:""}`;
     $("sheetBg").hidden=false; $("closeSheet").focus(); return;
   }
   if(e.target.closest("[data-hfpick]")){
