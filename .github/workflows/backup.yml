@@ -21,7 +21,7 @@ jobs:
           python3 scripts/backup.py nh-backup.json.gz
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:NH_BOT_PW -in nh-backup.json.gz -out nh-backup.json.gz.enc
           rm nh-backup.json.gz
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: nh-backup-${{ github.run_id }}
           path: nh-backup.json.gz.enc
