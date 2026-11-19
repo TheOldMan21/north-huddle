@@ -7,7 +7,7 @@ function cmtFor(id){ return CMT.all.filter(c=>c.nid===id).sort((a,b)=>String(a.t
 const _newsItemT=newsItem;
 newsItem=function(n){
   const id=nid(n.headline), c=cmtFor(id).length;
-  return `<div class="news-wrap" data-nid="${id}">${_newsItemT(n)}<button class="nc-btn" data-ncom="${id}" data-nhead="${esc(n.headline)}">${ICO_CHAT}<span>${c?`${c} ${c===1?"comment":"comments"}`:"Comment"}</span></button></div>`;
+  return _newsItemT(n);   // (comment links removed, Nov 2026)
 };
 const ICO_CHAT=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
 function openComments(id,head){
@@ -38,6 +38,7 @@ document.addEventListener("submit",async e=>{
 },true);
 (async()=>{
   await accReady; if(!ACC.db) return;
+  return;   // (comments removed, Nov 2026: nothing to load)
   ACC.db.collection("comments").orderBy("t","desc").limit(800).onSnapshot(s=>{
     CMT.all=s.docs.map(d=>({id:d.id,...d.data()}));
     document.querySelectorAll("[data-ncom]").forEach(b=>{ const c=cmtFor(b.dataset.ncom).length; b.querySelector("span").textContent=c?`${c} ${c===1?"comment":"comments"}`:"Comment"; });
