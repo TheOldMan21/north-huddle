@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Update the site
         env:
           NH_BOT_PW: ${{ secrets.NH_BOT_PW }}
