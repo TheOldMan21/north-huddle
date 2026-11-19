@@ -59,17 +59,36 @@ function sysNodes(){
     site:{row:3,ic:"🌐",name:"Website",sub:"north-huddle.pages.dev",st:"ok",link:CF_DASH,info:"The site itself, hosted on Cloudflare Pages. Every change pushed to GitHub goes live in about a minute.",facts:[["This version built",NH_BUILD.startsWith("__")?"—":ageTxt(NH_BUILD)],["Security headers","On"]]},
     people:{row:4,ic:"👥",name:"Fans",sub:SYS.visitors?`${SYS.visitors.people} in the last 24 hrs`:"Visitors",st:"ok",info:"Members and guests using the site. See the Activity tab for who opened it and when.",facts:[["People (24 hrs)",SYS.visitors?.people??"—"],["Members (24 hrs)",SYS.visitors?.members??"—"],["Phone alerts on",SYS.subs??"—"]]}
   };
+  sysWhy(N);
   const E=[["espn","updater"],["espn","stats"],["espn","live"],["espn","alerts"],["vik","updater"],["yt","updater"],["ai","updater"],["ai","live"],["sleeper","site"],
            ["updater","db"],["stats","live"],["alerts","db"],["db","site"],["live","site"],["site","people"],["alerts","people"]];
   return {N,E};
 }
 const SYS_COL={ok:"#22c55e",warn:"#f5b301",bad:"#ef4444",off:"#8b95a7"};
 const SYS_LBL={ok:"Healthy",warn:"Slow / stale",bad:"Problem",off:"Not set up"};
+// plain-language reason (and what to do) for every box that isn't green
+function sysWhy(N){
+  const s=SYS.status, p=SYS.probe, parts=s?.parts||{};
+  const late=(t,every,what)=>`The last ${what} was ${ageTxt(t)}. It's scheduled ${every}, so it's running behind.`;
+  const probeWhy=(k,label)=>{ const x=p[k]; if(!x) return `${label} wasn't checked yet.`; if(!x.ok) return `${label} didn't answer when this page checked it.`; if(x.ms>2500) return `${label} answered, but slowly (${(x.ms/1000).toFixed(1)} sec; anything over 2.5 sec counts as slow).`; return ""; };
+  const W={
+    espn:()=>[[probeWhy("scores","ESPN's live scores"),probeWhy("team","ESPN's team feed")].filter(Boolean).join(" "),"Usually clears up on its own within a few minutes. Tap Re-check. If it stays red for an hour, ESPN may be having an outage."],
+    vik:()=>!s?["The updater hasn't run yet, so the news feed hasn't been read.","Finish the updater setup (see Setup checklist)."]:[`Reading the team news feed failed on the last update${parts.news?.error?`: ${parts.news.error}`:"."}`,"The updater tries again every 20 minutes. Stories already on the site stay put."],
+    yt:()=>!s?["The updater hasn't run yet.","Finish the updater setup (see Setup checklist)."]:[`Reading the YouTube feed failed on the last update${parts.videos?.error?`: ${parts.videos.error}`:"."}`,"The updater tries again every 20 minutes. Interviews already on the site stay put."],
+    ai:()=>!s?["The updater hasn't run yet.",""]:["The last update couldn't reach the AI, so any new stories were saved without their one-line summary.","Nothing to do. The updater tries again every run and fills in missing summaries."],
+    updater:()=>!s?["The updater hasn't run yet.","Add the NH_BOT_PW secret on GitHub (see Setup checklist)."]:[late(s.at,"every 20 minutes (10 during games)","update")+(s.errors?.length?` Last run reported: ${s.errors.join("; ")}.`:""),"GitHub's scheduler often runs late. Tap “Run an update now”. If it keeps falling behind, open GitHub jobs and look for a red ✗ run."],
+    stats:()=>!SYS.stats?["The stats file couldn't be read.","Open the job on GitHub and check its last run."]:[late(SYS.stats,"hourly","stats file update")+" GitHub often skips hourly jobs on free accounts, so this one regularly runs only every few hours.","Not urgent: it only feeds league-wide leaders and player search, and other teams' pages. Tap “Run the stats job now” to refresh it."],
+    live:()=>[["scores","Scores"],["team","Team feed"],["standings","Standings"]].map(([k,l])=>probeWhy(k,l)).filter(Boolean).join(" ")?[[["scores","Scores"],["team","Team feed"],["standings","Standings"]].map(([k,l])=>probeWhy(k,l)).filter(Boolean).join(" "),"Usually a slow moment at ESPN or Cloudflare. Tap Re-check in a minute."]:["",""],
+    alerts:()=>!SYS.pushAt?["The alerts worker has never reported in.","It needs to be set up in Cloudflare (Workers → alerts)."]:[late(SYS.pushAt,"every minute","check by the alerts worker"),"Open Cloudflare → Workers & Pages → the alerts worker → Logs to see if it's erroring. Its schedule (Triggers → Cron) should be every minute."],
+    db:()=>[`The database didn't answer: ${SYS.err}`,"Check Supabase's status page or your project's dashboard."]
+  };
+  for(const [id,n] of Object.entries(N)){ if(n.st==="ok"||!W[id]) continue; try{ const [why,fix]=W[id](); if(why){ n.why=why; n.fix=fix; } }catch(e){} }
+}
 function sysMap(){
   const {N}=sysNodes(), rows=[0,1,2,3,4].map(r=>Object.entries(N).filter(([,n])=>n.row===r));
   const titles=["Sources","Jobs & functions","Database","Website","Fans"];
   return `<div class="sys-topo" id="sysTopo"><svg class="sys-wires" id="sysWires" aria-hidden="true"></svg>
-    ${rows.map((r,i)=>`<div class="sys-row"><div class="sys-rl">${titles[i]}</div><div class="sys-nodes">${r.map(([id,n])=>`<button class="sys-node${SYS.sel===id?" sel":""}" data-sysnode="${id}" style="--st:${SYS_COL[n.st]}"><span class="sys-ic">${n.ic}</span><span class="sys-nt"><b>${esc(n.name)}</b><small>${esc(n.sub)}</small></span><i class="sys-dot" title="${SYS_LBL[n.st]}"></i></button>`).join("")}</div></div>`).join("")}</div>`;
+    ${rows.map((r,i)=>`<div class="sys-row"><div class="sys-rl">${titles[i]}</div><div class="sys-nodes">${r.map(([id,n])=>`<button class="sys-node${SYS.sel===id?" sel":""}" data-sysnode="${id}" style="--st:${SYS_COL[n.st]}"><span class="sys-ic">${n.ic}</span><span class="sys-nt"><b>${esc(n.name)}</b><small>${esc(n.sub)}</small></span><i class="sys-dot" title="${esc(n.why||SYS_LBL[n.st])}"></i></button>`).join("")}</div></div>`).join("")}</div>`;
 }
 function sysWires(){
   const box=$("sysTopo"), svg=$("sysWires"); if(!box||!svg) return; const {N,E}=sysNodes(), r0=box.getBoundingClientRect();
@@ -82,7 +101,9 @@ function sysWires(){
 function sysDetail(){
   const {N}=sysNodes(), n=N[SYS.sel]||N.updater;
   return `<div class="card sys-detail" style="--st:${SYS_COL[n.st]}"><div class="sys-dh"><span class="sys-ic big">${n.ic}</span><div class="grow"><div class="t1">${esc(n.name)}</div><div class="t2"><i class="sys-dot"></i> ${SYS_LBL[n.st]}</div></div>${n.link?`<a class="tbtn" href="${esc(n.link)}" target="_blank" rel="noopener">Open ↗</a>`:""}</div>
+    ${n.why?`<div class="sys-why"><b>Why it's ${n.st==="bad"?"red":n.st==="off"?"gray":"yellow"}:</b> ${esc(n.why)}${n.fix?`<div class="sys-fix"><b>What to do:</b> ${esc(n.fix)}</div>`:""}</div>`:""}
     <p class="acct-p">${esc(n.info)}</p>${n.facts.length?`<div class="sys-facts">${n.facts.map(([l,v])=>`<div><span>${esc(l)}</span><b>${esc(String(v))}</b></div>`).join("")}</div>`:""}
+    ${SYS.sel==="stats"?`<div class="sys-acts"><button class="btn-gold" data-syskick="stats">▶ Run the stats job now</button><span class="t2">${SYS.kickStats||"Refreshes league-wide stats in about 3 minutes."}</span></div>`:""}
     ${SYS.sel==="updater"?`<div class="sys-acts"><button class="btn-gold" data-syskick>▶ Run an update now</button><span class="t2">${SYS.kick||"Starts the free updater right away. Fresh data in about a minute."}</span></div>`:""}</div>`;
 }
 function sysFresh(){
@@ -129,7 +150,9 @@ function admSystem(){
   if(!SYS.loaded) return skelRows(5);
   const {N}=sysNodes(), bad=Object.values(N).filter(n=>n.st==="bad").length, warn=Object.values(N).filter(n=>n.st==="warn"||n.st==="off").length;
   const head=bad?["bad","Something needs attention","Tap a red dot on the map to see what's wrong."]:warn?["warn","Mostly healthy","A few parts are slow, stale or not set up yet."]:["ok","Everything's running","The site is updating itself. Nothing for you to do."];
-  return `<div class="sys-head" style="--st:${SYS_COL[head[0]]}"><i class="sys-dot big"></i><div class="grow"><div class="t1">${head[1]}</div><div class="t2">${head[2]} Checked ${ageTxt(new Date(SYS.at).toISOString())}.</div></div><button class="tbtn" data-sysreload>Re-check</button></div>
+  const issues=Object.entries(N).filter(([,n])=>n.why);
+  return `<div class="sys-head" style="--st:${SYS_COL[head[0]]}"><i class="sys-dot big"></i><div class="grow"><div class="t1">${head[1]}</div><div class="t2">${head[2]} Checked ${ageTxt(new Date(SYS.at).toISOString())}.</div>
+    ${issues.length?`<ul class="sys-issues">${issues.map(([id,n])=>`<li><button data-sysnode="${id}" style="--st:${SYS_COL[n.st]}"><i class="sys-dot"></i><b>${esc(n.name)}:</b> ${esc(n.why)}</button></li>`).join("")}</ul>`:""}</div><button class="tbtn" data-sysreload>Re-check</button></div>
     <h2>How it all connects</h2><p class="t2">Data flows top to bottom: sources → the jobs that read them → the database → the website → fans. Tap any box.</p>
     ${sysMap()}${sysDetail()}
     <h2>How fresh is everything</h2>${sysFresh()}
@@ -150,6 +173,11 @@ document.addEventListener("click",async e=>{
   const n=e.target.closest("[data-sysnode]"); if(n){ SYS.sel=n.dataset.sysnode; renderAdmin(); setTimeout(()=>document.querySelector(".sys-detail")?.scrollIntoView({behavior:"smooth",block:"nearest"}),30); return; }
   if(e.target.closest("[data-sysreload]")||(e.target.closest("[data-adm-refresh]")&&ADM.tab==="system")){ SYS.loaded=false; sysLoad(); return; }
   if(e.target.closest("[data-sysalertclear]")){ await sysSaveAlert(""); return; }
+  const ks=e.target.closest('[data-syskick="stats"]');
+  if(ks){ SYS.kickStats="Starting…"; renderAdmin();
+    try{ const {data}=await NH.sb.auth.getSession(); const r=await fetch("/api/kick?force=1&wf=stats",{method:"POST",headers:{authorization:"Bearer "+(data?.session?.access_token||"")}}); const j=await r.json();
+      SYS.kickStats=j.ok?"Started! It takes about 3 minutes; tap Re-check after.":j.reason==="not_configured"?"Needs the GitHub key (see Setup).":"Couldn't start it ("+j.reason+")."; }catch(err){ SYS.kickStats="Couldn't start it."; }
+    renderAdmin(); return; }
   if(e.target.closest("[data-syskick]")){ SYS.kick="Starting…"; renderAdmin();
     try{ const {data}=await NH.sb.auth.getSession(); const r=await fetch("/api/kick?force=1",{method:"POST",headers:{authorization:"Bearer "+(data?.session?.access_token||"")}}); const j=await r.json();
       if(j.ok){ SYS.kick="Started! Tap Re-check in a minute to see the result."; }

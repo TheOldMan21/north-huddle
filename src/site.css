@@ -903,3 +903,11 @@ button.pg-srow{cursor:pointer}button.pg-srow:hover{background:var(--surface-2)}
 .cal-btn{display:flex;align-items:center;justify-content:center;text-decoration:none;flex:none;width:100%}
 .cal-sec{border:1.5px solid var(--line);background:var(--surface);color:var(--fg)}
 .qn{border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 45%,transparent);text-underline-offset:2px;cursor:pointer}
+/* System tab: why a box isn't green */
+.sys-why{border-left:4px solid var(--st);background:color-mix(in srgb,var(--st) 12%,var(--surface));border-radius:10px;padding:10px 12px;margin:10px 0;font-size:14.5px;line-height:1.45}
+.sys-fix{margin-top:6px;color:var(--muted)}.sys-fix b{color:var(--fg)}
+.sys-issues{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.sys-issues button{display:flex;gap:8px;align-items:flex-start;text-align:left;width:100%;border:0;background:color-mix(in srgb,var(--st) 10%,transparent);border-radius:8px;padding:7px 9px;font:inherit;font-size:13.5px;line-height:1.35;color:var(--fg);cursor:pointer}
+.sys-issues .sys-dot{flex:none;margin-top:4px}
+.sys-issues button{display:block}
+.sys-issues .sys-dot{display:inline-block;margin:0 6px 0 0;vertical-align:1px}

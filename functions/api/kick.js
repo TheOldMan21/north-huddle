@@ -23,12 +23,13 @@ export async function onRequestPost(ctx) {
       if (at && Date.now() - Date.parse(at) < 25 * 60e3) return json({ ok: false, reason: "fresh" });
     } catch (e) {}
   }
-  const g = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${WF}/dispatches`, {
+  const wf = force && url.searchParams.get("wf") === "stats" ? "espn-data.yml" : WF;   // admins can also start the stats job
+  const g = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${wf}/dispatches`, {
     method: "POST", body: JSON.stringify({ ref: "main" }),
     headers: { authorization: "Bearer " + env.GH_DISPATCH_TOKEN, accept: "application/vnd.github+json", "user-agent": "north-huddle-kick", "x-github-api-version": "2022-11-28" }
   });
   if (g.status !== 204) return json({ ok: false, reason: "github_" + g.status }, 502);
-  ctx.waitUntil(cache.put(lock, new Response("1", { headers: { "cache-control": "public, max-age=600" } })));
+  if (wf === WF) ctx.waitUntil(cache.put(lock, new Response("1", { headers: { "cache-control": "public, max-age=600" } })));
   return json({ ok: true, forced: force });
 }
 export async function onRequestGet() { return json({ ok: false, reason: "use POST" }, 405); }
