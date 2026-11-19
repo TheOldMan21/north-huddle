@@ -43,7 +43,7 @@ function sysNodes(){
     vik:{row:0,ic:"📰",name:"Vikings.com",sub:"Team news feed",st:!s?"off":parts.news?.ok===false?"bad":"ok",info:"The updater reads the team's news feed every run and adds new stories with a one-line summary.",facts:[["Stories on the site",SYS.counts.news??"—"],["Newest story",ageTxt(SYS.fresh.newsDate)],["Last checked",ageTxt(SYS.fresh.news)]]},
     yt:{row:0,ic:"▶️",name:"YouTube",sub:"Interviews & pressers",st:!s?"off":parts.videos?.ok===false?"bad":"ok",info:"Press conferences and interviews come from the team's YouTube channel feed.",facts:[["Interviews on the site",SYS.counts.videos??"—"],["Newest interview",ageTxt(SYS.fresh.videoDate)],["Last checked",ageTxt(SYS.fresh.videos)]]},
     ai:{row:0,ic:"✨",name:"AI helpers",sub:"Summaries, recaps, voice",st:!s?"off":s.ai==="unavailable"?"warn":"ok",
-      info:"Free AI: GitHub Models writes one-line news and injury summaries during updates. Cloudflare Workers AI writes game recaps, answers Ask AI and voices the Kirko Chainz announcer.",
+      info:"Free AI (Cloudflare Workers AI): writes one-line news and injury summaries during updates (via /api/summarize), game recaps, answers Ask AI and voices the Kirko Chainz announcer.",
       facts:[["Summaries last run",s?(s.ai==="unavailable"?"Unavailable (stories saved without a summary)":`${s.ai} written`):"—"],["Announcer voice",p.announce?.ok?"Ready":"Unavailable"]]},
     sleeper:{row:0,ic:"🏈",name:"Sleeper",sub:"Fantasy players",st:"ok",info:"Members' Sleeper leagues load straight from Sleeper in their browser. A player list copy is refreshed hourly by the stats job.",facts:[]},
     updater:{row:1,ic:"⚙️",name:"Site updater",sub:"GitHub · every 20 min",st:up,link:GH_RUN,

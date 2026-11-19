@@ -1,6 +1,6 @@
 name: site-update
 # Free auto-updater for North Huddle: ESPN + vikings.com + YouTube -> Supabase (scripts/updater.py).
-# Short summaries use GitHub Models with this workflow's own token (free). Needs the repo secret NH_BOT_PW.
+# Short summaries come from the site's own /api/summarize (Cloudflare AI). Needs the repo secret NH_BOT_PW.
 on:
   schedule:
     - cron: "7,27,47 * * * *"          # every 20 minutes, all day
@@ -14,7 +14,7 @@ on:
         default: ""
 permissions:
   contents: read
-  models: read
+
 concurrency:
   group: site-update
   cancel-in-progress: false

@@ -6,8 +6,8 @@ Keeps the Minnesota hub current from ESPN (+ vikings.com news, YouTube interview
   news/<slug>, videos/<slug>, pstats/<id> (tracked players), fweeks/wNN, fstats/wNN,
   pending requests, and sys/status (what ran, when, what changed — shown on the admin System tab).
 
-Short summaries (news, injury notes) are written by a small AI model through GitHub Models
-(free with the workflow's GITHUB_TOKEN). Without it, summaries are left blank.
+Short summaries (news, injury notes) are written by a small AI model through the site's own /api/summarize
+(the site's own /api/summarize, Cloudflare Workers AI). Without it, summaries are left blank.
 
   NH_BOT_PW=... python3 scripts/updater.py            # run and write
   NH_BOT_PW=... python3 scripts/updater.py --dry      # show what would change, write nothing
@@ -82,23 +82,19 @@ def flush():
 
 def coll(name): return {x["id"]: x["data"] for x in nh.lst(name)}
 
-# ---------------- small AI helper (GitHub Models, free in Actions) ----------------
+# ---------------- small AI helper (the site's own Cloudflare AI via /api/summarize; bot must be an admin) ----------------
+# (GitHub Models was retired in July 2026, so summaries now come from the site itself.)
 AI_USED = 0
+SITE = os.environ.get("NH_SITE", "https://north-huddle.pages.dev")
 def ai(prompt, max_tokens=120):
     global AI_USED
-    tok = os.environ.get("GITHUB_TOKEN")
-    if not tok or AI_USED >= 40: return ""
-    body = {"model": os.environ.get("NH_AI_MODEL", "openai/gpt-4o-mini"), "max_tokens": max_tokens, "temperature": 0.4,
-            "messages": [{"role": "system", "content": "You write short, accurate, neutral sentences for a football fan site. Never invent facts. Never copy phrases from the source; use your own words. No quotes, no emojis."},
-                         {"role": "user", "content": prompt}]}
+    if AI_USED >= 40: return ""
     try:
-        r = urllib.request.Request("https://models.github.ai/inference/chat/completions", data=json.dumps(body).encode(),
-                                   headers={"authorization": "Bearer " + tok, "content-type": "application/json", "accept": "application/json"})
-        with urllib.request.urlopen(r, timeout=40) as f: raw = f.read().decode("utf-8", "replace"); code = f.status
-        try: out = json.loads(raw)
-        except Exception: log(f"  ai unavailable: HTTP {code}, not JSON: {raw[:200]!r}"); AI_USED = 99; return ""
+        r = urllib.request.Request(SITE + "/api/summarize", data=json.dumps({"prompt": prompt, "max_tokens": max_tokens}).encode(),
+                                   headers={"authorization": "Bearer " + nh.token(), "content-type": "application/json", **UA})
+        with urllib.request.urlopen(r, timeout=40) as f: out = json.load(f)
         AI_USED += 1
-        return re.sub(r"\s+", " ", out["choices"][0]["message"]["content"]).strip().strip('"')
+        return re.sub(r"\s+", " ", out.get("text", "")).strip().strip('"')
     except urllib.error.HTTPError as e:
         log(f"  ai unavailable: HTTP {e.code}: {e.read().decode('utf-8', 'replace')[:300]}"); AI_USED = 99; return ""
     except Exception as e:
