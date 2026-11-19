@@ -16,29 +16,49 @@
   function docSnap(row,path){ const d=row?row.data:undefined; return {id:row?row.id:lastOf(path), exists:!!row, ref:null, data:()=>d===undefined?undefined:JSON.parse(JSON.stringify(d))}; }
   function querySnap(rows){ const docs=rows.map(r=>docSnap(r,r.path)); return {docs, size:docs.length, empty:!docs.length, forEach:f=>docs.forEach(f)}; }
 
+  /* ---------- boot bundle: public site data in one cached request (functions/api/boot.js) ---------- */
+  const BOOT_COLS=new Set(["hub","depth","videos","nfl","fantasy","tracked","pstats","games","players","news","standings","injuries","league","teams"]);
+  let bootP=null;
+  const loadBoot=()=>{ bootP=fetch("/api/boot",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{ if(!j||!Array.isArray(j.rows)) return null; const by={}; j.rows.forEach(r=>{ (by[r.col]=by[r.col]||[]).push({path:r.path,id:r.id,data:r.data}); }); by.__at=Date.parse(j.at)||0; return by; }).catch(()=>null); return bootP; };
+  loadBoot();
+  const jv=v=>v===undefined?null:v;
+  function sortLim(rows,q){
+    rows=rows.slice();
+    if(q.ord){ const [f,dir]=q.ord, d=dir==="desc"?-1:1; rows.sort((a,b)=>{ const x=jv(a.data&&a.data[f]), y=jv(b.data&&b.data[f]); if(x===null&&y===null) return 0; if(x===null) return 1; if(y===null) return -1; return (x<y?-1:x>y?1:0)*d; }); }
+    else rows.sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+    return rows.slice(0,q.lim||1000);
+  }
+  // "since": when this listener last read straight from the database; never go back to an older bundle than that.
+  async function bootCol(col,q,since){ if(!BOOT_COLS.has(col)||q.wh.length) return null; const by=await bootP; return by&&by.__at>=since?sortLim(by[col]||[],q):null; }
+  async function bootDoc(path,since){ const col=parentOf(path); if(!BOOT_COLS.has(col)) return undefined; const by=await bootP; if(!by||by.__at<since) return undefined; return (by[col]||[]).find(r=>r.path===path)||null; }
+
   /* ---------- live listeners ---------- */
   const listeners=new Set();
   function notify(path){
     const col=parentOf(path);
-    listeners.forEach(l=>{ if(l.kind==="doc"? l.path===path : l.col===col) l.kick(); });
+    listeners.forEach(l=>{ if(l.kind==="doc"? l.path===path : l.col===col) l.kick(true); });
   }
-  let live=false;
+  let lastAll=Date.now();
+  function refreshAll(){ lastAll=Date.now(); loadBoot(); listeners.forEach(l=>l.kick()); }
+  let live=false, everLive=false;
   sb.channel("docs-live").on("postgres_changes",{event:"*",schema:"public",table:"docs"},p=>{
     const path=(p.new&&p.new.path)||(p.old&&p.old.path);
-    if(path) notify(path); else listeners.forEach(l=>l.kick());
-  }).subscribe(st=>{ const was=live; live=(st==="SUBSCRIBED"); if(live&&!was) listeners.forEach(l=>l.kick()); });
+    if(path) notify(path); else listeners.forEach(l=>l.kick(true));
+  }).subscribe(st=>{ const was=live; live=(st==="SUBSCRIBED"); if(live&&!was){ if(everLive) refreshAll(); everLive=true; } });
   // Safety net if live updates drop: refresh when the tab comes back, and slowly while visible.
-  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) listeners.forEach(l=>l.kick()); });
-  setInterval(()=>{ if(!document.hidden) listeners.forEach(l=>l.kick()); }, 120000);
+  // (Live updates already push every change, so the slow sweep only runs every 10 min while connected, 2 min if not.)
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&Date.now()-lastAll>30000) refreshAll(); });
+  setInterval(()=>{ if(!document.hidden&&Date.now()-lastAll>(live?600000:120000)-5000) refreshAll(); }, 60000);
   function listen(kind,key,fetcher,onNext,onErr){
-    let last=null, t=0, stopped=false, busy=false, again=false;
+    let last=null, t=0, stopped=false, busy=false, again=false, direct=false, since=0;
     const run=async()=>{
       if(stopped) return; if(busy){ again=true; return; } busy=true;
-      try{ const snap=await fetcher(); const sig=JSON.stringify(snap.raw); if(sig!==last){ last=sig; onNext(snap.out); } }
+      const d=direct; direct=false;
+      try{ const snap=await fetcher(d,since); if(d||snap.direct) since=Date.now(); const sig=JSON.stringify(snap.raw); if(sig!==last){ last=sig; onNext(snap.out); } }
       catch(e){ if(onErr) onErr(mapErr(e)); }
       busy=false; if(again){ again=false; run(); }
     };
-    const l={kind, path:kind==="doc"?key:null, col:kind==="col"?key:null, kick(){ clearTimeout(t); t=setTimeout(run,250); }};
+    const l={kind, path:kind==="doc"?key:null, col:kind==="col"?key:null, kick(dir){ if(dir) direct=true; clearTimeout(t); t=setTimeout(run,250); }};
     listeners.add(l); run();
     return ()=>{ stopped=true; listeners.delete(l); };
   }
@@ -55,7 +75,7 @@
       async delete(){ const {error}=await sb.from("docs").delete().eq("path",path); if(error) throw mapErr(error); notify(path); },
       async acquire(o){ o=o||{}; const {data,error}=await sb.rpc("doc_acquire",{p_path:path, p_holder:String(o.holder||rid()), p_ttl_ms:Number(o.ttlMs||1000)}); if(error) throw mapErr(error); return {acquired:!!data, holder:o.holder}; },
       collection(c){ return colRef(path+"/"+c); },
-      onSnapshot(next,onErr){ return listen("doc",path,async()=>{ const r=await getRow(path); return {raw:r, out:docSnap(r,path)}; },next,onErr); }
+      onSnapshot(next,onErr){ return listen("doc",path,async(direct,since)=>{ let r=direct?undefined:await bootDoc(path,since), dir=r===undefined; if(dir) r=await getRow(path); return {raw:r, out:docSnap(r,path), direct:dir}; },next,onErr); }
     };
     return ref;
   }
@@ -82,7 +102,7 @@
       limit(n){ return colRef(col,{...q,lim:n}); },
       async get(){ try{ return querySnap(await fetchRows()); }catch(e){ throw mapErr(e); } },
       async add(data){ const r=docRef(col+"/"+rid()); await r.set(data); return r; },
-      onSnapshot(next,onErr){ return listen("col",col,async()=>{ const rows=await fetchRows(); return {raw:rows, out:querySnap(rows)}; },next,onErr); }
+      onSnapshot(next,onErr){ return listen("col",col,async(direct,since)=>{ let rows=direct?null:await bootCol(col,q,since), dir=!rows; if(dir) rows=await fetchRows(); return {raw:rows, out:querySnap(rows), direct:dir}; },next,onErr); }
     };
   }
   const db=Object.freeze({doc:docRef, collection:colRef});

@@ -1,0 +1,29 @@
+name: backup
+# Nightly encrypted backup of the North Huddle database (scripts/backup.py). Kept 30 days as a workflow artifact.
+# The repo is public, so the file is encrypted with the NH_BOT_PW secret before upload.
+on:
+  schedule:
+    - cron: "41 8 * * *"      # ~2:41 AM Central
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Back up and encrypt
+        env:
+          NH_BOT_PW: ${{ secrets.NH_BOT_PW }}
+        run: |
+          if [ -z "$NH_BOT_PW" ]; then echo "::warning::NH_BOT_PW secret missing; skipping."; exit 0; fi
+          python3 scripts/backup.py nh-backup.json.gz
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:NH_BOT_PW -in nh-backup.json.gz -out nh-backup.json.gz.enc
+          rm nh-backup.json.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nh-backup-${{ github.run_id }}
+          path: nh-backup.json.gz.enc
+          retention-days: 30
+          if-no-files-found: error

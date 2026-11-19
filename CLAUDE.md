@@ -24,6 +24,8 @@ Unofficial Minnesota football fan hub (owner: TheOldMan21). Hosted on Cloudflare
 - `scripts/updater.py` + `.github/workflows/site-update.yml` — FREE auto-updater (replaces the Claude refresh/gameday/league/requests tasks): ESPN + vikings.com RSS + YouTube RSS → games, hub/meta, standings, players (+logs), depth, injuries, news, videos, pstats, fweeks/fstats, requests; summaries via the site's /api/summarize (Workers AI, admin-only); writes sys/status. Needs repo secret NH_BOT_PW. `--dry` previews. Claude tasks stand down when sys/status is fresh (tasks/common.md).
 - `supabase/round6.sql` — security: write size caps, profile/request validation, league_guard trigger (commissioner-only role/member changes), 30 s lock cap, no email auto-admin, admins list admin-only, docs.updated_at touch trigger, sys/schema marker.
 - `supabase/setup.sql` — database schema, access rules, RPCs (`doc_update` deep merge, `doc_acquire` lease). Re-runnable in the Supabase SQL Editor.
+- `functions/api/boot.js` — all public bot-written collections in one 30 s edge-cached response; `src/shim.js` serves first loads and full refreshes from it (realtime changes still read the database directly). `src/chaingame_stub.js` — always-loaded Kirko Chainz card/badges/loader; build.py builds `src/chaingame.js` to `js/chaingame.js` (downloaded on Play/Shop). Stadium players build only when Depth is opened.
+- `scripts/backup.py` + `.github/workflows/backup.yml` — nightly encrypted (NH_BOT_PW) database backup kept 30 days as an artifact; `--restore` puts docs back. `.github/dependabot.yml` — weekly Actions updates.
 - `scripts/nh.py` — CLI for scheduled updates to read/write docs as the bot (`NH_BOT_PW` env var).
 
 ## Data

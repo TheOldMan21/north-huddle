@@ -138,6 +138,8 @@ function stadiumHtml(unit){
 }
 async function fillStadium(root){
   const el=root?.querySelector?.(".stadium"); if(!el) return; stadRO?.observe(el.parentElement);
+  // Don't build players (headshots + pixel work) while the Depth view is hidden; do it when it's opened.
+  if(el.offsetParent===null){ STAD.deferred=true; return; } STAD.deferred=false;
   await stadReady();
   const c=TEAM[CUR]||["#4F2683","#FFC62F","#fff"];
   await Promise.all([...el.querySelectorAll(".st-pl[data-stkey]")].map(async sp=>{
@@ -152,7 +154,7 @@ const _fieldSvgST=fieldSvg;
 fieldSvg=function(unit){
   const toggle=`<div class="fp-toggle auth-seg st-toggle" role="group" aria-label="Field view"><button data-fieldview="stadium" aria-pressed="${STAD.view==="stadium"}">Stadium</button><button data-fieldview="classic" aria-pressed="${STAD.view!=="stadium"}">Classic</button></div>`;
   if(STAD.view!=="stadium"){ const h=_fieldSvgST(unit); return h?toggle+h:h; }
-  if(!STAD.meta){ stadReady().then(()=>{ if(S.tab==="depth"||$("depthBody")?.querySelector(".stadium")) renderDepth(); }); }
+  if(!STAD.meta&&S.tab==="players"&&S.pmode==="depth"){ stadReady().then(()=>{ if(S.tab==="depth"||$("depthBody")?.querySelector(".stadium")) renderDepth(); }); }
   const h=stadiumHtml(unit); if(!h) return _fieldSvgST(unit);
   const hurt=S.depth.some(d=>{ const n=d.players?.[0]; return n&&findInjury(n)&&Object.keys(unit==="offense"?STAD_FORM.offense:(is43()?STAD_FORM.defense43:STAD_FORM.defense34)).includes(d.pos); });
   return toggle+h+(hurt?`<div class="foot"><span class="hurt-key"></span>Glowing red shows where a starter is hurt. Tap any player for details.</div>`:`<div class="foot">Tap any player for stats.</div>`);
@@ -166,3 +168,6 @@ document.addEventListener("keydown",e=>{ if((e.key==="Enter"||e.key===" ")&&e.ta
 // if the field ends up a different width than it was laid out for (hidden tab, rotate, unfold), lay it out again
 const stadRO=typeof ResizeObserver!=="undefined"?new ResizeObserver(es=>{ for(const e of es){ const w=e.contentRect.width; if(w>0&&STAD.view==="stadium"&&Math.abs(w-(STAD.cw||0))>40){ clearTimeout(STAD.rt2); STAD.rt2=setTimeout(()=>renderDepth(),60); } } }):null;
 let stadW=0; window.addEventListener("resize",()=>{ clearTimeout(STAD.rt); STAD.rt=setTimeout(()=>{ const w=$("depthBody")?.clientWidth||0; if(STAD.view==="stadium"&&S.tab==="depth"&&Math.abs(w-(STAD.cw||0))>60) renderDepth(); },250); });
+
+// build the stadium the first time the Depth view actually shows
+if(typeof syncDepthVis==="function"){ const _sdvST=syncDepthVis; syncDepthVis=function(){ _sdvST(); const d=$("v-depth"); if(d&&!d.hidden&&STAD.deferred&&STAD.view==="stadium") requestAnimationFrame(()=>fillStadium($("depthBody"))); }; }

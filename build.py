@@ -61,7 +61,19 @@ rep('<script id="hub-snapshot"', '<script src="/js/supabase.js"></script>\n<scri
 css = (R / "src/site.css").read_text()
 import subprocess, sys
 subprocess.run([sys.executable, str(R / "scripts/cg_lines.py")], check=False)
-site = "\n".join((R / f).read_text() for f in ["src/site.js", "src/teams.js", "src/live.js", "src/league.js", "src/sleeper.js", "src/social.js", "src/community.js", "src/thumbs.js", "src/talk.js", "src/app.js", "src/search.js", "src/activity.js", "src/ios.js", "src/round3.js", "src/highlights.js", "src/fieldgoal.js", "src/polish.js", "src/stadium.js", "src/admin.js", "src/feedback.js", "src/predict.js", "src/watch.js", "src/chaingame.js", "src/flags.js", "src/system.js"])
+site = "\n".join((R / f).read_text() for f in ["src/site.js", "src/teams.js", "src/live.js", "src/league.js", "src/sleeper.js", "src/social.js", "src/community.js", "src/thumbs.js", "src/talk.js", "src/app.js", "src/search.js", "src/activity.js", "src/ios.js", "src/round3.js", "src/highlights.js", "src/fieldgoal.js", "src/polish.js", "src/stadium.js", "src/admin.js", "src/feedback.js", "src/predict.js", "src/watch.js", "src/chaingame_stub.js", "src/flags.js", "src/system.js"])
+# --- the Kirko Chainz game itself is its own file, downloaded only when someone opens it ---
+def build_lazy(src, out):
+    import hashlib, shutil, subprocess, os
+    code = (R / src).read_text()
+    exe = os.environ.get("NH_ESBUILD") or shutil.which("esbuild")
+    if exe:
+        r = subprocess.run([exe, "--minify", "--loader=js", "--target=es2020,safari15", "--log-level=error"], input=code, capture_output=True, text=True)
+        if r.returncode != 0: raise SystemExit("esbuild failed: " + r.stderr[:500])
+        code = r.stdout
+    (R / out).write_text("/* built from " + src + " by build.py — edit the source, not this file */\n" + code)
+    return hashlib.sha1(code.encode()).hexdigest()[:10]
+site = site.replace("__CGV__", build_lazy("src/chaingame.js", "js/chaingame.js"))
 import datetime as _dt
 site = site.replace("__NH_BUILD__", _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 h = h + "\n<style>\n" + css + "\n</style>\n<script>\n" + site + "\n</script>\n"

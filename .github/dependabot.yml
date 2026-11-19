@@ -1,0 +1,8 @@
+# Weekly check for security updates to the GitHub Actions this repo uses.
+# (The site has no package.json; the one vendored library, js/supabase.js, is pinned on purpose.)
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

@@ -9,6 +9,11 @@ export async function onRequest(ctx) {
   const key = new Request(url.origin + "/api/recap?event=" + id), cache = caches.default;
   const hit = await cache.match(key); if (hit) return hit;
   if (!env.AI) return json({ error: "not_configured" }, 503);
+  // best-effort per-visitor limit on recaps that aren't cached yet (each one runs the AI)
+  const ip = request.headers.get("cf-connecting-ip") || "x", lk = new Request(`https://limits.north-huddle/recap/${encodeURIComponent(ip)}/${Math.floor(Date.now() / 3600e3)}`);
+  const lh = await cache.match(lk), used = lh ? Number(await lh.text()) || 0 : 0;
+  if (used >= 20) return json({ error: "rate_limited" }, 429);
+  ctx.waitUntil(cache.put(lk, new Response(String(used + 1), { headers: { "cache-control": "max-age=3600" } })));
   let s; try { const r = await fetch(SUM + id, { headers: { "user-agent": "Mozilla/5.0 (NorthHuddle)" } }); s = r.ok ? await r.json() : null; } catch (e) {}
   if (!s) return json({ error: "upstream" }, 502);
   const comp = s.header?.competitions?.[0] || {}, st = comp.status?.type || {};
