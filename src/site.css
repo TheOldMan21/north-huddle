@@ -751,3 +751,78 @@ nav.tabs button[aria-current=page] svg{color:#0B1220}
 #wpv .wpv-game{max-height:none!important}
 .wpv-x{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:calc(env(safe-area-inset-right) + 10px);z-index:2;width:44px;height:44px;border-radius:999px;border:0;background:rgba(0,0,0,.35);color:#fff;font-size:26px;line-height:1;cursor:pointer}
 #wpv .wpv-score{padding-right:48px}
+
+/* ===== home flow (src/homeflow.js), Nov 2026: one column, next game on top ===== */
+.home-grid .hf-hero{order:1!important}
+.home-grid .hf-next{order:1!important}
+.home-grid .gameday{order:1!important}
+.home-grid .upd-line{order:2!important}
+.home-grid .alert{order:3!important}
+.home-grid .hf-join{order:4!important}
+.home-grid .hf-last{order:5!important}
+.home-grid #predCard{order:6!important}
+.home-grid #pkCard{order:6!important}
+.home-grid .sec-head{order:8!important}
+.home-grid .hf-news{order:9!important}
+.home-grid .hf-play{order:20!important}
+.home-grid .hf-gone{display:none!important}
+/* 1. record + next game as one block */
+.hero.hf-joined{border-radius:18px 18px 0 0}
+.game-card.hf-next{margin-top:-20px;border:0;border-radius:0 0 18px 18px;background:color-mix(in srgb,var(--purple) 72%,#000);color:#fff;border-top:1px solid rgba(255,255,255,.14);box-shadow:none}
+.hf-next .label{color:#5EF2D6}
+.hf-next .sub,.hf-next .t2,.hf-next .prd-lab .t2{color:rgba(255,255,255,.78)}
+.hf-next .opp{color:#fff;font-size:24px}
+.hf-next .gc-head .wt-btn{display:none}
+.hf-next .chip.up{background:rgba(255,255,255,.14);color:#fff}
+.hf-next .countdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.hf-next .cd{background:rgba(255,255,255,.1);color:#fff;min-width:0}
+.hf-next .cd span{color:rgba(255,255,255,.75)}
+.hf-next .prd-bar{background:rgba(255,255,255,.18)}
+.hf-next .prd-lab b{color:#fff}
+.hf-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.hf-btn{flex:1;min-height:44px;border-radius:12px;font:800 16px var(--display);letter-spacing:.02em;cursor:pointer;padding:0 14px}
+.hf-gold{border:0;background:var(--gold);color:var(--on-gold)}
+.hf-ghost{border:1.5px solid rgba(255,255,255,.45);background:transparent;color:#fff}
+.hf-grad{border:0;background:linear-gradient(100deg,#2EE6C5,#7C5CFF);color:#0B1220}
+.hf-small .tbtn{min-height:40px}
+/* 2. one join card */
+.hf-join{display:flex;flex-direction:column;gap:8px}
+.hf-jt{font:800 21px var(--display)}
+.hf-join p{margin:0;line-height:1.4}
+.hf-jr{display:flex;gap:8px;align-items:center}
+.hf-link{border:0;background:none;color:var(--purple-ink);font:700 16px var(--display);padding:12px 10px;cursor:pointer}
+/* 3. last game with a short recap */
+.hf-sum{margin:0;font-size:15px;line-height:1.45}
+/* 4. calmer alert */
+.home-grid .alert{background:#FFF4D1;color:var(--fg);border:1px solid #F2D27A;font-weight:600;line-height:1.35}
+.alert .hf-tag{flex:none;font:800 12px var(--display);letter-spacing:.08em;background:#A15C00;color:#fff;border-radius:6px;padding:3px 7px;margin-top:2px}
+.alert small{display:block;font-weight:400;color:var(--muted);margin-top:2px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .home-grid .alert{background:rgba(255,198,47,.12);border-color:rgba(255,198,47,.38)}}
+:root[data-theme="dark"] .home-grid .alert,html.dark .home-grid .alert,body.dark .home-grid .alert{background:rgba(255,198,47,.12);border-color:rgba(255,198,47,.38)}
+/* 5. lead story with a big photo; three across on wide screens */
+.hf-news .news-item.nt.hf-lead{display:flex;flex-direction:column}
+.hf-news .hf-lead .nthumb{order:-1;width:calc(100% + 28px);height:190px;margin:-14px -14px 6px;border-radius:0;max-width:none}
+.hf-news .hf-lead .h{font:700 21px/1.15 var(--display)}
+@media(min-width:760px){
+  .home-grid .hf-news{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;background:none;border:0;overflow:visible}
+  .hf-news .news-item{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .hf-news .news-item.nt{display:flex;flex-direction:column}
+  .hf-news .nthumb{order:-1;width:calc(100% + 28px);height:150px;margin:-14px -14px 6px;border-radius:0;max-width:none}
+  .hf-news .hf-lead .nthumb{height:150px}
+  .hf-news .hf-lead .h{font:600 16px/1.3 var(--body)}
+}
+/* 6. play tiles */
+.hf-play{display:flex;flex-direction:column;gap:10px}
+.hf-play h2{margin:0}
+.hf-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hf-tiles .fg-card.hf-tile{order:0!important;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:6px;min-height:132px;padding:14px;border:0;border-radius:16px;margin:0}
+.hf-tiles .fg-card.hf-tile:not(.cg-card){background:#2F6B3A;color:#fff}
+.hf-tiles .cg-card.hf-tile{background:#0B1220;color:#fff}
+.hf-tile .grow{display:flex;flex-direction:column;gap:4px}
+.hf-tile .lg-ft{font:800 19px/1.05 var(--display);color:#fff}
+.hf-tile .t2{color:rgba(255,255,255,.78);font-size:12.5px}
+.hf-tile .fg-ico{color:#fff}
+.hf-tile .tbtn{margin-top:auto;background:rgba(255,255,255,.14);color:#fff;border-color:transparent}
+/* picks button lands here */
+@keyframes hfFlash{0%{box-shadow:0 0 0 0 rgba(46,230,197,.8)}100%{box-shadow:0 0 0 14px rgba(46,230,197,0)}}
+.hf-flash{animation:hfFlash 1s ease-out 2}

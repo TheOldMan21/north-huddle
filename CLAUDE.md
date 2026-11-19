@@ -26,6 +26,7 @@ Unofficial Minnesota football fan hub (owner: TheOldMan21). Hosted on Cloudflare
 - `supabase/setup.sql` — database schema, access rules, RPCs (`doc_update` deep merge, `doc_acquire` lease). Re-runnable in the Supabase SQL Editor.
 - `functions/api/boot.js` — all public bot-written collections in one 30 s edge-cached response; `src/shim.js` serves first loads and full refreshes from it (realtime changes still read the database directly). `src/chaingame_stub.js` — always-loaded Kirko Chainz card/badges/loader; build.py builds `src/chaingame.js` to `js/chaingame.js` (downloaded on Play/Shop). Stadium players build only when Depth is opened.
 - `scripts/backup.py` + `.github/workflows/backup.yml` — nightly encrypted (NH_BOT_PW) database backup kept 30 days as an artifact; `--restore` puts docs back. `.github/dependabot.yml` — weekly Actions updates.
+- `src/homeflow.js` — home page flow (runs last, wraps renderHome + MutationObserver): record+next game joined at top with Make your pick / Where to watch, one Join card for guests (picks card hidden for guests), AI recap folded into the last-game card (Full recap opens the sheet), labeled alert, lead story photo (3-across ≥760px), Play tiles. Single column at every width (owner does not want split columns).
 - `scripts/nh.py` — CLI for scheduled updates to read/write docs as the bot (`NH_BOT_PW` env var).
 
 ## Data
