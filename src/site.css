@@ -744,3 +744,10 @@ nav.tabs button[aria-current=page] svg{color:#0B1220}
 .sys-ck{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font-weight:800;flex:none}.sys-ck.y{background:#dcfce7;color:#15803d}.sys-ck.n{background:#fee2e2;color:#b91c1c}.sys-ck.q{background:rgba(127,127,127,.15)}
 .sys-alert{display:flex;gap:6px;margin-top:6px}.sys-alert input{flex:1;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid var(--line,#ccc);font:inherit;background:transparent;color:inherit}
 .sys-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+
+/* chat removed (Nov 2026): watch party is the game view alone, with its own close button */
+#wpv{grid-template-columns:1fr!important;grid-template-rows:1fr!important}
+#wpv .wpv-chat{display:none!important}
+#wpv .wpv-game{max-height:none!important}
+.wpv-x{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:calc(env(safe-area-inset-right) + 10px);z-index:2;width:44px;height:44px;border-radius:999px;border:0;background:rgba(0,0,0,.35);color:#fff;font-size:26px;line-height:1;cursor:pointer}
+#wpv .wpv-score{padding-right:48px}

@@ -13,7 +13,6 @@ function sections(){
   const list=[
     ["Home","home scores today game day",go("home")],
     ["Game picks & score predictions","pick winner predict score leaderboard",go("home",()=>setTimeout(()=>$("predCard")?.scrollIntoView({block:"center"}),150))],
-    ["Fan chat","chat talk message",go("home",()=>setTimeout(()=>$("fanChat")?.scrollIntoView({block:"center"}),150))],
     [`${NICK()} schedule`,"schedule games results bye",gm("team")],
     ["All scores (every game)","scoreboard live scores nfl games week",gm("scores")],
     ["Standings & playoff picture","standings playoffs seeds division wild card",gm("standings")],

@@ -251,7 +251,7 @@ renderGameSheet=function(){
   const hd=$("sheet").querySelector(".sheet-head"); if(sec&&hd) hd.insertAdjacentHTML("afterend",sec);
 };
 
-/* ---------- 6. watch party: full-screen field + score + plays + game chat ---------- */
+/* ---------- 6. watch party: full-screen field + score + plays (game chat removed Nov 2026) ---------- */
 const WPV={open:false, el:null, sig:"", t:0, last:0};
 function wpvGame(){ return liveGameNow()||soonGame(); }
 function wpvOpen(){
@@ -259,7 +259,7 @@ function wpvOpen(){
   gxSubscribe(gameKey(g));
   if(!WPV.el){
     const el=document.createElement("div"); el.id="wpv"; el.setAttribute("role","dialog"); el.setAttribute("aria-label","Watch party");
-    el.innerHTML=`<div class="wpv-game"></div><div class="wpv-chat"><div class="wpv-ch"><b>Game chat</b><span class="t2 wpv-n"></span><button class="x" data-wpvx="1" aria-label="Close watch party">×</button></div><div class="fc-list wpv-list"></div><div class="wpv-in"></div></div>`;
+    el.innerHTML=`<button class="x wpv-x" data-wpvx="1" aria-label="Close watch party">×</button><div class="wpv-game"></div><div class="wpv-chat" hidden><div class="wpv-ch"><span class="t2 wpv-n"></span></div><div class="fc-list wpv-list"></div><div class="wpv-in"></div></div>`;
     el.addEventListener("submit",async e=>{
       if(!e.target.closest(".wpv-form")) return; e.preventDefault();
       const i=e.target.querySelector("input"), t=(i.value||"").trim().slice(0,300); if(!t||!GX.key) return;
@@ -273,7 +273,7 @@ function wpvOpen(){
   WPV.open=true; WPV.sig=""; WPV.el.hidden=false; document.body.classList.add("wpv-on");
   WPV.el.querySelector(".wpv-in").innerHTML=ACC.id?`<form class="chat-in fc-form wpv-form">${av(ACC.id,"me")}<input maxlength="300" autocomplete="off" placeholder="React to the game…" aria-label="Game chat message"><button class="tbtn" type="submit">Send</button></form>`:`<button class="btn-gold" data-acct="1">Sign in to chat</button>`;
   try{ const p=WPV.el.requestFullscreen?.(); p?.then?.(()=>screen.orientation?.lock?.("landscape").catch(()=>{})).catch(()=>{}); }catch(e){}
-  wpvRender(); clearInterval(WPV.t); WPV.t=setInterval(wpvChat,1500); wpvChat(true);
+  wpvRender();
 }
 function wpvClose(){
   WPV.open=false; clearInterval(WPV.t); if(WPV.el) WPV.el.hidden=true; document.body.classList.remove("wpv-on");

@@ -2540,20 +2540,17 @@ renderHome=function(){
   if(FC.el && FC.el.contains(document.activeElement)){ FC.pending=true; return; }
   _renderHome2();
   const el=$("v-home"); if(!S.meta) return;
-  const anchor=el.querySelector(".gameday")||el.querySelector(".hero"); if(!anchor) return;
-  anchor.insertAdjacentElement("afterend",fanChatEl());
+  // (fan chat removed from the home page, Nov 2026)
 };
 (async()=>{
   await accReady;
   renderFanChat();
   if(ACC.db&&ACC.id){
-    ACC.db.collection("chat").orderBy("t","desc").limit(60).onSnapshot(s=>{ FC.msgs=s.docs.map(d=>({id:d.id,...d.data()})).reverse(); renderFanChat(); },e=>console.warn("fanchat",e));
     ACC.db.doc("requests/update").onSnapshot(s=>{ reqDoc=s.exists?s.data():null; },()=>{});
   }
   if(!ACC.db){ const b=$("refreshBtn"); if(b) b.hidden=false; }
   renderHome();
 })();
-setInterval(()=>{ if(S.tab==="home") renderFanChat(); },60000);
 
 </script>
 <script>

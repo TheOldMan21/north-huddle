@@ -42,7 +42,7 @@ function gxEl(){
   GX.el=s; return s;
 }
 function gxSubscribe(key){
-  if(key===GX.key) return; GX.key=key; GX.msgs=[];
+  if(key===GX.key) return; GX.key=key; GX.msgs=[]; return;   // (game chat removed: nothing to listen to)
   if(GX.unsub){ GX.unsub(); GX.unsub=null; }
   if(!key||!ACC.db) return;
   GX.unsub=ACC.db.collection("gamechat").where("game","==",key).orderBy("t","desc").limit(80).onSnapshot(s=>{ GX.msgs=s.docs.map(d=>({id:d.id,...d.data()})).reverse(); if(GX.tab==="chat") renderGX(true); },e=>console.warn("gamechat",e));
@@ -71,7 +71,8 @@ function gameChatHtml(){
 }
 function renderGX(chatOnly){
   const s=gxEl(), live=!!liveGameNow();
-  const tabs=live?[["plays","Plays"],["box","Box score"],["chat","Game chat"]]:[["chat","Game chat"]];
+  const tabs=live?[["plays","Plays"],["box","Box score"]]:[];   // (game chat removed, Nov 2026)
+  s.hidden=!tabs.length; if(!tabs.length) return;
   if(!tabs.some(t=>t[0]===GX.tab)) GX.tab=tabs[0][0];
   s.querySelector(".gx-seg").innerHTML=tabs.map(([k,l])=>`<button role="tab" data-gxtab="${k}" aria-selected="${GX.tab===k}">${l}${k==="chat"&&GX.msgs.length?` <span class="gx-n">${GX.msgs.length}</span>`:""}</button>`).join("");
   const pane=s.querySelector(".gx-pane");

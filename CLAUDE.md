@@ -10,7 +10,7 @@ Unofficial Minnesota football fan hub (owner: TheOldMan21). Hosted on Cloudflare
 - `functions/api/scores.js` — Cloudflare Pages Function proxying ESPN's scoreboard + scoring plays (30 s edge cache).
 - `js/supabase.js` — vendored supabase-js 2.45.4 UMD.
 - `supabase/admin.sql` — admin page support (banned table, admin_users RPC, can_write with ban check). Run AFTER setup.sql whenever setup.sql is re-run.
-- `src/round3.js` — spam filter (no links/repeats), pick'em, fan power rankings, member profiles, AI recaps (`functions/api/recap.js`), watch party.
+- `src/round3.js` — spam filter (no links/repeats), pick'em, fan power rankings, member profiles, AI recaps (`functions/api/recap.js`), watch party (game view only). Fan chat and game chat were removed from the UI in Nov 2026 (code paths left inert; chat/gamechat collections unused).
 - `src/stadium.js` — Depth "Stadium" view: starters on img/field/stadium.jpg, bodies built in-browser from img/field/body*.png (recolor, skin match, headshot via /api/hs, injury glow). Classic SVG view kept behind a toggle.
 - `src/feedback.js` — "Send feedback" (footer + account sheet) into the `feedback` table; owner Inbox tab on the admin page with a count on the header shield.
 - `supabase/round5.sql` — `guests` table + `guest_checkin(device)` RPC: guests get a lasting number (Guest 1, 2, …) per device code; Activity tab shows it with visit counts.
