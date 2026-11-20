@@ -7,7 +7,7 @@ on:
   schedule:
     - cron: "11 */3 * * *"
 permissions:
-  contents: read
+  contents: write         # publishes the league-wide stats file (espn-data release)
   actions: write          # lets the job start its own next run
 concurrency:
   group: site-update-loop
@@ -21,6 +21,7 @@ jobs:
       - name: Keep the site updated
         env:
           NH_BOT_PW: ${{ secrets.NH_BOT_PW }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "$NH_BOT_PW" ]; then echo "::warning::NH_BOT_PW secret missing"; exit 0; fi
           python3 scripts/update_loop.py
