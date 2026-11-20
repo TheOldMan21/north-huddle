@@ -1,0 +1,31 @@
+name: site-update-loop
+# Reliable timing for the free updater. GitHub's own cron on free repos often runs hours late, so this
+# workflow keeps ONE long job running scripts/updater.py every 20 min (10 during game windows) for ~5h40m,
+# then starts its own next run. The cron below only restarts the chain if it ever breaks.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "11 */3 * * *"
+permissions:
+  contents: read
+  actions: write          # lets the job start its own next run
+concurrency:
+  group: site-update-loop
+  cancel-in-progress: false
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - name: Keep the site updated
+        env:
+          NH_BOT_PW: ${{ secrets.NH_BOT_PW }}
+        run: |
+          if [ -z "$NH_BOT_PW" ]; then echo "::warning::NH_BOT_PW secret missing"; exit 0; fi
+          python3 scripts/update_loop.py
+      - name: Start the next loop
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run site-update-loop.yml --repo "$GITHUB_REPOSITORY" --ref main
