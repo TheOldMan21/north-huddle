@@ -19,7 +19,10 @@ function hfApply(){
     // 1. next game joins the record block
     if(next&&hero){
       next.classList.add("hf-next"); hero.classList.add("hf-joined");
-      if(next.parentElement!==hero.parentElement||next.previousElementSibling!==hero) hero.insertAdjacentElement("afterend",next);
+      // one card: the record and the next game live inside the same box
+      let combo=hero.closest(".hf-combo");
+      if(!combo){ combo=document.createElement("section"); combo.className="hf-combo"; hero.insertAdjacentElement("beforebegin",combo); combo.appendChild(hero); }
+      if(next.parentElement!==combo) combo.appendChild(next);
       if(!next.querySelector(".hf-acts")){
         const w=next.querySelector("[data-watch]");
         next.insertAdjacentHTML("beforeend",`<div class="hf-acts"><button class="hf-btn hf-gold" data-hfpick="1">Make your pick</button>${w?`<button class="hf-btn hf-ghost" data-watch="${esc(w.dataset.watch||"")}" data-wlabel="${esc(w.dataset.wlabel||"")}">Where to watch</button>`:""}</div>`);

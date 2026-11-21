@@ -922,4 +922,7 @@ button.pg-srow{cursor:pointer}button.pg-srow:hover{background:var(--surface-2)}
 .hero.hf-joined{box-shadow:none}
 .game-card.hf-next{background:var(--purple)!important;border-top:1px solid rgba(255,255,255,.16)!important;margin-top:-20px}
 .game-card.hf-next .cd{background:rgba(255,255,255,.12)}
-.hero.hf-joined .hero-word{opacity:.55}
+/* record + next game: one single card */
+.home-grid .hf-combo{order:1!important;background:var(--purple);color:#fff;border-radius:18px;overflow:hidden;position:relative;isolation:isolate}
+.hf-combo>.hero{background:transparent!important;border-radius:0!important;box-shadow:none!important;padding-bottom:4px}
+.hf-combo>.game-card.hf-next{background:transparent!important;border:0!important;border-radius:0!important;margin:0!important;box-shadow:none!important;padding-top:10px}
