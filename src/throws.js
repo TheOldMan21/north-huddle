@@ -114,7 +114,9 @@ async function openThrows(ev){
   THR.el.hidden=false; document.body.classList.add("thr-on"); thrRender();
   const d=await thrLoad(THR.ev); const g=d?`${d.away?.abbr||""} ${d.away?.score??""} at ${d.home?.abbr||""} ${d.home?.score??""}${d.detail?` · ${d.detail}`:""}`:"";
   THR.el.querySelector(".thr-title").textContent=g; thrRender();
-  clearInterval(THR.live); if(d&&!d.final) THR.live=setInterval(async()=>{ if(THR.el.hidden) return clearInterval(THR.live); const was=THR.k; const dd=await thrLoad(THR.ev,true); const n=dd?.throws.filter(t=>t.team+"|"+t.qb===THR.qb).length; if(was&&n&&!THR.play) THR.k=n; thrRender(); },30e3);
+  clearInterval(THR.live); if(d&&!d.final) THR.live=setInterval(async()=>{ if(THR.el.hidden) return clearInterval(THR.live); const cnt=x=>x?.throws.filter(t=>t.team+"|"+t.qb===THR.qb).length||0; const before=cnt(THR.cache[THR.ev]?.d), atEnd=THR.k>=before; const dd=await thrLoad(THR.ev,true); const n=cnt(dd);
+      // follow new throws only if you were already watching the latest one (don't yank you away while scrolling back)
+      if(atEnd&&n&&!THR.play) THR.k=n; thrRender(); if(dd?.final) clearInterval(THR.live); },30e3);
 }
 function closeThrows(){ if(!THR.el) return; THR.el.hidden=true; document.body.classList.remove("thr-on"); clearInterval(THR.play); THR.play=0; clearInterval(THR.live); }
 function thrStop(){ clearInterval(THR.play); THR.play=0; }
