@@ -991,3 +991,30 @@ button.pg-srow{cursor:pointer}button.pg-srow:hover{background:var(--surface-2)}
 .clp-h{font:800 18px var(--display);margin-bottom:8px}.clp-h span{font:600 13px var(--body);opacity:.7;margin-left:6px}
 #thr .clp-sec .hl-t{color:#fff}
 .clp-watch{display:inline-block;margin-top:8px;background:#FFC62F;color:#2A1A00;border-radius:999px;padding:8px 16px;font:800 15px var(--display);text-decoration:none}
+/* Throw chart extras: view switch, receivers, win chance, biggest plays */
+.thr-mode{display:flex;gap:6px;margin-bottom:10px}
+.thr-mode button{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;border-radius:10px;padding:8px 12px;font:700 15px var(--display);cursor:pointer}
+.thr-mode button[aria-pressed=true]{background:#fff;color:#2a1450}
+.thr-mode .thr-share{margin-left:auto;background:linear-gradient(100deg,#2EE6C5,#7C5CFF);color:#0B1220;border:0}
+.thr-rcv{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:-4px 0 12px;padding-bottom:2px}
+.thr-rcv button{flex:none;border:1px solid rgba(255,255,255,.16);background:transparent;color:#E9DEFA;border-radius:999px;padding:5px 11px;font:700 14px var(--display);cursor:pointer}
+.thr-rcv button[aria-pressed=true]{background:#5EF2D6;color:#0B1220;border-color:#5EF2D6}
+.thr-rcv small{opacity:.7;font:600 11.5px var(--body)}
+.thr-wp{background:rgba(255,255,255,.05);border-radius:12px;padding:8px 10px 6px;margin-top:8px}
+.thr-wph{display:flex;align-items:baseline;gap:8px;font:700 12px var(--display);letter-spacing:.06em;text-transform:uppercase;color:#D6C8EE}
+.thr-wph b{font:800 18px var(--display);color:#fff}
+.thr-wpk{margin-left:auto;text-transform:none;letter-spacing:0;font:500 11px var(--body);display:flex;gap:4px;align-items:center}
+.thr-wpk i{display:inline-block;width:8px;height:8px;border-radius:99px;margin-left:6px}
+.wp-svg{display:block;width:100%;height:64px;margin-top:4px}
+.wp-line{fill:none;stroke:#FFC62F;stroke-width:2;vector-effect:non-scaling-stroke}
+.wp-area{fill:rgba(255,198,47,.14)}
+.wp-mid{stroke:rgba(255,255,255,.25);stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
+.wp-q{stroke:rgba(255,255,255,.1);vector-effect:non-scaling-stroke}.wp-qt{fill:#D6C8EE;font:700 9px var(--display)}
+.wp-now{stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
+.wp-sack,i.wp-sack{fill:#ff6b6b;background:#ff6b6b}.wp-run,i.wp-run{fill:#5aa9ff;background:#5aa9ff}.wp-td,i.wp-td{fill:#4CC38A;background:#4CC38A}
+.thr-best{margin-top:12px}
+.thr-bp{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;border-top:1px solid rgba(255,255,255,.1);background:none;color:#fff;padding:10px 4px;cursor:pointer;font:inherit}
+.thr-bp b{flex:none;width:58px;font:800 20px var(--display)}.thr-bp b.up{color:#4CC38A}.thr-bp b.down{color:#ff6b6b}
+.thr-bp>span{display:flex;flex-direction:column}.thr-bpt{font-weight:600}.thr-bp small{color:#D6C8EE;font-size:12px}
+.clp-mini{display:inline-block;margin:0 0 6px 74px;color:#FFC62F;font:700 14px var(--display);text-decoration:none}
+.thr-split b small{font:600 12px var(--body);opacity:.75}
