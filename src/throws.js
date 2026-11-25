@@ -152,3 +152,50 @@ function thrHome(){
   if(gd&&live&&!gd.querySelector("[data-throws]")) gd.insertAdjacentHTML("beforeend",`<button class="tbtn thr-gd" data-throws="${esc(live.id)}">🎯 Live throw chart</button>`);
 }
 (()=>{ const h=$("v-home"); if(!h||typeof MutationObserver==="undefined") return; let q=0; new MutationObserver(()=>{ if(q) return; q=setTimeout(()=>{ q=0; thrHome(); },80); }).observe(h,{childList:true,subtree:true}); })();
+
+/* ---------- game clips: ESPN highlight videos, kept per game by the updater (clips/<event>) ---------- */
+const CLP={};
+async function clipsLoad(ev,force){
+  const c=CLP[ev]; if(c&&!force&&Date.now()-c.at<120e3) return c.v;
+  let v=[];
+  try{ const db=await claude.use("db"); const s=await db.doc("clips/"+ev).get(); v=(s.exists&&s.data().videos)||[]; }catch(e){}
+  try{ if(typeof HL!=="undefined"&&HL.data){ const g=(HL.data.games||[]).find(x=>String(x.id)===String(ev)); (g?.videos||[]).forEach(x=>{ if(!v.find(y=>String(y.id)===String(x.id))) v.push(x); }); } }catch(e){}
+  v.sort((a,b)=>String(a.at).localeCompare(String(b.at)));
+  CLP[ev]={v,at:Date.now()}; return v;
+}
+const clLast=n=>String(n||"").replace(/\s+(Jr|Sr|II|III|IV)\.?$/,"").trim().split(/\s+/).pop().toLowerCase();
+// the clip that best matches a throw: names the receiver (or interceptor), ideally the yardage, posted soon after the play
+function clipFor(t,vids){
+  if(!vids?.length||t.res==="I") return null;
+  const who=clLast(t.res==="INT"?t.by:t.target); if(!who||who.length<3) return null;
+  let best=null, bs=0;
+  for(const v of vids){ const ti=String(v.title||"").toLowerCase(); if(!ti.includes(who)) continue;
+    let s=1; if(t.res==="C"&&t.yds>=5&&new RegExp(`\\b${Math.abs(t.yds)}[- ]?(yard|yd)`).test(ti)) s+=3;
+    if(t.td&&/touchdown|\btd\b/.test(ti)) s+=2; if(t.res==="INT"&&/intercept|pick/.test(ti)) s+=2;
+    if(t.at&&v.at){ const m=(Date.parse(v.at)-Date.parse(t.at))/6e4; if(m>-2&&m<25) s+=2; else if(m<-2) s-=2; }
+    if(s>bs){ bs=s; best=v; } }
+  return bs>=2?best:null;
+}
+function clipsHtml(vids){
+  if(!vids?.length) return "";
+  const tile=typeof hlVid==="function"?v=>hlVid(v,null,false):v=>`<a class="hl-vid" href="${esc(v.url)}" target="_blank" rel="noopener"><span class="hl-t">${esc(v.title)}</span></a>`;
+  return `<div class="clp-sec"><div class="clp-h">Game highlights <span>${vids.length} ${vids.length===1?"clip":"clips"}</span></div><div class="hl-row">${vids.slice().reverse().map(tile).join("")}</div></div>`;
+}
+// Throw chart: "Watch the play" on the current throw + the game's clips under the chart
+const _thrRenderCL=thrRender;
+thrRender=function(){ _thrRenderCL(); const el=THR.el; if(!el||el.hidden) return; const ev=THR.ev, d=THR.cache[ev]?.d; if(!d) return;
+  const vids=CLP[ev]?.v; if(!vids){ clipsLoad(ev).then(()=>{ if(THR.ev===ev) thrRender(); }); return; }
+  const [team,qb]=THR.qb.split("|"), all=d.throws.filter(t=>t.team===team&&t.qb===qb), cur=all[Math.max(0,(THR.k||all.length)-1)];
+  const b=el.querySelector(".thr-b"); if(!b) return;
+  const v=cur&&clipFor(cur,vids), mid=b.querySelector(".thr-mid");
+  if(mid&&v&&!mid.querySelector(".clp-watch")) mid.insertAdjacentHTML("beforeend",`<a class="clp-watch" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Watch the play</a>`);
+  if(!b.querySelector(".clp-sec")) b.querySelector(".thr-note")?.insertAdjacentHTML("beforebegin",clipsHtml(vids));
+};
+// keep clips fresh while a live game's chart is open
+setInterval(()=>{ if(THR.el&&!THR.el.hidden&&!THR.cache[THR.ev]?.d?.final) clipsLoad(THR.ev,true).then(()=>thrRender()); },120e3);
+// box-score sheet: the game's highlights
+if(typeof renderGameSheet==="function"){ const _rgsCL=renderGameSheet; renderGameSheet=function(){ _rgsCL(); const s=GM.sheet; if(!s) return;
+  const sh=$("sheet"), id=String(s.id), vids=CLP[id]?.v;
+  if(!vids){ clipsLoad(id).then(v=>{ if(v.length&&GM.sheet&&String(GM.sheet.id)===id&&!$("sheetBg").hidden) renderGameSheet(); }); return; }
+  sh.querySelector(".clp-sec")?.remove(); const h=clipsHtml(vids); if(!h) return;
+  const a=sh.querySelector(".thr-open"); if(a) a.insertAdjacentHTML("afterend",h); else sh.insertAdjacentHTML("beforeend",h); }; }

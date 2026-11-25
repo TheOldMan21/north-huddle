@@ -441,6 +441,26 @@ def run_videos():
     for i, (vid, v) in enumerate(vs):
         if (v.get("date") or "") < cutoff or i >= 20 - added: drop(f"videos/{vid}", "old")
 
+# ---------------- game clips: keep ESPN's highlight clips for each game (ESPN drops them later) ----------------
+def run_clips():
+    sb = get(f"{A}/scoreboard") or {}
+    evs = [e for e in sb.get("events", []) if e.get("competitions", [{}])[0].get("status", {}).get("type", {}).get("state") in ("in", "post")]
+    recent = [e for e in evs if e.get("date") and (NOW - dt.datetime.fromisoformat(e["date"].replace("Z", "+00:00"))).total_seconds() < 2 * 86400]
+    if not recent: return
+    sums = pget([f"{A}/summary?event={e['id']}" for e in recent], 8)
+    for e, s in zip(recent, sums):
+        vids = [{"id": str(v.get("id")), "title": (v.get("headline") or "")[:140], "dur": v.get("duration") or 0, "thumb": v.get("thumbnail") or "",
+                 "url": ((v.get("links") or {}).get("web") or {}).get("href") or "", "at": v.get("originalPublishDate") or ""} for v in (s or {}).get("videos", [])]
+        vids = [v for v in vids if v["url"] and v["thumb"]]
+        if not vids: continue
+        old = nh.get(f"clips/{e['id']}") or {}
+        have = {v["id"]: v for v in old.get("videos", [])}
+        for v in vids: have[v["id"]] = v
+        merged = sorted(have.values(), key=lambda v: v.get("at", ""))[-60:]
+        comp = e["competitions"][0]
+        data = {"event": e["id"], "teams": [c.get("team", {}).get("abbreviation") for c in comp.get("competitors", [])], "videos": merged}
+        put(f"clips/{e['id']}", data, old or None, f"{len(merged)} clips")
+
 # ---------------- tracked players (other teams) ----------------
 def run_tracked():
     tr, ps = coll("tracked"), coll("pstats")
@@ -536,7 +556,7 @@ def run_requests():
 # ======================================================================================
 if __name__ == "__main__":
     t0 = time.time(); parts = {}
-    for name, fn in [("hub", run_hub), ("news", run_news), ("videos", run_videos), ("tracked", run_tracked), ("fantasy", run_fantasy), ("requests", run_requests)]:
+    for name, fn in [("hub", run_hub), ("news", run_news), ("videos", run_videos), ("tracked", run_tracked), ("fantasy", run_fantasy), ("requests", run_requests), ("clips", run_clips)]:
         if not want(name): continue
         n0 = len(OPS)
         try:

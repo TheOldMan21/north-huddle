@@ -986,3 +986,8 @@ button.pg-srow{cursor:pointer}button.pg-srow:hover{background:var(--surface-2)}
 .thr-note{font-size:12px;color:#B9A8D6;margin:12px 2px 0;line-height:1.4}
 .thr-open{width:100%;margin:10px 0}
 .thr-gd{margin-top:8px}
+/* game clips (src/throws.js) */
+.clp-sec{margin:12px 0}
+.clp-h{font:800 18px var(--display);margin-bottom:8px}.clp-h span{font:600 13px var(--body);opacity:.7;margin-left:6px}
+#thr .clp-sec .hl-t{color:#fff}
+.clp-watch{display:inline-block;margin-top:8px;background:#FFC62F;color:#2A1A00;border-radius:999px;padding:8px 16px;font:800 15px var(--display);text-decoration:none}
