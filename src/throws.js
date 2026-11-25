@@ -106,6 +106,7 @@ function thrRender(){
 }
 async function openThrows(ev){
   if(!ev) return;
+  if(THR.ev!==String(ev)) THR.qb="";   // a different game starts on its own quarterback
   THR.ev=String(ev); THR.k=0; clearInterval(THR.play); THR.play=0;
   if(!THR.el){ const el=document.createElement("div"); el.id="thr"; el.setAttribute("role","dialog"); el.setAttribute("aria-label","Throw chart");
     el.innerHTML=`<div class="thr-wrap"><div class="thr-top"><div><div class="thr-kick">THROW CHART</div><div class="thr-title"></div></div><button class="x" data-thrx aria-label="Close">×</button></div><div class="thr-body"></div></div>`;
@@ -143,6 +144,7 @@ if(typeof renderGameSheet==="function"){ const _rgsTHR=renderGameSheet; renderGa
 // home: last game card + live game-day card
 function thrHome(){
   const acts=document.querySelector("#v-home .hf-last .hf-acts"), id=acts?.querySelector("[data-sbgame]")?.dataset.sbgame;
+  const tb=acts?.querySelector("[data-throws]"); if(tb&&tb.dataset.throws!==id) tb.remove();
   if(acts&&id&&!acts.querySelector("[data-throws]")) acts.insertAdjacentHTML("beforeend",`<button class="tbtn" data-throws="${esc(id)}">Throws</button>`);
   const gd=document.querySelector("#v-home .gameday"), lg=typeof liveGameNow==="function"?liveGameNow():null, live=(LIVE.data?.games||[]).find(g=>g.state==="in"&&(g.home===CUR||g.away===CUR));
   if(gd&&live&&!gd.querySelector("[data-throws]")) gd.insertAdjacentHTML("beforeend",`<button class="tbtn thr-gd" data-throws="${esc(live.id)}">🎯 Live throw chart</button>`);

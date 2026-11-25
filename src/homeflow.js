@@ -38,7 +38,12 @@ function hfApply(){
         HF.recap={title:rc.querySelector(".t1")?.textContent||"Game recap", label:rc.querySelector(".label")?.textContent.trim()||"", ps, id};
         rc.classList.add("hf-gone");
       }
-      const id=HF.recap?.id||"";
+      // only use a recap that belongs to the team being shown (switching teams must not keep the old game)
+      const lastG=[...(S.games||[])].filter(g=>g.status==="final"&&g.espnId).sort((a,b)=>b.week-a.week)[0];
+      const want=String(lastG?.espnId||(typeof lastFinalId==="function"?lastFinalId()?.id:"")||"");
+      if(HF.recap&&want&&String(HF.recap.id)!==want) HF.recap=null;
+      if(HF.cur!==CUR){ HF.cur=CUR; if(!rc) HF.recap=null; }
+      const id=HF.recap?.id||want||"";
       const sumNow=HF.recap?.ps?.length?hfSent(HF.recap.ps[0]):"", sumEl=last.querySelector(".hf-sum"); if(sumEl&&sumEl.textContent!==sumNow) sumEl.remove();
       if(!last.querySelector(".hf-sum")&&HF.recap?.ps?.length) last.querySelector(".statline")?.insertAdjacentHTML("beforebegin",`<p class="hf-sum">${esc(hfSent(HF.recap.ps[0]))}</p>`);
       const sig=(HF.recap?.ps?.length?"r":"")+id, acts=last.querySelector(".hf-acts");
