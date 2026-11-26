@@ -54,7 +54,16 @@ function thrField(list,cur){
     else if(t.res==="C") g+=`<circle cx="${x}" cy="${y}" r="${r}" class="tf-c${on?" on":""}"/>`;
     else if(t.res==="INT") g+=`<circle cx="${x}" cy="${y}" r="${r}" class="tf-int${on?" on":""}"/>`;
     else g+=`<g class="tf-i${on?" on":""}"><circle cx="${x}" cy="${y}" r="${r}"/><path d="M${x-r/2.2},${y-r/2.2}L${x+r/2.2},${y+r/2.2}M${x+r/2.2},${y-r/2.2}L${x-r/2.2},${y+r/2.2}"/></g>`; });
-  g+=`<circle cx="${qx}" cy="${qy}" r="7" class="tf-qb"/>`;
+  // the quarterback's headshot at the line of scrimmage
+  const qbPh=cur?.qbPhoto||list.find(t=>t.qbPhoto)?.qbPhoto||"";
+  if(qbPh) g+=`<defs><clipPath id="tf-cq"><circle cx="${qx}" cy="${qy}" r="17"/></clipPath><clipPath id="tf-cw"><circle cx="36" cy="44" r="25"/></clipPath></defs>`
+    +`<circle cx="${qx}" cy="${qy}" r="17" class="tf-qbbg"/><image href="${esc(qbPh)}" x="${qx-23}" y="${qy-19}" width="46" height="46" preserveAspectRatio="xMidYMin slice" clip-path="url(#tf-cq)"/><circle cx="${qx}" cy="${qy}" r="17" class="tf-qbring"/>`;
+  else g+=`<circle cx="${qx}" cy="${qy}" r="7" class="tf-qb"/>`;
+  // intended receiver of the current throw, in the top-left corner
+  if(cur?.target){ const tp=cur.tPhoto, last=String(cur.target).split(" ").slice(-1)[0];
+    g+=`<text x="36" y="12" class="tf-tl" text-anchor="middle">TARGET</text>`
+      +(tp?`${qbPh?"":`<defs><clipPath id="tf-cw"><circle cx="36" cy="44" r="25"/></clipPath></defs>`}<circle cx="36" cy="44" r="25" class="tf-qbbg"/><image href="${esc(tp)}" x="2" y="17" width="68" height="68" preserveAspectRatio="xMidYMin slice" clip-path="url(#tf-cw)"/>`:`<circle cx="36" cy="44" r="25" class="tf-qbbg"/>`)
+      +`<circle cx="36" cy="44" r="25" class="tf-wring ${cur.res==="C"?"ok":cur.res==="INT"?"int":"no"}"/><text x="36" y="84" class="tf-tn" text-anchor="middle">${esc(last.length>11?last.slice(0,10)+"…":last)}</text>`; }
   return `<svg viewBox="0 0 ${TF.W} ${TF.H}" class="tf-svg" role="img" aria-label="Where each pass went">${g}</svg>`;
 }
 function thrStar(x,y,r){ let p=""; for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr=i%2?r*0.45:r; p+=(i?"L":"M")+(x+Math.cos(a)*rr).toFixed(1)+","+(y+Math.sin(a)*rr).toFixed(1); } return p+"Z"; }

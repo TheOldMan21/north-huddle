@@ -1018,3 +1018,9 @@ button.pg-srow{cursor:pointer}button.pg-srow:hover{background:var(--surface-2)}
 .thr-bp>span{display:flex;flex-direction:column}.thr-bpt{font-weight:600}.thr-bp small{color:#D6C8EE;font-size:12px}
 .clp-mini{display:inline-block;margin:0 0 6px 74px;color:#FFC62F;font:700 14px var(--display);text-decoration:none}
 .thr-split b small{font:600 12px var(--body);opacity:.75}
+/* Throw chart: QB headshot at the line, intended receiver in the corner */
+.tf-qbbg{fill:#2a1450}
+.tf-qbring{fill:none;stroke:#5aa9ff;stroke-width:3}
+.tf-wring{fill:none;stroke-width:3}.tf-wring.ok{stroke:#4CC38A}.tf-wring.no{stroke:#ff6b6b}.tf-wring.int{stroke:#fff}
+.tf-tl{fill:#FFC62F;font:800 10px var(--display);letter-spacing:.08em}
+.tf-tn{fill:#fff;font:700 11px var(--display)}
